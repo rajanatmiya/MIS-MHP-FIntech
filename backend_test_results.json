@@ -1,0 +1,88 @@
+{
+  "summary": {
+    "total_tests": 13,
+    "passed_tests": 13,
+    "failed_tests": 0,
+    "success_rate": 100.0
+  },
+  "test_results": [
+    {
+      "test": "User Registration",
+      "success": true,
+      "details": "User created with ID: 30e72415-a888-4ff5-a61d-ca8d71681a0c",
+      "timestamp": "2025-10-13T17:24:43.781443"
+    },
+    {
+      "test": "User Login",
+      "success": true,
+      "details": "Login successful, token received",
+      "timestamp": "2025-10-13T17:24:44.320460"
+    },
+    {
+      "test": "Get Current User",
+      "success": true,
+      "details": "User data retrieved: Test User",
+      "timestamp": "2025-10-13T17:24:44.359275"
+    },
+    {
+      "test": "Create Loan",
+      "success": true,
+      "details": "Loan created with ID: 9b4d5ff3-9e7c-42cf-81fc-e312f7f1db30",
+      "timestamp": "2025-10-13T17:24:44.426523"
+    },
+    {
+      "test": "Get Loans",
+      "success": true,
+      "details": "Retrieved 1 loans",
+      "timestamp": "2025-10-13T17:24:44.467244"
+    },
+    {
+      "test": "Get Loan by ID",
+      "success": true,
+      "details": "Retrieved loan: John Doe",
+      "timestamp": "2025-10-13T17:24:44.505259"
+    },
+    {
+      "test": "Update Loan",
+      "success": true,
+      "details": "Loan updated, status: Disbursed",
+      "timestamp": "2025-10-13T17:24:44.552265"
+    },
+    {
+      "test": "Analytics Overview",
+      "success": true,
+      "details": "Total: 1, Disbursed: 1",
+      "timestamp": "2025-10-13T17:24:44.591217"
+    },
+    {
+      "test": "Analytics by Bank",
+      "success": true,
+      "details": "Bank stats retrieved: 1 banks",
+      "timestamp": "2025-10-13T17:24:44.632012"
+    },
+    {
+      "test": "Analytics by Agent",
+      "success": true,
+      "details": "Agent stats retrieved: 1 agents",
+      "timestamp": "2025-10-13T17:24:44.673915"
+    },
+    {
+      "test": "Analytics by Month",
+      "success": true,
+      "details": "Month stats retrieved: 1 months",
+      "timestamp": "2025-10-13T17:24:44.716729"
+    },
+    {
+      "test": "Get Unique Values",
+      "success": true,
+      "details": "Banks: 1, Statuses: 1",
+      "timestamp": "2025-10-13T17:24:44.759366"
+    },
+    {
+      "test": "Delete Loan",
+      "success": true,
+      "details": "Loan deleted successfully",
+      "timestamp": "2025-10-13T17:24:44.798093"
+    }
+  ]
+}
