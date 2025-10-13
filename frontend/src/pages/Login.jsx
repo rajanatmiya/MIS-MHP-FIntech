@@ -42,11 +42,11 @@ const Login = () => {
                 <BarChart3 className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-4xl font-bold text-slate-800" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                LoanHub MIS
+                Mhp Fintech
               </h1>
             </div>
             <p className="text-lg text-slate-600 leading-relaxed">
-              Comprehensive Management Information System for Direct Selling Agents
+              MIS Dashboard - Mhp fintech services Pvt ltd
             </p>
           </div>
           
