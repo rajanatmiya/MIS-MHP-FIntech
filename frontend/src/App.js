@@ -7,6 +7,7 @@ import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Loans from '@/pages/Loans';
 import Analytics from '@/pages/Analytics';
+import UserManagement from '@/pages/UserManagement';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
