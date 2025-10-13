@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X, Shield } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -15,7 +15,22 @@ const Layout = ({ children }) => {
     { name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' }
   ];
 
+  // Add User Management for admins
+  if (user?.role === 'admin') {
+    navigation.push({ name: 'Users', href: '/users', icon: Shield, testId: 'nav-users' });
+  }
+
   const isActive = (path) => location.pathname === path;
+
+  const getRoleBadge = (role) => {
+    const badges = {
+      admin: { text: 'Admin', class: 'bg-purple-100 text-purple-700' },
+      manager: { text: 'Manager', class: 'bg-blue-100 text-blue-700' },
+      agent: { text: 'Agent', class: 'bg-green-100 text-green-700' }
+    };
+    const badge = badges[role] || badges.agent;
+    return <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${badge.class}`}>{badge.text}</span>;
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
