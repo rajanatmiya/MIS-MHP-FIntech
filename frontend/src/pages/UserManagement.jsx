@@ -235,12 +235,11 @@ const UserManagement = () => {
               {formData.role === 'agent' && managers.length > 0 && (
                 <div className="space-y-2">
                   <Label htmlFor="manager">Assign Manager</Label>
-                  <Select value={formData.manager_id} onValueChange={(value) => setFormData({...formData, manager_id: value})}>
+                  <Select value={formData.manager_id || undefined} onValueChange={(value) => setFormData({...formData, manager_id: value})}>
                     <SelectTrigger data-testid="user-manager-select">
-                      <SelectValue placeholder="Select manager" />
+                      <SelectValue placeholder="Select manager (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Manager</SelectItem>
                       {managers.map(manager => (
                         <SelectItem key={manager.id} value={manager.id}>
                           {manager.name} ({manager.team_code || 'No team'})
