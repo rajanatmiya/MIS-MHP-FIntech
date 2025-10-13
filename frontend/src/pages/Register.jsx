@@ -56,9 +56,11 @@ const Register = () => {
         <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 border border-slate-200">
           <div className="mb-8 text-center">
             <div className="flex justify-center mb-4">
-              <div className="bg-gradient-to-br from-blue-600 to-cyan-500 p-3 rounded-xl shadow-lg">
-                <BarChart3 className="w-8 h-8 text-white" />
-              </div>
+              <img 
+                src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+                alt="MHP Fintech Logo" 
+                className="h-20 w-auto object-contain"
+              />
             </div>
             <h2 className="text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
               Create Account
