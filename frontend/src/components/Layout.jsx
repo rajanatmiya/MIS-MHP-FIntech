@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X, Shield } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X, Shield, Settings as SettingsIcon } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -19,6 +19,9 @@ const Layout = ({ children }) => {
   if (user?.role === 'admin') {
     navigation.push({ name: 'Users', href: '/users', icon: Shield, testId: 'nav-users' });
   }
+  
+  // Add Settings for everyone
+  navigation.push({ name: 'Settings', href: '/settings', icon: SettingsIcon, testId: 'nav-settings' });
 
   const isActive = (path) => location.pathname === path;
 
