@@ -142,11 +142,13 @@ const Loans = () => {
             <DialogHeader>
               <DialogTitle>{editingLoan ? 'Edit Loan Application' : 'Add New Loan Application'}</DialogTitle>
             </DialogHeader>
-            <LoanForm
-              loan={editingLoan}
-              onSuccess={handleFormSuccess}
-              onCancel={() => setShowForm(false)}
-            />
+            <div aria-describedby="loan-form-description">
+              <LoanForm
+                loan={editingLoan}
+                onSuccess={handleFormSuccess}
+                onCancel={() => setShowForm(false)}
+              />
+            </div>
           </DialogContent>
         </Dialog>
       </div>
