@@ -1,0 +1,324 @@
+import React, { useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+import { API, AuthContext } from '@/App';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from 'sonner';
+
+const STATUS_OPTIONS = [
+  'Decline',
+  'Disbursed',
+  'Hold',
+  'Login Done',
+  'Sent For Login',
+  'Pd To Be Done',
+  "Won't Do",
+  'Drop',
+  'Cam Done'
+];
+
+const SCHEME_OPTIONS = ['Salaried PL', 'BIL', 'OD', 'Banking'];
+const CASE_TYPE_OPTIONS = ['In House', 'Out House'];
+
+const LoanForm = ({ loan, onSuccess, onCancel }) => {
+  const { user } = useContext(AuthContext);
+  const [loading, setLoading] = useState(false);
+  const [uniqueValues, setUniqueValues] = useState({ banks: [], agents: [] });
+  const [formData, setFormData] = useState({
+    agent_name: '',
+    customer_name: '',
+    company_name: '',
+    contact_no: '',
+    status: '',
+    bank: '',
+    sanction: '',
+    disbursed: '',
+    remark: '',
+    scheme: '',
+    case_type: '',
+    from_location: '',
+    branch: '',
+    executive_name: '',
+    team_manager_code: '',
+    month: ''
+  });
+
+  useEffect(() => {
+    fetchUniqueValues();
+    if (loan) {
+      setFormData({
+        agent_name: loan.agent_name || '',
+        customer_name: loan.customer_name || '',
+        company_name: loan.company_name || '',
+        contact_no: loan.contact_no || '',
+        status: loan.status || '',
+        bank: loan.bank || '',
+        sanction: loan.sanction || '',
+        disbursed: loan.disbursed || '',
+        remark: loan.remark || '',
+        scheme: loan.scheme || '',
+        case_type: loan.case_type || '',
+        from_location: loan.from_location || '',
+        branch: loan.branch || '',
+        executive_name: loan.executive_name || '',
+        team_manager_code: loan.team_manager_code || '',
+        month: loan.month || ''
+      });
+    }
+  }, [loan]);
+
+  const fetchUniqueValues = async () => {
+    try {
+      const response = await axios.get(`${API}/analytics/unique-values`);
+      setUniqueValues(response.data);
+    } catch (error) {
+      console.error('Failed to fetch unique values');
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      if (loan) {
+        await axios.put(`${API}/loans/${loan.id}`, formData);
+        toast.success('Loan application updated successfully');
+      } else {
+        await axios.post(`${API}/loans`, formData);
+        toast.success('Loan application created successfully');
+      }
+      onSuccess();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to save loan application');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6" data-testid="loan-form">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Agent Name */}
+        <div className="space-y-2">
+          <Label htmlFor="agent_name">Agent Name *</Label>
+          <Input
+            id="agent_name"
+            value={formData.agent_name}
+            onChange={(e) => handleChange('agent_name', e.target.value)}
+            required
+            data-testid="agent-name-input"
+          />
+        </div>
+
+        {/* Customer Name */}
+        <div className="space-y-2">
+          <Label htmlFor="customer_name">Customer Name *</Label>
+          <Input
+            id="customer_name"
+            value={formData.customer_name}
+            onChange={(e) => handleChange('customer_name', e.target.value)}
+            required
+            data-testid="customer-name-input"
+          />
+        </div>
+
+        {/* Company Name */}
+        <div className="space-y-2">
+          <Label htmlFor="company_name">Company Name *</Label>
+          <Input
+            id="company_name"
+            value={formData.company_name}
+            onChange={(e) => handleChange('company_name', e.target.value)}
+            required
+            data-testid="company-name-input"
+          />
+        </div>
+
+        {/* Contact No */}
+        <div className="space-y-2">
+          <Label htmlFor="contact_no">Contact Number *</Label>
+          <Input
+            id="contact_no"
+            value={formData.contact_no}
+            onChange={(e) => handleChange('contact_no', e.target.value)}
+            required
+            data-testid="contact-no-input"
+          />
+        </div>
+
+        {/* Status */}
+        <div className="space-y-2">
+          <Label htmlFor="status">Status *</Label>
+          <Select value={formData.status} onValueChange={(value) => handleChange('status', value)} required>
+            <SelectTrigger data-testid="status-select">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUS_OPTIONS.map(status => (
+                <SelectItem key={status} value={status}>{status}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Bank */}
+        <div className="space-y-2">
+          <Label htmlFor="bank">Bank *</Label>
+          <Input
+            id="bank"
+            value={formData.bank}
+            onChange={(e) => handleChange('bank', e.target.value)}
+            required
+            data-testid="bank-input"
+          />
+        </div>
+
+        {/* Sanction */}
+        <div className="space-y-2">
+          <Label htmlFor="sanction">Sanction</Label>
+          <Input
+            id="sanction"
+            value={formData.sanction}
+            onChange={(e) => handleChange('sanction', e.target.value)}
+            data-testid="sanction-input"
+          />
+        </div>
+
+        {/* Disbursed */}
+        <div className="space-y-2">
+          <Label htmlFor="disbursed">Disbursed</Label>
+          <Input
+            id="disbursed"
+            value={formData.disbursed}
+            onChange={(e) => handleChange('disbursed', e.target.value)}
+            data-testid="disbursed-input"
+          />
+        </div>
+
+        {/* Scheme */}
+        <div className="space-y-2">
+          <Label htmlFor="scheme">Scheme</Label>
+          <Select value={formData.scheme} onValueChange={(value) => handleChange('scheme', value)}>
+            <SelectTrigger data-testid="scheme-select">
+              <SelectValue placeholder="Select scheme" />
+            </SelectTrigger>
+            <SelectContent>
+              {SCHEME_OPTIONS.map(scheme => (
+                <SelectItem key={scheme} value={scheme}>{scheme}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Case Type */}
+        <div className="space-y-2">
+          <Label htmlFor="case_type">Case Type</Label>
+          <Select value={formData.case_type} onValueChange={(value) => handleChange('case_type', value)}>
+            <SelectTrigger data-testid="case-type-select">
+              <SelectValue placeholder="Select case type" />
+            </SelectTrigger>
+            <SelectContent>
+              {CASE_TYPE_OPTIONS.map(type => (
+                <SelectItem key={type} value={type}>{type}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* From Location */}
+        <div className="space-y-2">
+          <Label htmlFor="from_location">From Location</Label>
+          <Input
+            id="from_location"
+            value={formData.from_location}
+            onChange={(e) => handleChange('from_location', e.target.value)}
+            data-testid="from-location-input"
+          />
+        </div>
+
+        {/* Branch */}
+        <div className="space-y-2">
+          <Label htmlFor="branch">Branch</Label>
+          <Input
+            id="branch"
+            value={formData.branch}
+            onChange={(e) => handleChange('branch', e.target.value)}
+            data-testid="branch-input"
+          />
+        </div>
+
+        {/* Executive Name */}
+        <div className="space-y-2">
+          <Label htmlFor="executive_name">Executive Name</Label>
+          <Input
+            id="executive_name"
+            value={formData.executive_name}
+            onChange={(e) => handleChange('executive_name', e.target.value)}
+            data-testid="executive-name-input"
+          />
+        </div>
+
+        {/* Team Manager Code */}
+        <div className="space-y-2">
+          <Label htmlFor="team_manager_code">Team Manager Code</Label>
+          <Input
+            id="team_manager_code"
+            value={formData.team_manager_code}
+            onChange={(e) => handleChange('team_manager_code', e.target.value)}
+            data-testid="team-manager-code-input"
+          />
+        </div>
+
+        {/* Month */}
+        <div className="space-y-2">
+          <Label htmlFor="month">Month *</Label>
+          <Input
+            id="month"
+            value={formData.month}
+            onChange={(e) => handleChange('month', e.target.value)}
+            placeholder="e.g., Jan'25"
+            required
+            data-testid="month-input"
+          />
+        </div>
+      </div>
+
+      {/* Remark */}
+      <div className="space-y-2">
+        <Label htmlFor="remark">Remark</Label>
+        <Textarea
+          id="remark"
+          value={formData.remark}
+          onChange={(e) => handleChange('remark', e.target.value)}
+          rows={3}
+          data-testid="remark-input"
+        />
+      </div>
+
+      {/* Buttons */}
+      <div className="flex justify-end gap-3 pt-4">
+        <Button type="button" variant="outline" onClick={onCancel} data-testid="cancel-button">
+          Cancel
+        </Button>
+        <Button
+          type="submit"
+          disabled={loading}
+          className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white"
+          data-testid="submit-loan-button"
+        >
+          {loading ? 'Saving...' : loan ? 'Update Loan' : 'Create Loan'}
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+export default LoanForm;
