@@ -1,5 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -13,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
 from collections import defaultdict
+import shutil
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -21,6 +23,10 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
+
+# File uploads directory
+UPLOADS_DIR = ROOT_DIR / 'uploads'
+UPLOADS_DIR.mkdir(exist_ok=True)
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -58,6 +64,42 @@ class Token(BaseModel):
     token_type: str
     user: User
 
+class FileAttachment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    filename: str
+    original_filename: str
+    file_path: str
+    file_type: str
+    file_size: int
+    uploaded_by: str
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class Comment(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    loan_id: str
+    user_id: str
+    user_name: str
+    comment: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CommentCreate(BaseModel):
+    loan_id: str
+    comment: str
+
+class ActivityLog(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    loan_id: str
+    user_id: str
+    user_name: str
+    action: str  # created, updated, status_changed, commented, file_uploaded
+    field_name: Optional[str] = None
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 class LoanApplication(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -77,6 +119,9 @@ class LoanApplication(BaseModel):
     executive_name: Optional[str] = ""
     team_manager_code: Optional[str] = ""
     month: str
+    custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    file_count: Optional[int] = 0
+    comment_count: Optional[int] = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_by: str  # user id
@@ -98,6 +143,7 @@ class LoanApplicationCreate(BaseModel):
     executive_name: Optional[str] = ""
     team_manager_code: Optional[str] = ""
     month: str
+    custom_fields: Optional[Dict[str, Any]] = None
 
 class LoanApplicationUpdate(BaseModel):
     agent_name: Optional[str] = None
@@ -116,6 +162,7 @@ class LoanApplicationUpdate(BaseModel):
     executive_name: Optional[str] = None
     team_manager_code: Optional[str] = None
     month: Optional[str] = None
+    custom_fields: Optional[Dict[str, Any]] = None
 
 # Auth helpers
 def hash_password(password: str) -> str:
@@ -152,15 +199,29 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     
     return User(**user)
 
+async def log_activity(loan_id: str, user: User, action: str, field_name: Optional[str] = None, 
+                       old_value: Optional[str] = None, new_value: Optional[str] = None):
+    activity = ActivityLog(
+        loan_id=loan_id,
+        user_id=user.id,
+        user_name=user.name,
+        action=action,
+        field_name=field_name,
+        old_value=old_value,
+        new_value=new_value
+    )
+    
+    activity_dict = activity.model_dump()
+    activity_dict['created_at'] = activity_dict['created_at'].isoformat()
+    await db.activity_logs.insert_one(activity_dict)
+
 # Auth routes
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserCreate):
-    # Check if user exists
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    # Create user
     user = User(
         email=user_data.email,
         name=user_data.name,
@@ -242,6 +303,10 @@ async def create_loan(loan_data: LoanApplicationCreate, current_user: User = Dep
     loan_dict['updated_at'] = loan_dict['updated_at'].isoformat()
     
     await db.loan_applications.insert_one(loan_dict)
+    
+    # Log activity
+    await log_activity(loan.id, current_user, "created")
+    
     return loan
 
 @api_router.get("/loans/{loan_id}", response_model=LoanApplication)
@@ -266,6 +331,16 @@ async def update_loan(loan_id: str, loan_data: LoanApplicationUpdate, current_us
     update_dict = {k: v for k, v in loan_data.model_dump().items() if v is not None}
     update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
     
+    # Log activity for changed fields
+    for field, new_value in update_dict.items():
+        if field != 'updated_at' and field in loan and loan[field] != new_value:
+            old_value = str(loan[field]) if loan[field] else ""
+            await log_activity(loan_id, current_user, "updated", field, old_value, str(new_value))
+            
+            # Special logging for status changes
+            if field == "status":
+                await log_activity(loan_id, current_user, "status_changed", None, old_value, str(new_value))
+    
     await db.loan_applications.update_one({"id": loan_id}, {"$set": update_dict})
     
     updated_loan = await db.loan_applications.find_one({"id": loan_id}, {"_id": 0})
@@ -276,12 +351,189 @@ async def update_loan(loan_id: str, loan_data: LoanApplicationUpdate, current_us
     
     return LoanApplication(**updated_loan)
 
+@api_router.patch("/loans/{loan_id}/status")
+async def update_loan_status(loan_id: str, status: str, current_user: User = Depends(get_current_user)):
+    loan = await db.loan_applications.find_one({"id": loan_id}, {"_id": 0})
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan application not found")
+    
+    old_status = loan.get('status', '')
+    update_dict = {
+        'status': status,
+        'updated_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    await db.loan_applications.update_one({"id": loan_id}, {"$set": update_dict})
+    
+    # Log status change
+    await log_activity(loan_id, current_user, "status_changed", "status", old_status, status)
+    
+    return {"message": "Status updated successfully", "loan_id": loan_id, "new_status": status}
+
 @api_router.delete("/loans/{loan_id}")
 async def delete_loan(loan_id: str, current_user: User = Depends(get_current_user)):
     result = await db.loan_applications.delete_one({"id": loan_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Loan application not found")
+    
+    # Delete associated comments, files, and activity logs
+    await db.comments.delete_many({"loan_id": loan_id})
+    await db.activity_logs.delete_many({"loan_id": loan_id})
+    
+    # Delete files
+    files = await db.file_attachments.find({"loan_id": loan_id}, {"_id": 0}).to_list(100)
+    for file in files:
+        file_path = Path(file['file_path'])
+        if file_path.exists():
+            file_path.unlink()
+    await db.file_attachments.delete_many({"loan_id": loan_id})
+    
     return {"message": "Loan application deleted successfully"}
+
+# Comments routes
+@api_router.get("/loans/{loan_id}/comments", response_model=List[Comment])
+async def get_comments(loan_id: str, current_user: User = Depends(get_current_user)):
+    comments = await db.comments.find({"loan_id": loan_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    for comment in comments:
+        if isinstance(comment.get('created_at'), str):
+            comment['created_at'] = datetime.fromisoformat(comment['created_at'])
+    
+    return comments
+
+@api_router.post("/loans/{loan_id}/comments", response_model=Comment)
+async def create_comment(loan_id: str, comment_text: str = Form(...), current_user: User = Depends(get_current_user)):
+    comment = Comment(
+        loan_id=loan_id,
+        user_id=current_user.id,
+        user_name=current_user.name,
+        comment=comment_text
+    )
+    
+    comment_dict = comment.model_dump()
+    comment_dict['created_at'] = comment_dict['created_at'].isoformat()
+    
+    await db.comments.insert_one(comment_dict)
+    
+    # Update comment count
+    await db.loan_applications.update_one(
+        {"id": loan_id},
+        {"$inc": {"comment_count": 1}}
+    )
+    
+    # Log activity
+    await log_activity(loan_id, current_user, "commented")
+    
+    return comment
+
+# File upload routes
+@api_router.post("/loans/{loan_id}/files")
+async def upload_file(loan_id: str, file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    # Check if loan exists
+    loan = await db.loan_applications.find_one({"id": loan_id})
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan application not found")
+    
+    # Create loan-specific directory
+    loan_dir = UPLOADS_DIR / loan_id
+    loan_dir.mkdir(exist_ok=True)
+    
+    # Save file
+    file_id = str(uuid.uuid4())
+    file_extension = Path(file.filename).suffix
+    filename = f"{file_id}{file_extension}"
+    file_path = loan_dir / filename
+    
+    with file_path.open("wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Get file size
+    file_size = file_path.stat().st_size
+    
+    # Create file attachment record
+    attachment = FileAttachment(
+        filename=filename,
+        original_filename=file.filename,
+        file_path=str(file_path),
+        file_type=file.content_type or "application/octet-stream",
+        file_size=file_size,
+        uploaded_by=current_user.id
+    )
+    attachment_dict = attachment.model_dump()
+    attachment_dict['loan_id'] = loan_id
+    attachment_dict['uploaded_at'] = attachment_dict['uploaded_at'].isoformat()
+    
+    await db.file_attachments.insert_one(attachment_dict)
+    
+    # Update file count
+    await db.loan_applications.update_one(
+        {"id": loan_id},
+        {"$inc": {"file_count": 1}}
+    )
+    
+    # Log activity
+    await log_activity(loan_id, current_user, "file_uploaded", None, None, file.filename)
+    
+    return {
+        "message": "File uploaded successfully",
+        "file_id": attachment.id,
+        "filename": file.filename
+    }
+
+@api_router.get("/loans/{loan_id}/files")
+async def get_files(loan_id: str, current_user: User = Depends(get_current_user)):
+    files = await db.file_attachments.find({"loan_id": loan_id}, {"_id": 0}).sort("uploaded_at", -1).to_list(100)
+    
+    for file in files:
+        if isinstance(file.get('uploaded_at'), str):
+            file['uploaded_at'] = datetime.fromisoformat(file['uploaded_at'])
+    
+    return files
+
+@api_router.get("/files/{file_id}/download")
+async def download_file(file_id: str, current_user: User = Depends(get_current_user)):
+    file = await db.file_attachments.find_one({"id": file_id}, {"_id": 0})
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    file_path = Path(file['file_path'])
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    return FileResponse(file_path, filename=file['original_filename'])
+
+@api_router.delete("/files/{file_id}")
+async def delete_file(file_id: str, current_user: User = Depends(get_current_user)):
+    file = await db.file_attachments.find_one({"id": file_id}, {"_id": 0})
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Delete file from disk
+    file_path = Path(file['file_path'])
+    if file_path.exists():
+        file_path.unlink()
+    
+    # Delete from database
+    await db.file_attachments.delete_one({"id": file_id})
+    
+    # Update file count
+    await db.loan_applications.update_one(
+        {"id": file['loan_id']},
+        {"$inc": {"file_count": -1}}
+    )
+    
+    return {"message": "File deleted successfully"}
+
+# Activity log routes
+@api_router.get("/loans/{loan_id}/activity", response_model=List[ActivityLog])
+async def get_activity_log(loan_id: str, current_user: User = Depends(get_current_user)):
+    activities = await db.activity_logs.find({"loan_id": loan_id}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    
+    for activity in activities:
+        if isinstance(activity.get('created_at'), str):
+            activity['created_at'] = datetime.fromisoformat(activity['created_at'])
+    
+    return activities
 
 # Analytics routes
 @api_router.get("/analytics/overview")
