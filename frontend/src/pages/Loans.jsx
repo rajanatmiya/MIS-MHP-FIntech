@@ -214,8 +214,8 @@ const Loans = () => {
         )}
       </div>
 
-      {/* Table */}
-      <Card>
+      {/* Table - Desktop */}
+      <Card className="hidden md:block">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full" data-testid="loans-table">
@@ -279,6 +279,78 @@ const Loans = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Card View - Mobile */}
+      <div className="md:hidden space-y-3">
+        {filteredLoans.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center text-slate-500">
+              No loan applications found
+            </CardContent>
+          </Card>
+        ) : (
+          filteredLoans.map((loan) => (
+            <Card key={loan.id} className="card-hover" data-testid={`loan-card-${loan.id}`}>
+              <CardContent className="p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="font-semibold text-slate-800">{loan.customer_name}</h3>
+                      <p className="text-sm text-slate-600">{loan.company_name}</p>
+                    </div>
+                    <span className={getStatusBadgeClass(loan.status)}>{loan.status}</span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <p className="text-slate-500">Contact</p>
+                      <p className="font-medium text-slate-800">{loan.contact_no}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Bank</p>
+                      <p className="font-medium text-slate-800">{loan.bank}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Agent</p>
+                      <p className="font-medium text-slate-800">{loan.agent_name}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Month</p>
+                      <p className="font-medium text-slate-800">{loan.month}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 pt-2 border-t border-slate-200">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => {
+                        setEditingLoan(loan);
+                        setShowForm(true);
+                      }}
+                      data-testid={`edit-loan-${loan.id}`}
+                    >
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-red-600 hover:bg-red-50"
+                      onClick={() => handleDelete(loan.id)}
+                      data-testid={`delete-loan-${loan.id}`}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 };
