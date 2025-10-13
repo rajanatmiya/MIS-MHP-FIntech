@@ -236,6 +236,31 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
+# Change password route
+class PasswordChange(BaseModel):
+    old_password: str
+    new_password: str
+
+@api_router.post("/auth/change-password")
+async def change_password(password_data: PasswordChange, current_user: User = Depends(get_current_user)):
+    # Get user with password
+    user = await db.users.find_one({"id": current_user.id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Verify old password
+    if not verify_password(password_data.old_password, user['password']):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    
+    # Update password
+    new_hashed = hash_password(password_data.new_password)
+    await db.users.update_one(
+        {"id": current_user.id},
+        {"$set": {"password": new_hashed}}
+    )
+    
+    return {"message": "Password changed successfully"}
+
 # User management (Admin only)
 @api_router.get("/users", response_model=List[User])
 async def get_users(current_user: User = Depends(get_current_user)):
