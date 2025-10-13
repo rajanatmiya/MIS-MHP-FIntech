@@ -84,7 +84,10 @@ const Layout = ({ children }) => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-800 truncate" data-testid="user-name">{user?.name}</p>
-                  <p className="text-xs text-slate-500 truncate" data-testid="user-email">{user?.email}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-slate-500 truncate" data-testid="user-email">{user?.email}</p>
+                    {getRoleBadge(user?.role)}
+                  </div>
                 </div>
               </div>
               <Button
