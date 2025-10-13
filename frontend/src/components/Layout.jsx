@@ -1,12 +1,13 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, BarChart3, LogOut, User } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard, testId: 'nav-dashboard' },
@@ -18,8 +19,78 @@ const Layout = ({ children }) => {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 z-50" data-testid="sidebar">
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <img 
+            src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+            alt="MHP Fintech Logo" 
+            className="h-10 w-auto object-contain"
+          />
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 rounded-lg hover:bg-slate-100"
+            data-testid="mobile-menu-toggle"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40" onClick={() => setMobileMenuOpen(false)}>
+          <div className="fixed top-16 left-0 right-0 bg-white shadow-lg z-50" onClick={(e) => e.stopPropagation()}>
+            <nav className="p-4 space-y-2">
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
+                      isActive(item.href) 
+                        ? 'bg-blue-50 text-blue-600 font-semibold' 
+                        : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                    data-testid={item.testId}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="border-t border-slate-200 p-4">
+              <div className="flex items-center gap-3 mb-3 px-2">
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <User className="w-5 h-5 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 truncate" data-testid="user-name">{user?.name}</p>
+                  <p className="text-xs text-slate-500 truncate" data-testid="user-email">{user?.email}</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  logout();
+                  setMobileMenuOpen(false);
+                }}
+                variant="outline"
+                className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                data-testid="logout-button"
+              >
+                <LogOut className="w-4 h-4" />
+                Logout
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:block fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 z-50" data-testid="sidebar">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="p-6 border-b border-slate-200">
@@ -78,8 +149,8 @@ const Layout = ({ children }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 min-h-screen">
-        <div className="p-8">
+      <main className="pt-16 lg:pt-0 lg:ml-64 min-h-screen">
+        <div className="p-4 lg:p-8">
           {children}
         </div>
       </main>
