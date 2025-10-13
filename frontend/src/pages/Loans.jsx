@@ -81,9 +81,12 @@ const Loans = () => {
     try {
       await axios.delete(`${API}/loans/${loanId}`);
       toast.success('Loan application deleted');
-      fetchLoans();
+      // Update local state immediately
+      setLoans(prevLoans => prevLoans.filter(loan => loan.id !== loanId));
+      setFilteredLoans(prevLoans => prevLoans.filter(loan => loan.id !== loanId));
     } catch (error) {
       toast.error('Failed to delete loan application');
+      console.error('Delete error:', error);
     }
   };
 
