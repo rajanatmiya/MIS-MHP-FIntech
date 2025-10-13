@@ -132,17 +132,17 @@ const Loans = () => {
             <Button
               onClick={() => setEditingLoan(null)}
               className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-md hover:shadow-lg"
-              data-testid=\"add-loan-button\"
+              data-testid="add-loan-button"
             >
-              <Plus className=\"w-4 h-4 mr-2\" />
+              <Plus className="w-4 h-4 mr-2" />
               Add New Loan
             </Button>
           </DialogTrigger>
-          <DialogContent className=\"max-w-3xl max-h-[90vh] overflow-y-auto\">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingLoan ? 'Edit Loan Application' : 'Add New Loan Application'}</DialogTitle>
             </DialogHeader>
-            <div aria-describedby=\"loan-form-description\">
+            <div aria-describedby="loan-form-description">
               <LoanForm
                 loan={editingLoan}
                 onSuccess={handleFormSuccess}
