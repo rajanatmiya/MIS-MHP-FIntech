@@ -57,7 +57,12 @@ const UserManagement = () => {
         await axios.put(`${API}/users/${editingUser.id}`, updateData);
         toast.success('User updated successfully');
       } else {
-        await axios.post(`${API}/auth/register`, formData);
+        const createData = {
+          ...formData,
+          team_code: formData.team_code || null,
+          manager_id: formData.manager_id || null
+        };
+        await axios.post(`${API}/auth/register`, createData);
         toast.success('User created successfully');
       }
       
