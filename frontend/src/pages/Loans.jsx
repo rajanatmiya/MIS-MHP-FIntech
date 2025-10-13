@@ -118,31 +118,31 @@ const Loans = () => {
   }
 
   return (
-    <div className="space-y-6 fade-in" data-testid="loans-page">
+    <div className="space-y-4 lg:space-y-6 fade-in" data-testid="loans-page">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
             Loan Applications
           </h1>
-          <p className="text-slate-600">Manage and track all loan applications</p>
+          <p className="text-sm lg:text-base text-slate-600">Manage and track all loan applications</p>
         </div>
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
             <Button
               onClick={() => setEditingLoan(null)}
-              className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-md hover:shadow-lg"
-              data-testid="add-loan-button"
+              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-md hover:shadow-lg"
+              data-testid=\"add-loan-button\"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className=\"w-4 h-4 mr-2\" />
               Add New Loan
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className=\"max-w-3xl max-h-[90vh] overflow-y-auto\">
             <DialogHeader>
               <DialogTitle>{editingLoan ? 'Edit Loan Application' : 'Add New Loan Application'}</DialogTitle>
             </DialogHeader>
-            <div aria-describedby="loan-form-description">
+            <div aria-describedby=\"loan-form-description\">
               <LoanForm
                 loan={editingLoan}
                 onSuccess={handleFormSuccess}
