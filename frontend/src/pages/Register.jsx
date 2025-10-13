@@ -5,6 +5,7 @@ import { API, AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { BarChart3 } from 'lucide-react';
 
@@ -13,7 +14,8 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 'agent'
   });
   const [loading, setLoading] = useState(false);
   const { login } = useContext(AuthContext);
@@ -37,7 +39,7 @@ const Register = () => {
         name: formData.name,
         email: formData.email,
         password: formData.password,
-        role: 'agent'
+        role: formData.role
       });
       
       login(response.data.access_token, response.data.user);
