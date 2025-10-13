@@ -131,6 +131,20 @@ const Register = () => {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="role" className="text-slate-700 font-medium">Register As</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
+                <SelectTrigger className="h-11" data-testid="register-role-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin - Full Access</SelectItem>
+                  <SelectItem value="manager">Manager - Team Access</SelectItem>
+                  <SelectItem value="agent">Agent - Personal Access</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button
               type="submit"
               className="w-full h-11 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
