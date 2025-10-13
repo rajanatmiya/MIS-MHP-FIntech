@@ -38,16 +38,16 @@ const Login = () => {
         <div className="hidden md:flex flex-col justify-center space-y-6 p-8">
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-blue-600 to-cyan-500 p-3 rounded-xl shadow-lg">
-                <BarChart3 className="w-8 h-8 text-white" />
-              </div>
-              <h1 className="text-4xl font-bold text-slate-800" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                Mhp Fintech
-              </h1>
+              <img 
+                src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+                alt="MHP Fintech Logo" 
+                className="h-24 w-auto object-contain"
+              />
             </div>
             <p className="text-lg text-slate-600 leading-relaxed">
               MIS Dashboard - Mhp fintech services Pvt ltd
             </p>
+            <p className="text-sm text-slate-500 italic">Your Growth is our Vision</p>
           </div>
           
           <div className="space-y-4 pt-8">
