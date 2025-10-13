@@ -1,12 +1,12 @@
 import React, { useState, useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API, AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { BarChart3, TrendingUp } from 'lucide-react';
+import { TrendingUp, BarChart3 } from 'lucide-react';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -121,11 +121,8 @@ const Login = () => {
           </form>
 
           <div className="mt-6 text-center">
-            <p className="text-slate-600">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium" data-testid="register-link">
-                Create Account
-              </Link>
+            <p className="text-sm text-slate-500">
+              Don't have access? Contact your administrator
             </p>
           </div>
         </div>

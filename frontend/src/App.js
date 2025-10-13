@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import '@/App.css';
 import Login from '@/pages/Login';
-import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 import Loans from '@/pages/Loans';
 import Analytics from '@/pages/Analytics';
@@ -153,7 +152,6 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
           <Route
             path="/*"
             element={
