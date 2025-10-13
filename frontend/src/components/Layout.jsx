@@ -29,9 +29,9 @@ const Layout = ({ children }) => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  LoanHub MIS
+                  Mhp Fintech
                 </h1>
-                <p className="text-xs text-slate-500">Loan Management</p>
+                <p className="text-xs text-slate-500">MIS Dashboard</p>
               </div>
             </div>
           </div>
