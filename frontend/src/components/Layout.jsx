@@ -24,16 +24,13 @@ const Layout = ({ children }) => {
           {/* Logo */}
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center space-x-3">
-              <div className="bg-gradient-to-br from-blue-600 to-cyan-500 p-2 rounded-lg shadow-md">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-slate-800" style={{ fontFamily: 'Manrope, sans-serif' }}>
-                  Mhp Fintech
-                </h1>
-                <p className="text-xs text-slate-500">MIS Dashboard</p>
-              </div>
+              <img 
+                src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+                alt="MHP Fintech Logo" 
+                className="h-12 w-auto object-contain"
+              />
             </div>
+            <p className="text-xs text-slate-500 mt-2">Your Growth is our Vision</p>
           </div>
 
           {/* Navigation */}
