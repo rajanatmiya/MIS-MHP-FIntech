@@ -71,13 +71,13 @@ const Dashboard = () => {
   const declineRate = overview?.total > 0 ? ((overview?.declined / overview?.total) * 100).toFixed(1) : 0;
 
   return (
-    <div className="space-y-8 fade-in" data-testid="dashboard-page">
+    <div className="space-y-6 lg:space-y-8 fade-in" data-testid="dashboard-page">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
           Dashboard Overview
         </h1>
-        <p className="text-slate-600">Monitor your loan application metrics and performance</p>
+        <p className="text-sm lg:text-base text-slate-600">Monitor your loan application metrics and performance</p>
       </div>
 
       {/* Stats Grid */}
