@@ -92,7 +92,7 @@ const UserManagement = () => {
       password: '',
       role: user.role,
       team_code: user.team_code || '',
-      manager_id: user.manager_id || ''
+      manager_id: user.manager_id || undefined
     });
     setShowForm(true);
   };
