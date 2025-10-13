@@ -81,19 +81,19 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card key={index} className="stat-card card-hover" data-testid={stat.testId}>
-              <CardContent className="p-6">
+              <CardContent className="p-4 lg:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
-                    <p className="text-3xl font-bold text-slate-800">{stat.value}</p>
+                    <p className="text-xs lg:text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
+                    <p className="text-2xl lg:text-3xl font-bold text-slate-800">{stat.value}</p>
                   </div>
-                  <div className={`${stat.bgColor} ${stat.color} p-3 rounded-xl`}>
-                    <Icon className="w-6 h-6" />
+                  <div className={`${stat.bgColor} ${stat.color} p-2 lg:p-3 rounded-xl`}>
+                    <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
                   </div>
                 </div>
               </CardContent>
