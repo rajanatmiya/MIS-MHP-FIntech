@@ -163,6 +163,7 @@ function App() {
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/loans" element={<Loans />} />
                     <Route path="/analytics" element={<Analytics />} />
+                    <Route path="/users" element={<UserManagement />} />
                   </Routes>
                 </Layout>
               ) : (
