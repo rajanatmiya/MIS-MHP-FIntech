@@ -104,7 +104,7 @@ const UserManagement = () => {
       password: '',
       role: 'agent',
       team_code: '',
-      manager_id: ''
+      manager_id: undefined
     });
   };
 
