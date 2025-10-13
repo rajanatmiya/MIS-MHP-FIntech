@@ -1,0 +1,27 @@
+{
+  "short_name": "MHP Fintech",
+  "name": "MHP Fintech MIS Dashboard",
+  "description": "Management Information System for Direct Selling Agents - Your Growth is our Vision",
+  "icons": [
+    {
+      "src": "https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1e40af",
+  "background_color": "#f8fafc",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["business", "finance", "productivity"],
+  "screenshots": [
+    {
+      "src": "https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg",
+      "type": "image/jpeg",
+      "sizes": "1280x720"
+    }
+  ]
+}
