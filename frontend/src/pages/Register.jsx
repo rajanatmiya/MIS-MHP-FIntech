@@ -63,7 +63,7 @@ const Register = () => {
             <h2 className="text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
               Create Account
             </h2>
-            <p className="text-slate-600">Join LoanHub MIS to manage your loans</p>
+            <p className="text-slate-600">Join Mhp Fintech MIS to manage your loans</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
