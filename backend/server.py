@@ -318,6 +318,66 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "User deleted successfully"}
 
+# Custom Field Configuration routes (Admin only)
+@api_router.get("/field-configs", response_model=List[CustomFieldConfig])
+async def get_field_configs(current_user: User = Depends(get_current_user)):
+    """Get all custom field configurations"""
+    fields = await db.field_configs.find({}, {"_id": 0}).sort("order", 1).to_list(1000)
+    
+    for field in fields:
+        if isinstance(field.get('created_at'), str):
+            field['created_at'] = datetime.fromisoformat(field['created_at'])
+    
+    return fields
+
+@api_router.post("/field-configs", response_model=CustomFieldConfig)
+async def create_field_config(field_data: CustomFieldConfigCreate, current_user: User = Depends(get_current_user)):
+    """Create a new custom field configuration (Admin only)"""
+    check_admin(current_user)
+    
+    # Check if field name already exists
+    existing = await db.field_configs.find_one({"name": field_data.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Field name already exists")
+    
+    field = CustomFieldConfig(**field_data.model_dump())
+    
+    field_dict = field.model_dump()
+    field_dict['created_at'] = field_dict['created_at'].isoformat()
+    
+    await db.field_configs.insert_one(field_dict)
+    return field
+
+@api_router.put("/field-configs/{field_id}", response_model=CustomFieldConfig)
+async def update_field_config(field_id: str, field_data: CustomFieldConfigUpdate, current_user: User = Depends(get_current_user)):
+    """Update a custom field configuration (Admin only)"""
+    check_admin(current_user)
+    
+    update_dict = {k: v for k, v in field_data.model_dump().items() if v is not None}
+    
+    if update_dict:
+        await db.field_configs.update_one({"id": field_id}, {"$set": update_dict})
+    
+    updated_field = await db.field_configs.find_one({"id": field_id}, {"_id": 0})
+    if not updated_field:
+        raise HTTPException(status_code=404, detail="Field configuration not found")
+    
+    if isinstance(updated_field.get('created_at'), str):
+        updated_field['created_at'] = datetime.fromisoformat(updated_field['created_at'])
+    
+    return CustomFieldConfig(**updated_field)
+
+@api_router.delete("/field-configs/{field_id}")
+async def delete_field_config(field_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a custom field configuration (Admin only)"""
+    check_admin(current_user)
+    
+    result = await db.field_configs.delete_one({"id": field_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Field configuration not found")
+    
+    return {"message": "Field configuration deleted successfully"}
+
 # Loan routes with role-based access
 @api_router.get("/loans", response_model=List[LoanApplication])
 async def get_loans(
