@@ -323,11 +323,19 @@ const UserManagement = () => {
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{user.team_code || '-'}</td>
                     <td className="px-4 py-3 text-right space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(user)}>
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(user)} title="Edit User">
                         <Edit className="w-4 h-4 text-blue-600" />
                       </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setResetPasswordUser(user)}
+                        title="Reset Password"
+                      >
+                        <Key className="w-4 h-4 text-green-600" />
+                      </Button>
                       {user.id !== currentUser.id && (
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(user.id)}>
+                        <Button variant="ghost" size="sm" onClick={() => handleDelete(user.id)} title="Delete User">
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
                       )}
