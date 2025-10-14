@@ -1,0 +1,70 @@
+{
+  "summary": {
+    "total_tests": 10,
+    "passed_tests": 10,
+    "failed_tests": 0,
+    "success_rate": 100.0
+  },
+  "test_results": [
+    {
+      "test": "Admin Login",
+      "success": true,
+      "details": "Admin login successful",
+      "timestamp": "2025-10-14T00:41:43.916611"
+    },
+    {
+      "test": "Create Sample Loans",
+      "success": true,
+      "details": "Created 8 out of 8 sample loans",
+      "timestamp": "2025-10-14T00:41:44.208149"
+    },
+    {
+      "test": "Monthly Trends API",
+      "success": true,
+      "details": "Retrieved 3 months of data. Fields: ['total', 'disbursed', 'declined', 'pending', 'login_done', 'month']. Sorted: True",
+      "timestamp": "2025-10-14T00:41:44.283995"
+    },
+    {
+      "test": "Excel Export API",
+      "success": true,
+      "details": "Excel file generated. Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, Size: 5445 bytes, Has filename: True",
+      "timestamp": "2025-10-14T00:41:44.569903"
+    },
+    {
+      "test": "Excel Export All Months",
+      "success": true,
+      "details": "Successfully exported 3/3 months",
+      "timestamp": "2025-10-14T00:41:44.693163"
+    },
+    {
+      "test": "Create Manager User",
+      "success": true,
+      "details": "User created with ID: 2d1e97b3-76cc-4959-ab1f-eb42eceb929f",
+      "timestamp": "2025-10-14T00:41:44.952573"
+    },
+    {
+      "test": "Create Agent User",
+      "success": true,
+      "details": "User created with ID: 64015607-e38c-476e-adec-f1c6b7652a1f",
+      "timestamp": "2025-10-14T00:41:45.214220"
+    },
+    {
+      "test": "RBAC Filtering",
+      "success": true,
+      "details": "Admin sees 8 loans, Manager sees 0 loans, Agent sees 0 loans",
+      "timestamp": "2025-10-14T00:41:45.404588"
+    },
+    {
+      "test": "Create Agent User",
+      "success": true,
+      "details": "User created with ID: f73b027b-7229-4b9e-b9dc-21a9bf7f999f",
+      "timestamp": "2025-10-14T00:41:45.742651"
+    },
+    {
+      "test": "Edge Cases",
+      "success": true,
+      "details": "Passed 3/3 edge case tests",
+      "timestamp": "2025-10-14T00:41:45.780043"
+    }
+  ]
+}
