@@ -8,6 +8,7 @@ import Loans from '@/pages/Loans';
 import AnalyticsEnhanced from '@/pages/AnalyticsEnhanced';
 import MonthlyMIS from '@/pages/MonthlyMIS';
 import UserManagement from '@/pages/UserManagement';
+import FieldManagement from '@/pages/FieldManagement';
 import Settings from '@/pages/Settings';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
