@@ -723,6 +723,44 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def create_default_admin():
+    """Create default admin user if it doesn't exist"""
+    try:
+        admin_email = "admin@mhpfintech.com"
+        admin_password = "Admin@123"
+        
+        # Check if admin exists
+        existing_admin = await db.users.find_one({"email": admin_email})
+        
+        if not existing_admin:
+            # Create admin user
+            admin_user = {
+                "id": str(uuid.uuid4()),
+                "email": admin_email,
+                "name": "Admin User",
+                "role": "admin",
+                "team_code": None,
+                "manager_id": None,
+                "password": hash_password(admin_password),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            
+            await db.users.insert_one(admin_user)
+            logger.info(f"✅ Created default admin user: {admin_email}")
+        else:
+            # Ensure existing admin has admin role
+            if existing_admin.get('role') != 'admin':
+                await db.users.update_one(
+                    {"email": admin_email},
+                    {"$set": {"role": "admin"}}
+                )
+                logger.info(f"✅ Updated role to 'admin' for {admin_email}")
+            else:
+                logger.info(f"✅ Admin user already exists: {admin_email}")
+    except Exception as e:
+        logger.error(f"❌ Error creating admin user: {str(e)}")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
