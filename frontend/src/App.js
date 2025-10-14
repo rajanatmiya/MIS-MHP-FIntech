@@ -5,7 +5,7 @@ import '@/App.css';
 import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import Loans from '@/pages/Loans';
-import Analytics from '@/pages/Analytics';
+import AnalyticsEnhanced from '@/pages/AnalyticsEnhanced';
 import UserManagement from '@/pages/UserManagement';
 import Settings from '@/pages/Settings';
 import Layout from '@/components/Layout';
