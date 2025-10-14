@@ -318,6 +318,33 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "User deleted successfully"}
 
+# Admin password reset
+class PasswordResetRequest(BaseModel):
+    new_password: str
+
+@api_router.post("/users/{user_id}/reset-password")
+async def admin_reset_password(
+    user_id: str, 
+    password_data: PasswordResetRequest, 
+    current_user: User = Depends(get_current_user)
+):
+    """Admin can reset any user's password"""
+    check_admin(current_user)
+    
+    # Check if user exists
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Hash and update password
+    new_hashed = hash_password(password_data.new_password)
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"password": new_hashed}}
+    )
+    
+    return {"message": f"Password reset successfully for {user.get('email', 'user')}"}
+
 # Custom Field Configuration routes (Admin only)
 @api_router.get("/field-configs", response_model=List[CustomFieldConfig])
 async def get_field_configs(current_user: User = Depends(get_current_user)):
