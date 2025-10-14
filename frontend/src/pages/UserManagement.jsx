@@ -91,6 +91,26 @@ const UserManagement = () => {
     }
   };
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+
+    try {
+      await axios.post(`${API}/users/${resetPasswordUser.id}/reset-password`, {
+        new_password: newPassword
+      });
+      toast.success(`Password reset successfully for ${resetPasswordUser.name}`);
+      setResetPasswordUser(null);
+      setNewPassword('');
+    } catch (error) {
+      toast.error('Failed to reset password');
+    }
+  };
+
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
