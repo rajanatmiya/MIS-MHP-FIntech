@@ -43,7 +43,7 @@ const Layout = ({ children }) => {
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50 px-4 py-3">
         <div className="flex items-center justify-between">
           <img 
-            src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+            src={process.env.REACT_APP_LOGO_URL} 
             alt="MHP Fintech Logo" 
             className="h-10 w-auto object-contain"
           />
