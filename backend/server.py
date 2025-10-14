@@ -1,6 +1,6 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -14,7 +14,8 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 import jwt
 from collections import defaultdict
-import shutil
+import pandas as pd
+from io import BytesIO
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -23,10 +24,6 @@ load_dotenv(ROOT_DIR / '.env')
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
-
-# File uploads directory
-UPLOADS_DIR = ROOT_DIR / 'uploads'
-UPLOADS_DIR.mkdir(exist_ok=True)
 
 # Security
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -47,8 +44,8 @@ class User(BaseModel):
     email: EmailStr
     name: str
     role: str = "agent"  # admin, manager, agent
-    team_code: Optional[str] = None  # For managers and agents
-    manager_id: Optional[str] = None  # For agents - links to their manager
+    team_code: Optional[str] = None
+    manager_id: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
@@ -178,18 +175,15 @@ def check_admin(user: User):
         raise HTTPException(status_code=403, detail="Admin access required")
 
 async def get_accessible_user_ids(user: User) -> List[str]:
-    """Get list of user IDs accessible to current user based on role"""
     if user.role == "admin":
-        return None  # Admin sees everything
+        return None
     elif user.role == "manager":
-        # Manager sees their team
         team_users = await db.users.find(
             {"$or": [{"manager_id": user.id}, {"id": user.id}]},
             {"_id": 0, "id": 1}
         ).to_list(1000)
         return [u["id"] for u in team_users]
     else:
-        # Agent sees only their own
         return [user.id]
 
 # Auth routes
@@ -243,16 +237,13 @@ class PasswordChange(BaseModel):
 
 @api_router.post("/auth/change-password")
 async def change_password(password_data: PasswordChange, current_user: User = Depends(get_current_user)):
-    # Get user with password
     user = await db.users.find_one({"id": current_user.id})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # Verify old password
     if not verify_password(password_data.old_password, user['password']):
         raise HTTPException(status_code=400, detail="Current password is incorrect")
     
-    # Update password
     new_hashed = hash_password(password_data.new_password)
     await db.users.update_one(
         {"id": current_user.id},
@@ -313,9 +304,8 @@ async def get_loans(
 ):
     query = {}
     
-    # Role-based filtering
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:  # Not admin
+    if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
     
     if status:
@@ -355,7 +345,6 @@ async def create_loan(loan_data: LoanApplicationCreate, current_user: User = Dep
     return loan
 
 async def check_loan_access(loan_id: str, user: User) -> dict:
-    """Check if user has access to this loan"""
     loan = await db.loan_applications.find_one({"id": loan_id}, {"_id": 0})
     if not loan:
         raise HTTPException(status_code=404, detail="Loan application not found")
@@ -407,7 +396,7 @@ async def delete_loan(loan_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "Loan application deleted successfully"}
 
-# Analytics routes with role-based filtering
+# Analytics routes
 @api_router.get("/analytics/overview")
 async def get_overview(current_user: User = Depends(get_current_user)):
     query = {}
@@ -441,6 +430,43 @@ async def get_overview(current_user: User = Depends(get_current_user)):
         "pending": pending_count,
         "status_breakdown": dict(status_counts)
     }
+
+@api_router.get("/analytics/monthly-trends")
+async def get_monthly_trends(current_user: User = Depends(get_current_user)):
+    query = {}
+    accessible_ids = await get_accessible_user_ids(current_user)
+    if accessible_ids is not None:
+        query["created_by"] = {"$in": accessible_ids}
+    
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    monthly_data = defaultdict(lambda: {
+        "total": 0,
+        "disbursed": 0,
+        "declined": 0,
+        "pending": 0,
+        "login_done": 0,
+        "month": ""
+    })
+    
+    for loan in loans:
+        month = loan.get('month', 'Unknown')
+        status = loan.get('status', '')
+        
+        monthly_data[month]["month"] = month
+        monthly_data[month]["total"] += 1
+        
+        if status == 'Disbursed':
+            monthly_data[month]["disbursed"] += 1
+        elif status == 'Decline':
+            monthly_data[month]["declined"] += 1
+        elif status == 'Login Done':
+            monthly_data[month]["login_done"] += 1
+        elif status in ['Hold', 'Sent For Login', 'Pd To Be Done']:
+            monthly_data[month]["pending"] += 1
+    
+    sorted_data = sorted(monthly_data.values(), key=lambda x: x["month"])
+    return sorted_data
 
 @api_router.get("/analytics/by-bank")
 async def get_by_bank(current_user: User = Depends(get_current_user)):
@@ -547,6 +573,52 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
         "months": sorted(list(months)),
         "schemes": sorted(list(schemes))
     }
+
+# Excel Export
+@api_router.get("/export/loans")
+async def export_loans(
+    month: Optional[str] = None,
+    status: Optional[str] = None,
+    bank: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    query = {}
+    accessible_ids = await get_accessible_user_ids(current_user)
+    if accessible_ids is not None:
+        query["created_by"] = {"$in": accessible_ids}
+    
+    if month:
+        query["month"] = month
+    if status:
+        query["status"] = status
+    if bank:
+        query["bank"] = bank
+    
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    df = pd.DataFrame(loans)
+    if not df.empty:
+        columns_order = [
+            'month', 'agent_name', 'customer_name', 'company_name', 'contact_no',
+            'status', 'bank', 'sanction', 'disbursed', 'scheme', 'case_type',
+            'from_location', 'branch', 'executive_name', 'team_manager_code', 'remark'
+        ]
+        existing_cols = [col for col in columns_order if col in df.columns]
+        df = df[existing_cols]
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Loans')
+    
+    output.seek(0)
+    
+    filename = f"loans_export_{month if month else 'all'}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
 
 # Include the router
 app.include_router(api_router)
