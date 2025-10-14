@@ -71,6 +71,32 @@ class Token(BaseModel):
     token_type: str
     user: User
 
+class CustomFieldConfig(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str  # Internal field name (e.g., "mobile_number")
+    label: str  # Display label (e.g., "Mobile Number")
+    field_type: str  # text, number, date, dropdown
+    required: bool = False
+    options: Optional[List[str]] = None  # For dropdown fields
+    order: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class CustomFieldConfigCreate(BaseModel):
+    name: str
+    label: str
+    field_type: str
+    required: bool = False
+    options: Optional[List[str]] = None
+    order: Optional[int] = 0
+
+class CustomFieldConfigUpdate(BaseModel):
+    label: Optional[str] = None
+    field_type: Optional[str] = None
+    required: Optional[bool] = None
+    options: Optional[List[str]] = None
+    order: Optional[int] = None
+
 class LoanApplication(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
