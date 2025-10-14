@@ -374,6 +374,15 @@ const UserManagement = () => {
                         <Edit className="w-4 h-4 mr-2" />
                         Edit
                       </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1 text-green-600" 
+                        onClick={() => setResetPasswordUser(user)}
+                      >
+                        <Key className="w-4 h-4 mr-2" />
+                        Reset
+                      </Button>
                       {user.id !== currentUser.id && (
                         <Button variant="outline" size="sm" className="flex-1 text-red-600" onClick={() => handleDelete(user.id)}>
                           <Trash2 className="w-4 h-4 mr-2" />
