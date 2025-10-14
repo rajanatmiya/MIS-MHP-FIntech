@@ -11,6 +11,7 @@ const Layout = ({ children }) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard, testId: 'nav-dashboard' },
+    { name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' },
     { name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' },
     { name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' }
   ];
