@@ -6,6 +6,7 @@ import Login from '@/pages/Login';
 import Dashboard from '@/pages/Dashboard';
 import Loans from '@/pages/Loans';
 import AnalyticsEnhanced from '@/pages/AnalyticsEnhanced';
+import MonthlyMIS from '@/pages/MonthlyMIS';
 import UserManagement from '@/pages/UserManagement';
 import Settings from '@/pages/Settings';
 import Layout from '@/components/Layout';
