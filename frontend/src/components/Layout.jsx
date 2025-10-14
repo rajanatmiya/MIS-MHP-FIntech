@@ -119,7 +119,7 @@ const Layout = ({ children }) => {
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center space-x-3">
               <img 
-                src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+                src={process.env.REACT_APP_LOGO_URL} 
                 alt="MHP Fintech Logo" 
                 className="h-12 w-auto object-contain"
               />
