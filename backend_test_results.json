@@ -9,80 +9,80 @@
     {
       "test": "User Registration",
       "success": true,
-      "details": "User created with ID: 30e72415-a888-4ff5-a61d-ca8d71681a0c",
-      "timestamp": "2025-10-13T17:24:43.781443"
+      "details": "User created with ID: 127b4820-3d30-49e3-a5a0-ba4bce7e7517",
+      "timestamp": "2025-10-14T00:40:29.552206"
     },
     {
       "test": "User Login",
       "success": true,
       "details": "Login successful, token received",
-      "timestamp": "2025-10-13T17:24:44.320460"
+      "timestamp": "2025-10-14T00:40:30.080979"
     },
     {
       "test": "Get Current User",
       "success": true,
       "details": "User data retrieved: Test User",
-      "timestamp": "2025-10-13T17:24:44.359275"
+      "timestamp": "2025-10-14T00:40:30.115229"
     },
     {
       "test": "Create Loan",
       "success": true,
-      "details": "Loan created with ID: 9b4d5ff3-9e7c-42cf-81fc-e312f7f1db30",
-      "timestamp": "2025-10-13T17:24:44.426523"
+      "details": "Loan created with ID: f000a908-ff93-4f54-93f7-8755a6f4647e",
+      "timestamp": "2025-10-14T00:40:30.195357"
     },
     {
       "test": "Get Loans",
       "success": true,
       "details": "Retrieved 1 loans",
-      "timestamp": "2025-10-13T17:24:44.467244"
+      "timestamp": "2025-10-14T00:40:30.231416"
     },
     {
       "test": "Get Loan by ID",
       "success": true,
       "details": "Retrieved loan: John Doe",
-      "timestamp": "2025-10-13T17:24:44.505259"
+      "timestamp": "2025-10-14T00:40:30.269674"
     },
     {
       "test": "Update Loan",
       "success": true,
       "details": "Loan updated, status: Disbursed",
-      "timestamp": "2025-10-13T17:24:44.552265"
+      "timestamp": "2025-10-14T00:40:30.306263"
     },
     {
       "test": "Analytics Overview",
       "success": true,
       "details": "Total: 1, Disbursed: 1",
-      "timestamp": "2025-10-13T17:24:44.591217"
+      "timestamp": "2025-10-14T00:40:30.346880"
     },
     {
       "test": "Analytics by Bank",
       "success": true,
       "details": "Bank stats retrieved: 1 banks",
-      "timestamp": "2025-10-13T17:24:44.632012"
+      "timestamp": "2025-10-14T00:40:30.421591"
     },
     {
       "test": "Analytics by Agent",
       "success": true,
       "details": "Agent stats retrieved: 1 agents",
-      "timestamp": "2025-10-13T17:24:44.673915"
+      "timestamp": "2025-10-14T00:40:30.456216"
     },
     {
       "test": "Analytics by Month",
       "success": true,
       "details": "Month stats retrieved: 1 months",
-      "timestamp": "2025-10-13T17:24:44.716729"
+      "timestamp": "2025-10-14T00:40:30.531933"
     },
     {
       "test": "Get Unique Values",
       "success": true,
       "details": "Banks: 1, Statuses: 1",
-      "timestamp": "2025-10-13T17:24:44.759366"
+      "timestamp": "2025-10-14T00:40:30.570396"
     },
     {
       "test": "Delete Loan",
       "success": true,
       "details": "Loan deleted successfully",
-      "timestamp": "2025-10-13T17:24:44.798093"
+      "timestamp": "2025-10-14T00:40:30.608107"
     }
   ]
 }
