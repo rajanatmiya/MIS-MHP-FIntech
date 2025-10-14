@@ -177,10 +177,7 @@ metadata:
 test_plan:
   current_focus:
     - "Test MonthlyMIS page loads correctly"
-    - "Test API endpoints with sample data"
-    - "Test Excel export functionality"
     - "Test month selection and detailed view"
-    - "Test RBAC filtering for different user roles"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
