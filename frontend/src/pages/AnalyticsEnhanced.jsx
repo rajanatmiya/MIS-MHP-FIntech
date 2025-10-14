@@ -63,13 +63,11 @@ const AnalyticsEnhanced = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className=\"flex items-center justify-center h-96\">
-        <div className=\"animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600\"></div>
-      </div>
-    );
-  }
+      {loading && (
+        <div className="flex items-center justify-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      )}
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
