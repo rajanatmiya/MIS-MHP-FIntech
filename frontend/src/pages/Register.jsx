@@ -59,7 +59,7 @@ const Register = () => {
           <div className="mb-8 text-center">
             <div className="flex justify-center mb-4">
               <img 
-                src="https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg" 
+                src={process.env.REACT_APP_LOGO_URL} 
                 alt="MHP Fintech Logo" 
                 className="h-20 w-auto object-contain"
               />
