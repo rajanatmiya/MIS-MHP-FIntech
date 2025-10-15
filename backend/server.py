@@ -436,7 +436,7 @@ async def get_loans(
             {"contact_no": {"$regex": search, "$options": "i"}}
         ]
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100000)
     
     for loan in loans:
         if isinstance(loan.get('created_at'), str):
