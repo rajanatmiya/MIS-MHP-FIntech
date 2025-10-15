@@ -182,6 +182,39 @@ const MonthlyMIS = () => {
     }
   };
 
+  const handleImportExcel = async () => {
+    if (!importFile) {
+      toast.error('Please select an Excel file');
+      return;
+    }
+
+    setImporting(true);
+    const formData = new FormData();
+    formData.append('file', importFile);
+
+    try {
+      const response = await axios.post(`${API}/import/loans-excel`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+
+      toast.success(`Import complete! Imported: ${response.data.imported}, Skipped: ${response.data.skipped}`);
+      
+      if (response.data.errors && response.data.errors.length > 0) {
+        console.log('Import errors:', response.data.errors);
+      }
+
+      setShowImportDialog(false);
+      setImportFile(null);
+      fetchLoans(); // Refresh data
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const filteredLoans = loans.filter(loan => {
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
