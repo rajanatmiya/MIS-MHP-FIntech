@@ -843,8 +843,8 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             if old_col in df.columns:
                 df.rename(columns={old_col: new_col}, inplace=True)
         
-        # Required fields
-        required_fields = ['customer_name', 'status', 'bank', 'month']
+        # Required fields (removed month as it can be auto-generated)
+        required_fields = ['customer_name', 'status']
         missing_fields = [field for field in required_fields if field not in df.columns]
         
         if missing_fields:
@@ -852,6 +852,9 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                 status_code=400, 
                 detail=f"Missing required columns: {', '.join(missing_fields)}"
             )
+        
+        # Auto-generate month if not present (use current month)
+        current_month = datetime.now().strftime("%b'%y")  # e.g., "Jan'25"
         
         # Import loans
         imported_count = 0
