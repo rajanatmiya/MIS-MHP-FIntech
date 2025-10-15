@@ -510,6 +510,52 @@ async def delete_loan(loan_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "Loan application deleted successfully"}
 
+@api_router.post("/loans/delete-by-date")
+async def delete_loans_by_date(date_str: str, current_user: User = Depends(get_current_user)):
+    """Delete all loans from a specific date - Admin only"""
+    check_admin(current_user)
+    
+    try:
+        # Parse the date string (e.g., "16-10-2025" or "2025-10-16")
+        from datetime import datetime
+        
+        # Try different date formats
+        date_formats = ["%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"]
+        target_date = None
+        
+        for fmt in date_formats:
+            try:
+                target_date = datetime.strptime(date_str, fmt).date()
+                break
+            except:
+                continue
+        
+        if not target_date:
+            raise HTTPException(status_code=400, detail="Invalid date format. Use DD-MM-YYYY or YYYY-MM-DD")
+        
+        # Find all loans created on this date
+        start_datetime = datetime.combine(target_date, datetime.min.time())
+        end_datetime = datetime.combine(target_date, datetime.max.time())
+        
+        # Delete loans where created_at is on the target date
+        result = await db.loan_applications.delete_many({
+            "created_at": {
+                "$gte": start_datetime.isoformat(),
+                "$lte": end_datetime.isoformat()
+            }
+        })
+        
+        return {
+            "message": f"Deleted {result.deleted_count} entries from {date_str}",
+            "deleted_count": result.deleted_count
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Delete by date error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete entries: {str(e)}")
+
 # Analytics routes
 @api_router.get("/analytics/overview")
 async def get_overview(current_user: User = Depends(get_current_user)):
