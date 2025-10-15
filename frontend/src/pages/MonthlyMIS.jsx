@@ -347,6 +347,22 @@ const MonthlyMIS = () => {
                 />
               </div>
               <div>
+                <Label>Location</Label>
+                <Input
+                  value={newLoanData.location || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, location: e.target.value})}
+                  placeholder="City, State"
+                />
+              </div>
+              <div>
+                <Label>Executive Name *</Label>
+                <Input
+                  required
+                  value={newLoanData.agent_name || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, agent_name: e.target.value})}
+                />
+              </div>
+              <div>
                 <Label>Status *</Label>
                 <Input
                   required
@@ -373,25 +389,51 @@ const MonthlyMIS = () => {
                 />
               </div>
               <div>
-                <Label>Agent Name *</Label>
-                <Input
-                  required
-                  value={newLoanData.agent_name || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, agent_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Sanction</Label>
+                <Label>Sanction Amount</Label>
                 <Input
                   value={newLoanData.sanction || ''}
                   onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})}
+                  placeholder="e.g., 500000"
                 />
               </div>
               <div>
-                <Label>Disbursed</Label>
+                <Label>Disbursed Amount</Label>
                 <Input
                   value={newLoanData.disbursed || ''}
                   onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})}
+                  placeholder="e.g., 500000"
+                />
+              </div>
+              <div>
+                <Label>Rate of Interest (%)</Label>
+                <Input
+                  value={newLoanData.rate_of_interest || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, rate_of_interest: e.target.value})}
+                  placeholder="e.g., 10.5"
+                />
+              </div>
+              <div>
+                <Label>Tenure (Months)</Label>
+                <Input
+                  value={newLoanData.tenure || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, tenure: e.target.value})}
+                  placeholder="e.g., 24, 36, 60"
+                />
+              </div>
+              <div>
+                <Label>Product Type</Label>
+                <Input
+                  value={newLoanData.product_type || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, product_type: e.target.value})}
+                  placeholder="e.g., Personal Loan, Business Loan"
+                />
+              </div>
+              <div>
+                <Label>Login Date</Label>
+                <Input
+                  type="date"
+                  value={newLoanData.login_date || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, login_date: e.target.value})}
                 />
               </div>
               <div className="md:col-span-2">
@@ -399,6 +441,7 @@ const MonthlyMIS = () => {
                 <Input
                   value={newLoanData.remark || ''}
                   onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})}
+                  placeholder="Additional notes"
                 />
               </div>
             </div>
