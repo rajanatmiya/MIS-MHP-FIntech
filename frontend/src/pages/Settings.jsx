@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Shield, Download, Database } from 'lucide-react';
+import { User, Lock, Shield, Download, Database, Trash2 } from 'lucide-react';
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
@@ -18,6 +18,8 @@ const Settings = () => {
   });
   const [loading, setLoading] = useState(false);
   const [backupLoading, setBackupLoading] = useState(false);
+  const [deleteDate, setDeleteDate] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const handleBackupData = async () => {
     setBackupLoading(true);
