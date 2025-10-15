@@ -1,64 +1,133 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API } from '@/App';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Calendar, Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download } from 'lucide-react';
 
 const MonthlyMIS = () => {
-  const [monthlyData, setMonthlyData] = useState({});
+  const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMonth, setSelectedMonth] = useState(null);
+  const [expandedMonths, setExpandedMonths] = useState(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [editingCell, setEditingCell] = useState(null);
+  const [editValue, setEditValue] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newLoanData, setNewLoanData] = useState({});
 
   useEffect(() => {
-    fetchMonthlyMIS();
+    fetchLoans();
   }, []);
 
-  const fetchMonthlyMIS = async () => {
+  const fetchLoans = async () => {
     try {
-      const response = await axios.get(`${API}/analytics/monthly-trends`);
+      const response = await axios.get(`${API}/loans`);
+      setLoans(response.data);
       
-      // Group data by month
-      const grouped = {};
-      response.data.forEach(item => {
-        grouped[item.month] = item;
-      });
-      
-      setMonthlyData(grouped);
-      
-      // Set current month as selected
-      const months = Object.keys(grouped).sort();
-      if (months.length > 0) {
-        setSelectedMonth(months[months.length - 1]);
+      // Auto-expand first month
+      if (response.data.length > 0) {
+        const firstMonth = response.data[0].month;
+        setExpandedMonths(new Set([firstMonth]));
       }
     } catch (error) {
-      toast.error('Failed to fetch monthly MIS');
+      toast.error('Failed to fetch loans');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleExport = async (month) => {
+  const groupByMonth = () => {
+    const grouped = {};
+    loans.forEach(loan => {
+      const month = loan.month || 'Unknown';
+      if (!grouped[month]) {
+        grouped[month] = [];
+      }
+      grouped[month].push(loan);
+    });
+    return grouped;
+  };
+
+  const toggleMonth = (month) => {
+    const newExpanded = new Set(expandedMonths);
+    if (newExpanded.has(month)) {
+      newExpanded.delete(month);
+    } else {
+      newExpanded.add(month);
+    }
+    setExpandedMonths(newExpanded);
+  };
+
+  const handleCellClick = (loanId, field, currentValue) => {
+    setEditingCell({ loanId, field });
+    setEditValue(currentValue || '');
+  };
+
+  const handleCellSave = async (loanId, field) => {
     try {
-      const response = await axios.get(`${API}/export/loans?month=${month}`, {
-        responseType: 'blob'
+      await axios.put(`${API}/loans/${loanId}`, {
+        [field]: editValue
       });
       
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `MIS_${month}_${new Date().toISOString().split('T')[0]}.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      // Update local state
+      setLoans(loans.map(loan => 
+        loan.id === loanId ? { ...loan, [field]: editValue } : loan
+      ));
       
-      toast.success(`${month} MIS exported successfully!`);
+      toast.success('Updated successfully');
+      setEditingCell(null);
     } catch (error) {
-      toast.error('Failed to export MIS');
+      toast.error('Failed to update');
     }
   };
+
+  const handleCellKeyDown = (e, loanId, field) => {
+    if (e.key === 'Enter') {
+      handleCellSave(loanId, field);
+    } else if (e.key === 'Escape') {
+      setEditingCell(null);
+    }
+  };
+
+  const handleAddLoan = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(`${API}/loans`, newLoanData);
+      setLoans([response.data, ...loans]);
+      toast.success('Loan added successfully');
+      setShowAddForm(false);
+      setNewLoanData({});
+    } catch (error) {
+      toast.error('Failed to add loan');
+    }
+  };
+
+  const filteredLoans = loans.filter(loan => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      loan.customer_name?.toLowerCase().includes(searchLower) ||
+      loan.company_name?.toLowerCase().includes(searchLower) ||
+      loan.contact_no?.toLowerCase().includes(searchLower) ||
+      loan.status?.toLowerCase().includes(searchLower) ||
+      loan.bank?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const groupedLoans = {};
+  filteredLoans.forEach(loan => {
+    const month = loan.month || 'Unknown';
+    if (!groupedLoans[month]) {
+      groupedLoans[month] = [];
+    }
+    groupedLoans[month].push(loan);
+  });
+
+  const months = Object.keys(groupedLoans).sort();
 
   if (loading) {
     return (
@@ -68,190 +137,258 @@ const MonthlyMIS = () => {
     );
   }
 
-  const months = Object.keys(monthlyData).sort();
+  const renderCell = (loan, field, label) => {
+    const isEditing = editingCell?.loanId === loan.id && editingCell?.field === field;
+    const value = loan[field] || '';
 
-  const getMonthColor = (month) => {
-    const colors = [
-      'bg-blue-50 border-blue-200',
-      'bg-green-50 border-green-200',
-      'bg-purple-50 border-purple-200',
-      'bg-orange-50 border-orange-200',
-      'bg-pink-50 border-pink-200',
-      'bg-cyan-50 border-cyan-200'
-    ];
-    const index = months.indexOf(month);
-    return colors[index % colors.length];
-  };
+    if (isEditing) {
+      return (
+        <input
+          type="text"
+          value={editValue}
+          onChange={(e) => setEditValue(e.target.value)}
+          onBlur={() => handleCellSave(loan.id, field)}
+          onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
+          className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          autoFocus
+        />
+      );
+    }
 
-  const calculateGrowth = (currentMonth, previousMonth) => {
-    if (!previousMonth) return 0;
-    const current = monthlyData[currentMonth];
-    const previous = monthlyData[previousMonth];
-    
-    if (previous.total === 0) return 0;
-    return (((current.total - previous.total) / previous.total) * 100).toFixed(1);
+    return (
+      <div
+        onClick={() => handleCellClick(loan.id, field, value)}
+        className="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors min-h-[32px] flex items-center"
+        title="Click to edit"
+      >
+        {value || <span className="text-slate-400">-</span>}
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-6 fade-in" data-testid="monthly-mis-page">
+    <div className="space-y-4 fade-in pb-20">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
-          Month-wise MIS Dashboard
-        </h1>
-        <p className="text-sm lg:text-base text-slate-600">Manage and track loan performance by month</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-1" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            MIS Board
+          </h1>
+          <p className="text-sm text-slate-600">Month-wise loan management • Click any cell to edit</p>
+        </div>
+        <Button
+          onClick={() => setShowAddForm(true)}
+          className="bg-blue-600 hover:bg-blue-700"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Entry
+        </Button>
       </div>
 
-      {/* Monthly Boards - Monday.com Style */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {months.map((month, index) => {
-          const data = monthlyData[month];
-          const successRate = data.total > 0 ? ((data.disbursed / data.total) * 100).toFixed(1) : 0;
-          const previousMonth = months[index - 1];
-          const growth = calculateGrowth(month, previousMonth);
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+        <Input
+          placeholder="Quick find... (customer, company, contact, status, bank)"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {/* Month Groups */}
+      <div className="space-y-2">
+        {months.map(month => {
+          const monthLoans = groupedLoans[month];
+          const isExpanded = expandedMonths.has(month);
           
           return (
-            <Card 
-              key={month} 
-              className={`card-hover cursor-pointer border-2 transition-all ${getMonthColor(month)} ${
-                selectedMonth === month ? 'ring-2 ring-blue-500' : ''
-              }`}
-              onClick={() => setSelectedMonth(month)}
-              data-testid={`month-card-${month}`}
-            >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
+            <Card key={month} className="overflow-hidden">
+              {/* Month Header */}
+              <div
+                onClick={() => toggleMonth(month)}
+                className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-colors border-b"
+              >
+                <div className="flex items-center gap-3">
+                  {isExpanded ? (
+                    <ChevronDown className="w-5 h-5 text-purple-600" />
+                  ) : (
+                    <ChevronRight className="w-5 h-5 text-purple-600" />
+                  )}
                   <div>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Calendar className="w-5 h-5" />
-                      {month}
-                    </CardTitle>
-                    {index > 0 && (
-                      <div className="flex items-center gap-1 mt-1">
-                        {growth >= 0 ? (
-                          <TrendingUp className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <TrendingDown className="w-4 h-4 text-red-600" />
-                        )}
-                        <span className={`text-sm font-medium ${growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {growth}%
-                        </span>
-                      </div>
-                    )}
+                    <h3 className="font-bold text-lg text-purple-900">{month}</h3>
+                    <p className="text-sm text-purple-600">{monthLoans.length} entries</p>
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleExport(month);
-                    }}
-                    data-testid={`export-${month}`}
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Total Applications */}
-                <div className="bg-white rounded-lg p-3 shadow-sm">
-                  <p className="text-sm text-slate-600 mb-1">Total Applications</p>
-                  <p className="text-3xl font-bold text-slate-800">{data.total}</p>
-                </div>
+              </div>
 
-                {/* Status Breakdown */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-green-50 rounded-lg p-3 border border-green-200">
-                    <p className="text-xs text-green-600 font-medium mb-1">Disbursed</p>
-                    <p className="text-xl font-bold text-green-700">{data.disbursed}</p>
+              {/* Month Content */}
+              {isExpanded && (
+                <CardContent className="p-0">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b sticky top-0">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Date</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Customer Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Company Name</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Contact</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Status</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Bank</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Sanction</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Disbursed</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Remark</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200">
+                        {monthLoans.map(loan => (
+                          <tr key={loan.id} className="hover:bg-slate-50">
+                            <td className="px-4 py-2 text-sm text-slate-700 whitespace-nowrap">
+                              {new Date(loan.created_at).toLocaleDateString('en-GB')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'customer_name', 'Customer Name')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'company_name', 'Company Name')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'contact_no', 'Contact')}
+                            </td>
+                            <td className="px-4 py-2 text-sm">
+                              {renderCell(loan, 'status', 'Status')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'bank', 'Bank')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'sanction', 'Sanction')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'disbursed', 'Disbursed')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'remark', 'Remark')}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
-                    <p className="text-xs text-red-600 font-medium mb-1">Declined</p>
-                    <p className="text-xl font-bold text-red-700">{data.declined}</p>
-                  </div>
-                  <div className="bg-amber-50 rounded-lg p-3 border border-amber-200">
-                    <p className="text-xs text-amber-600 font-medium mb-1">Pending</p>
-                    <p className="text-xl font-bold text-amber-700">{data.pending}</p>
-                  </div>
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <p className="text-xs text-blue-600 font-medium mb-1">Login Done</p>
-                    <p className="text-xl font-bold text-blue-700">{data.login_done}</p>
-                  </div>
-                </div>
-
-                {/* Success Rate */}
-                <div className="pt-2 border-t">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-slate-600">Success Rate</span>
-                    <span className="text-sm font-bold text-green-600">{successRate}%</span>
-                  </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all"
-                      style={{ width: `${successRate}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </CardContent>
+                </CardContent>
+              )}
             </Card>
           );
         })}
       </div>
 
-      {/* No Data State */}
       {months.length === 0 && (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
-            <Calendar className="w-16 h-16 text-slate-300 mb-4" />
-            <h3 className="text-lg font-semibold text-slate-800 mb-2">No Monthly Data</h3>
-            <p className="text-slate-600 text-center">
-              Start adding loan applications to see month-wise MIS
-            </p>
+            <p className="text-slate-600">No entries found. Click "Add Entry" to create your first loan application.</p>
           </CardContent>
         </Card>
       )}
 
-      {/* Selected Month Details */}
-      {selectedMonth && monthlyData[selectedMonth] && (
-        <Card className="border-2 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-600" />
-              {selectedMonth} - Detailed View
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-slate-50 rounded-lg">
-                <p className="text-sm text-slate-600 mb-1">Total</p>
-                <p className="text-2xl font-bold text-slate-800">{monthlyData[selectedMonth].total}</p>
+      {/* Add Form Dialog */}
+      <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Entry</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleAddLoan} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>Customer Name *</Label>
+                <Input
+                  required
+                  value={newLoanData.customer_name || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})}
+                />
               </div>
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-sm text-green-600 mb-1">Disbursed</p>
-                <p className="text-2xl font-bold text-green-700">{monthlyData[selectedMonth].disbursed}</p>
+              <div>
+                <Label>Company Name *</Label>
+                <Input
+                  required
+                  value={newLoanData.company_name || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})}
+                />
               </div>
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <p className="text-sm text-red-600 mb-1">Declined</p>
-                <p className="text-2xl font-bold text-red-700">{monthlyData[selectedMonth].declined}</p>
+              <div>
+                <Label>Contact Number *</Label>
+                <Input
+                  required
+                  value={newLoanData.contact_no || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, contact_no: e.target.value})}
+                />
               </div>
-              <div className="text-center p-4 bg-amber-50 rounded-lg">
-                <p className="text-sm text-amber-600 mb-1">Pending</p>
-                <p className="text-2xl font-bold text-amber-700">{monthlyData[selectedMonth].pending}</p>
+              <div>
+                <Label>Status *</Label>
+                <Input
+                  required
+                  value={newLoanData.status || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, status: e.target.value})}
+                  placeholder="e.g., Pending, Approved, Disbursed"
+                />
+              </div>
+              <div>
+                <Label>Bank *</Label>
+                <Input
+                  required
+                  value={newLoanData.bank || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Month *</Label>
+                <Input
+                  required
+                  value={newLoanData.month || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, month: e.target.value})}
+                  placeholder="e.g., Jan'25, Feb'25"
+                />
+              </div>
+              <div>
+                <Label>Agent Name *</Label>
+                <Input
+                  required
+                  value={newLoanData.agent_name || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, agent_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Sanction</Label>
+                <Input
+                  value={newLoanData.sanction || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Disbursed</Label>
+                <Input
+                  value={newLoanData.disbursed || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <Label>Remark</Label>
+                <Input
+                  value={newLoanData.remark || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})}
+                />
               </div>
             </div>
-            
-            <div className="mt-4 flex justify-end">
-              <Button
-                onClick={() => handleExport(selectedMonth)}
-                className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export {selectedMonth} MIS
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+                Add Entry
               </Button>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
