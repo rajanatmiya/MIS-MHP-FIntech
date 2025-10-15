@@ -263,6 +263,43 @@ const Settings = () => {
           </form>
         </CardContent>
       </Card>
+
+      {/* Data Backup - Admin Only */}
+      {user?.role === 'admin' && (
+        <Card className="border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <Database className="w-5 h-5" />
+              Data Backup & Export
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="text-sm text-slate-700">
+                <p className="mb-2">Download a complete backup of all your data including:</p>
+                <ul className="list-disc ml-5 space-y-1">
+                  <li>All loan applications</li>
+                  <li>User accounts (without passwords)</li>
+                  <li>Custom field configurations</li>
+                </ul>
+              </div>
+              
+              <Button
+                onClick={handleBackupData}
+                disabled={backupLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                {backupLoading ? 'Downloading...' : 'Download Full Backup'}
+              </Button>
+
+              <p className="text-xs text-slate-500">
+                💡 Backup files are in Excel format (.xlsx) and include all data up to the current moment.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
