@@ -608,6 +608,40 @@ const MonthlyMIS = () => {
                             </td>
                           </tr>
                         ))}
+                        
+                        {/* Totals Row */}
+                        <tr className="bg-blue-50 font-semibold border-t-2 border-blue-300">
+                          <td className="px-4 py-3 text-sm text-blue-900" colSpan="6">
+                            TOTAL ({monthLoans.length} entries)
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).sanction)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).disbursed)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500" colSpan="8">
+                            {/* Empty cells for non-numeric columns */}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).pf)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).insurance)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-500">
+                            {/* Tenure - no total */}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).subvention)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).brokerage)}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
+                            ₹{formatNumber(calculateMonthTotals(monthLoans).subvention_0)}
+                          </td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
