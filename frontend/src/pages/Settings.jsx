@@ -290,39 +290,88 @@ const Settings = () => {
 
       {/* Data Backup - Admin Only */}
       {user?.role === 'admin' && (
-        <Card className="border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-800">
-              <Database className="w-5 h-5" />
-              Data Backup & Export
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="text-sm text-slate-700">
-                <p className="mb-2">Download a complete backup of all your data including:</p>
-                <ul className="list-disc ml-5 space-y-1">
-                  <li>All loan applications</li>
-                  <li>User accounts (without passwords)</li>
-                  <li>Custom field configurations</li>
-                </ul>
-              </div>
-              
-              <Button
-                onClick={handleBackupData}
-                disabled={backupLoading}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                {backupLoading ? 'Downloading...' : 'Download Full Backup'}
-              </Button>
+        <>
+          <Card className="border-green-200 bg-green-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-green-800">
+                <Database className="w-5 h-5" />
+                Data Backup & Export
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-sm text-slate-700">
+                  <p className="mb-2">Download a complete backup of all your data including:</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>All loan applications</li>
+                    <li>User accounts (without passwords)</li>
+                    <li>Custom field configurations</li>
+                  </ul>
+                </div>
+                
+                <Button
+                  onClick={handleBackupData}
+                  disabled={backupLoading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {backupLoading ? 'Downloading...' : 'Download Full Backup'}
+                </Button>
 
-              <p className="text-xs text-slate-500">
-                💡 Backup files are in Excel format (.xlsx) and include all data up to the current moment.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+                <p className="text-xs text-slate-500">
+                  💡 Backup files are in Excel format (.xlsx) and include all data up to the current moment.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Delete by Date - Admin Only */}
+          <Card className="border-red-200 bg-red-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-red-800">
+                <Trash2 className="w-5 h-5" />
+                Delete Entries by Date
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-red-100 border border-red-300 rounded-lg p-3">
+                  <p className="text-sm text-red-900 font-semibold mb-1">⚠️ DANGER ZONE</p>
+                  <p className="text-xs text-red-800">
+                    This will permanently delete ALL loan entries created on the specified date. This action CANNOT be undone!
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deleteDate">Enter Date to Delete (e.g., 16-10-2025)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="deleteDate"
+                      type="text"
+                      value={deleteDate}
+                      onChange={(e) => setDeleteDate(e.target.value)}
+                      placeholder="DD-MM-YYYY or YYYY-MM-DD"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleDeleteByDate}
+                      disabled={deleteLoading || !deleteDate}
+                      variant="destructive"
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {deleteLoading ? 'Deleting...' : 'Delete'}
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-slate-600">
+                  💡 Common use: Delete duplicate imports or wrongly imported entries. Example: "16-10-2025" will delete all entries from October 16, 2025.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );
