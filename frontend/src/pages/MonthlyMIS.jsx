@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp } from 'lucide-react';
 
 const MonthlyMIS = () => {
   const [loans, setLoans] = useState([]);
@@ -19,6 +19,22 @@ const MonthlyMIS = () => {
   const [editValue, setEditValue] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLoanData, setNewLoanData] = useState({});
+  
+  // Filter states
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    status: '',
+    bank: '',
+    month: '',
+    agent_name: ''
+  });
+  
+  // AI states
+  const [aiQuery, setAiQuery] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState('');
+  const [aiQuestion, setAiQuestion] = useState('');
 
   useEffect(() => {
     fetchLoans();
