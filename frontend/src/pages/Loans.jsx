@@ -336,16 +336,18 @@ const Loans = () => {
                       <Edit className="w-4 h-4 mr-2" />
                       Edit
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-red-600 hover:bg-red-50"
-                      onClick={() => handleDelete(loan.id)}
-                      data-testid={`delete-loan-${loan.id}`}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </Button>
+                    {user?.role === 'admin' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1 text-red-600 hover:bg-red-50"
+                        onClick={() => handleDelete(loan.id)}
+                        data-testid={`delete-loan-${loan.id}`}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
