@@ -113,8 +113,11 @@ const MonthlyMIS = () => {
       loan.customer_name?.toLowerCase().includes(searchLower) ||
       loan.company_name?.toLowerCase().includes(searchLower) ||
       loan.contact_no?.toLowerCase().includes(searchLower) ||
+      loan.location?.toLowerCase().includes(searchLower) ||
+      loan.agent_name?.toLowerCase().includes(searchLower) ||
       loan.status?.toLowerCase().includes(searchLower) ||
-      loan.bank?.toLowerCase().includes(searchLower)
+      loan.bank?.toLowerCase().includes(searchLower) ||
+      loan.product_type?.toLowerCase().includes(searchLower)
     );
   });
 
