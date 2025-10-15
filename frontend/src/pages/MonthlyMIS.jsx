@@ -296,13 +296,25 @@ const MonthlyMIS = () => {
           </h1>
           <p className="text-sm text-slate-600">Month-wise loan management • Click any cell to edit</p>
         </div>
-        <Button
-          onClick={() => setShowAddForm(true)}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Entry
-        </Button>
+        <div className="flex gap-2">
+          {user?.role === 'admin' && (
+            <Button
+              onClick={() => setShowImportDialog(true)}
+              variant="outline"
+              className="border-green-600 text-green-600 hover:bg-green-50"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Import Excel
+            </Button>
+          )}
+          <Button
+            onClick={() => setShowAddForm(true)}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Entry
+          </Button>
+        </div>
       </div>
 
       {/* Search Bar */}
