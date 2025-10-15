@@ -192,7 +192,7 @@ const MonthlyMIS = () => {
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
         <Input
-          placeholder="Quick find... (customer, company, contact, status, bank)"
+          placeholder="Quick find... (customer, company, contact, location, executive, status, bank, product)"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10"
