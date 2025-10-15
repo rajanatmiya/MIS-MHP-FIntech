@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Shield } from 'lucide-react';
+import { User, Lock, Shield, Download, Database } from 'lucide-react';
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
@@ -17,6 +17,30 @@ const Settings = () => {
     confirmPassword: ''
   });
   const [loading, setLoading] = useState(false);
+  const [backupLoading, setBackupLoading] = useState(false);
+
+  const handleBackupData = async () => {
+    setBackupLoading(true);
+    try {
+      const response = await axios.get(`${API}/backup/full-data`, {
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `mhp_fintech_backup_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('Backup downloaded successfully!');
+    } catch (error) {
+      toast.error('Failed to download backup');
+    } finally {
+      setBackupLoading(false);
+    }
+  };
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
