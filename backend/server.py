@@ -790,6 +790,9 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
         # Column mapping (case-insensitive)
         column_mapping = {
             'name': 'name',
+            'date': 'date',
+            'entry date': 'date',
+            'created date': 'date',
             'customer name': 'customer_name',
             'customername': 'customer_name',
             'customer': 'customer_name',
