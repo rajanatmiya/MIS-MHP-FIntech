@@ -68,6 +68,33 @@ const Settings = () => {
     }
   };
 
+  const handleDeleteAllData = async () => {
+    if (deleteAllConfirm !== 'DELETE_ALL_DATA') {
+      toast.error('Please type DELETE_ALL_DATA exactly to confirm');
+      return;
+    }
+
+    if (!window.confirm('🚨 FINAL WARNING: You are about to DELETE ALL MIS DATA! This will remove EVERYTHING and CANNOT be undone! Are you ABSOLUTELY sure?')) {
+      return;
+    }
+
+    setDeleteAllLoading(true);
+    try {
+      const response = await axios.post(`${API}/loans/delete-all?confirm=${deleteAllConfirm}`);
+      toast.success(response.data.message);
+      setDeleteAllConfirm('');
+      
+      // Reload page after deletion
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete all data');
+    } finally {
+      setDeleteAllLoading(false);
+    }
+  };
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
