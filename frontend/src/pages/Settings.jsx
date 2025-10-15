@@ -44,6 +44,28 @@ const Settings = () => {
     }
   };
 
+  const handleDeleteByDate = async () => {
+    if (!deleteDate) {
+      toast.error('Please enter a date');
+      return;
+    }
+
+    if (!window.confirm(`⚠️ WARNING: This will DELETE ALL entries from ${deleteDate}. This action CANNOT be undone! Are you absolutely sure?`)) {
+      return;
+    }
+
+    setDeleteLoading(true);
+    try {
+      const response = await axios.post(`${API}/loans/delete-by-date?date_str=${deleteDate}`);
+      toast.success(response.data.message);
+      setDeleteDate('');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete entries');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const handlePasswordChange = async (e) => {
     e.preventDefault();
 
