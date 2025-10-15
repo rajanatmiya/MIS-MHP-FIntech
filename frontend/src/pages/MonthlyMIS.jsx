@@ -506,46 +506,70 @@ const MonthlyMIS = () => {
                               {new Date(loan.created_at).toLocaleDateString('en-GB')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'name', 'Name')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'customer_name', 'Customer Name')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'company_name', 'Company Name')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'contact_no', 'Contact')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'location', 'Location')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'agent_name', 'Executive Name')}
+                              {renderCell(loan, 'contact_no', 'Contact Number')}
                             </td>
                             <td className="px-4 py-2 text-sm">
                               {renderCell(loan, 'status', 'Status')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'bank', 'Bank')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'sanction', 'Sanction')}
+                              {renderCell(loan, 'sanction', 'Bank Sanctioned')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'disbursed', 'Disbursed')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'rate_of_interest', 'ROI')}
+                              {renderCell(loan, 'remark', 'Remark')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'scheme', 'Scheme')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'case_from', 'Case From')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'location', 'Location')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'branch', 'Branch')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'agent_name', 'Executive Name')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'team_manager', 'Team Manager')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'code', 'Code')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'rate', 'Rate')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'pf', 'PF')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'insurance', 'Insurance')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'tenure', 'Tenure')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'product_type', 'Product Type')}
+                              {renderCell(loan, 'subvention', 'Subvention')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'login_date', 'Login Date')}
+                              {renderCell(loan, 'brokerage', 'Brokerage')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'remark', 'Remark')}
+                              {renderCell(loan, 'subvention_0', 'Subvention 0')}
                             </td>
                           </tr>
                         ))}
