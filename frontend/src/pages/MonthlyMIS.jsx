@@ -180,7 +180,7 @@ const MonthlyMIS = () => {
 
   const filteredLoans = loans.filter(loan => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchesSearch = (
       loan.customer_name?.toLowerCase().includes(searchLower) ||
       loan.company_name?.toLowerCase().includes(searchLower) ||
       loan.contact_no?.toLowerCase().includes(searchLower) ||
@@ -190,6 +190,15 @@ const MonthlyMIS = () => {
       loan.bank?.toLowerCase().includes(searchLower) ||
       loan.product_type?.toLowerCase().includes(searchLower)
     );
+    
+    const matchesFilters = (
+      (!filters.status || loan.status === filters.status) &&
+      (!filters.bank || loan.bank === filters.bank) &&
+      (!filters.month || loan.month === filters.month) &&
+      (!filters.agent_name || loan.agent_name === filters.agent_name)
+    );
+    
+    return matchesSearch && matchesFilters;
   });
 
   const groupedLoans = {};
