@@ -400,6 +400,68 @@ const Settings = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Delete ALL Data - Admin Only */}
+          <Card className="border-red-600 bg-red-100">
+            <CardHeader className="bg-red-200 border-b-2 border-red-600">
+              <CardTitle className="flex items-center gap-2 text-red-900">
+                <Trash2 className="w-6 h-6" />
+                🚨 DELETE ALL MIS DATA - NUCLEAR OPTION 🚨
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-4">
+                <div className="bg-red-200 border-2 border-red-600 rounded-lg p-4">
+                  <p className="text-base text-red-900 font-bold mb-2">⛔ EXTREME DANGER ZONE ⛔</p>
+                  <p className="text-sm text-red-900 font-semibold mb-2">
+                    This will PERMANENTLY DELETE ALL YOUR MIS DATA!
+                  </p>
+                  <ul className="text-xs text-red-800 space-y-1 ml-4 list-disc">
+                    <li>All loan entries (all months, all dates)</li>
+                    <li>All imported data</li>
+                    <li>All manually entered data</li>
+                    <li>This action CANNOT be undone!</li>
+                    <li>Database will be completely empty!</li>
+                  </ul>
+                </div>
+
+                <div className="bg-yellow-100 border border-yellow-500 rounded-lg p-3">
+                  <p className="text-sm text-yellow-900 font-semibold">💡 USE THIS TO:</p>
+                  <p className="text-xs text-yellow-800">
+                    Clean database before fresh import • Remove all duplicate/wrong data • Start completely fresh
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="deleteAllConfirm" className="text-red-900 font-semibold">
+                    Type <span className="bg-red-600 text-white px-2 py-1 rounded font-mono">DELETE_ALL_DATA</span> to confirm:
+                  </Label>
+                  <Input
+                    id="deleteAllConfirm"
+                    type="text"
+                    value={deleteAllConfirm}
+                    onChange={(e) => setDeleteAllConfirm(e.target.value)}
+                    placeholder="Type: DELETE_ALL_DATA"
+                    className="border-2 border-red-600 font-mono"
+                  />
+                  
+                  <Button
+                    onClick={handleDeleteAllData}
+                    disabled={deleteAllLoading || deleteAllConfirm !== 'DELETE_ALL_DATA'}
+                    variant="destructive"
+                    className="w-full bg-red-700 hover:bg-red-800 text-white font-bold py-3"
+                  >
+                    <Trash2 className="w-5 h-5 mr-2" />
+                    {deleteAllLoading ? 'DELETING ALL DATA...' : '🚨 DELETE ALL MIS DATA 🚨'}
+                  </Button>
+                </div>
+
+                <p className="text-xs text-red-700 font-semibold text-center">
+                  ⚠️ DOWNLOAD BACKUP BEFORE USING THIS! ⚠️
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
