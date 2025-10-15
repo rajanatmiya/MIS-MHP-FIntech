@@ -138,6 +138,41 @@ const MonthlyMIS = () => {
     toast.success('Filters cleared');
   };
 
+  const calculateMonthTotals = (loans) => {
+    const totals = {
+      sanction: 0,
+      disbursed: 0,
+      pf: 0,
+      insurance: 0,
+      subvention: 0,
+      brokerage: 0,
+      subvention_0: 0
+    };
+
+    loans.forEach(loan => {
+      // Parse numeric values, removing commas and handling empty strings
+      const parseNum = (val) => {
+        if (!val) return 0;
+        const num = parseFloat(String(val).replace(/,/g, ''));
+        return isNaN(num) ? 0 : num;
+      };
+
+      totals.sanction += parseNum(loan.sanction);
+      totals.disbursed += parseNum(loan.disbursed);
+      totals.pf += parseNum(loan.pf);
+      totals.insurance += parseNum(loan.insurance);
+      totals.subvention += parseNum(loan.subvention);
+      totals.brokerage += parseNum(loan.brokerage);
+      totals.subvention_0 += parseNum(loan.subvention_0);
+    });
+
+    return totals;
+  };
+
+  const formatNumber = (num) => {
+    return new Intl.NumberFormat('en-IN').format(num);
+  };
+
   const handleCellClick = (loanId, field, currentValue) => {
     setEditingCell({ loanId, field });
     setEditValue(currentValue || '');
