@@ -279,6 +279,119 @@ const MonthlyMIS = () => {
         />
       </div>
 
+      {/* AI Natural Language Search */}
+      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-5 h-5 text-purple-600" />
+            <h3 className="font-semibold text-purple-900">AI Search</h3>
+          </div>
+          <div className="flex gap-2">
+            <Input
+              placeholder='Try: "Show me all HDFC loans from Mumbai" or "Find approved loans this month"'
+              value={aiQuery}
+              onChange={(e) => setAiQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleAISearch()}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleAISearch}
+              disabled={aiLoading}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {aiLoading ? 'Thinking...' : 'Search'}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filters and AI Analysis */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant="outline"
+          onClick={() => setShowFilters(!showFilters)}
+          className="flex items-center gap-2"
+        >
+          <Filter className="w-4 h-4" />
+          Filters
+          {(filters.status || filters.bank || filters.month || filters.agent_name) && (
+            <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+              Active
+            </span>
+          )}
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={() => setShowAIAnalysis(true)}
+          className="flex items-center gap-2 text-purple-600"
+        >
+          <TrendingUp className="w-4 h-4" />
+          AI Analysis
+        </Button>
+
+        {(filters.status || filters.bank || filters.month || filters.agent_name) && (
+          <Button
+            variant="ghost"
+            onClick={clearFilters}
+            className="text-slate-600"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Clear Filters
+          </Button>
+        )}
+      </div>
+
+      {/* Filter Panel */}
+      {showFilters && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <Label>Status</Label>
+                <Select value={filters.status} onValueChange={(val) => setFilters({...filters, status: val})}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value=" ">All Status</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Disbursed">Disbursed</SelectItem>
+                    <SelectItem value="Declined">Declined</SelectItem>
+                    <SelectItem value="Hold">Hold</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Bank</Label>
+                <Input
+                  placeholder="e.g., HDFC, ICICI"
+                  value={filters.bank}
+                  onChange={(e) => setFilters({...filters, bank: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Month</Label>
+                <Input
+                  placeholder="e.g., Jan'25"
+                  value={filters.month}
+                  onChange={(e) => setFilters({...filters, month: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Executive Name</Label>
+                <Input
+                  placeholder="Agent name"
+                  value={filters.agent_name}
+                  onChange={(e) => setFilters({...filters, agent_name: e.target.value})}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Month Groups */}
       <div className="space-y-2">
         {months.map(month => {
