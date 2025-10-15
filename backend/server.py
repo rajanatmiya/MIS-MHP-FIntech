@@ -992,7 +992,7 @@ async def ai_smart_suggestions(field: str, partial_value: str, current_user: Use
     """Get AI-powered suggestions for field values"""
     try:
         # Get existing values from database
-        loans = await db.loan_applications.find({}, {"_id": 0, field: 1}).to_list(1000)
+        loans = await db.loan_applications.find({}, {"_id": 0, field: 1}).to_list(100000)
         existing_values = list(set([loan.get(field, "") for loan in loans if loan.get(field)]))
         
         # Filter matching values
