@@ -261,6 +261,12 @@ const MonthlyMIS = () => {
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'contact_no', 'Contact')}
                             </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'location', 'Location')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'agent_name', 'Executive Name')}
+                            </td>
                             <td className="px-4 py-2 text-sm">
                               {renderCell(loan, 'status', 'Status')}
                             </td>
@@ -272,6 +278,18 @@ const MonthlyMIS = () => {
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'disbursed', 'Disbursed')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'rate_of_interest', 'ROI')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'tenure', 'Tenure')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'product_type', 'Product Type')}
+                            </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'login_date', 'Login Date')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'remark', 'Remark')}
