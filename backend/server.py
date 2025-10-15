@@ -556,6 +556,26 @@ async def delete_loans_by_date(date_str: str, current_user: User = Depends(get_c
         logger.error(f"Delete by date error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete entries: {str(e)}")
 
+@api_router.post("/loans/delete-all")
+async def delete_all_loans(confirm: str, current_user: User = Depends(get_current_user)):
+    """Delete ALL loan entries - Admin only - DANGER"""
+    check_admin(current_user)
+    
+    if confirm != "DELETE_ALL_DATA":
+        raise HTTPException(status_code=400, detail="Confirmation text does not match")
+    
+    try:
+        result = await db.loan_applications.delete_many({})
+        
+        return {
+            "message": f"ALL MIS DATA DELETED! Removed {result.deleted_count} entries",
+            "deleted_count": result.deleted_count
+        }
+        
+    except Exception as e:
+        logger.error(f"Delete all error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete all entries: {str(e)}")
+
 # Analytics routes
 @api_router.get("/analytics/overview")
 async def get_overview(current_user: User = Depends(get_current_user)):
