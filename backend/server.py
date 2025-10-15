@@ -501,7 +501,8 @@ async def update_loan(loan_id: str, loan_data: LoanApplicationUpdate, current_us
 
 @api_router.delete("/loans/{loan_id}")
 async def delete_loan(loan_id: str, current_user: User = Depends(get_current_user)):
-    await check_loan_access(loan_id, current_user)
+    # Only admins can delete loans
+    check_admin(current_user)
     
     result = await db.loan_applications.delete_one({"id": loan_id})
     if result.deleted_count == 0:
