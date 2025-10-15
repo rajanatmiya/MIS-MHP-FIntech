@@ -757,6 +757,70 @@ const MonthlyMIS = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Import Excel Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="w-5 h-5 text-green-600" />
+              Import Loans from Excel
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-blue-900 mb-2">📋 Excel Format Requirements:</h4>
+              <div className="text-sm text-blue-800 space-y-1">
+                <p><strong>Required columns:</strong> Customer Name, Status, Bank, Month</p>
+                <p><strong>Optional columns:</strong> Company Name, Contact, Location, Executive Name, Sanction, Disbursed, ROI, Tenure, Product Type, Login Date, Remark</p>
+                <p className="mt-2 text-xs">💡 Column names are case-insensitive and flexible (e.g., "Customer Name", "customer", "customername" all work)</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Select Excel File (.xlsx or .xls)</Label>
+              <Input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setImportFile(e.target.files[0])}
+                className="cursor-pointer"
+              />
+              {importFile && (
+                <p className="text-sm text-green-600">
+                  ✓ Selected: {importFile.name}
+                </p>
+              )}
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <p className="text-xs text-yellow-800">
+                <strong>⚠️ Note:</strong> Existing data will not be affected. Only new entries will be added. Empty rows will be skipped.
+              </p>
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowImportDialog(false);
+                  setImportFile(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleImportExcel}
+                disabled={importing || !importFile}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                {importing ? 'Importing...' : 'Import Data'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
