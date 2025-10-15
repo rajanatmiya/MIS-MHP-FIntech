@@ -79,6 +79,61 @@ const MonthlyMIS = () => {
     setExpandedMonths(newExpanded);
   };
 
+  const handleAISearch = async () => {
+    if (!aiQuery.trim()) return;
+    
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/ai/search`, {
+        query: aiQuery
+      });
+      
+      const aiFilters = response.data.filters;
+      setFilters({
+        status: aiFilters.status || '',
+        bank: aiFilters.bank || '',
+        month: aiFilters.month || '',
+        agent_name: aiFilters.agent_name || ''
+      });
+      
+      toast.success('AI understood your query! Applied filters.');
+      setAiQuery('');
+    } catch (error) {
+      toast.error('AI search failed. Try again!');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleAIAnalysis = async () => {
+    if (!aiQuestion.trim()) return;
+    
+    setAiLoading(true);
+    try {
+      const response = await axios.post(`${API}/ai/analyze`, {
+        month: filters.month || null,
+        question: aiQuestion
+      });
+      
+      setAiAnalysis(response.data.analysis);
+      setShowAIAnalysis(true);
+    } catch (error) {
+      toast.error('AI analysis failed. Try again!');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      status: '',
+      bank: '',
+      month: '',
+      agent_name: ''
+    });
+    toast.success('Filters cleared');
+  };
+
   const handleCellClick = (loanId, field, currentValue) => {
     setEditingCell({ loanId, field });
     setEditValue(currentValue || '');
