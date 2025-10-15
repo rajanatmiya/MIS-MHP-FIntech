@@ -871,6 +871,20 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     skipped_count += 1
                     continue
                 
+                # Handle date from Excel or use current date
+                import_date = None
+                if pd.notna(row.get('date')):
+                    try:
+                        # Try to parse date from Excel
+                        import_date = pd.to_datetime(row.get('date'))
+                        if pd.notna(import_date):
+                            import_date = import_date.isoformat()
+                    except:
+                        import_date = None
+                
+                if not import_date:
+                    import_date = datetime.now(timezone.utc).isoformat()
+                
                 # Prepare loan data
                 loan_data = {
                     "id": str(uuid.uuid4()),
@@ -899,7 +913,7 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     "month": str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month,
                     "bank": str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else '',
                     "created_by": current_user.id,
-                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_at": import_date,  # Use date from Excel
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }
                 
