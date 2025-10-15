@@ -893,7 +893,7 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     "subvention": str(row.get('subvention', '')).strip() if pd.notna(row.get('subvention')) else '',
                     "brokerage": str(row.get('brokerage', '')).strip() if pd.notna(row.get('brokerage')) else '',
                     "subvention_0": str(row.get('subvention_0', '')).strip() if pd.notna(row.get('subvention_0')) else '',
-                    "month": str(row.get('month', '')).strip(),
+                    "month": str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month,
                     "bank": str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else '',
                     "created_by": current_user.id,
                     "created_at": datetime.now(timezone.utc).isoformat(),
