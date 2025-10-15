@@ -733,6 +733,47 @@ async def export_loans(
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@api_router.get("/backup/full-data")
+async def backup_all_data(current_user: User = Depends(get_current_user)):
+    """Export all data - Admin only"""
+    check_admin(current_user)
+    
+    # Get all loans
+    loans = await db.loan_applications.find({}, {"_id": 0}).to_list(10000)
+    
+    # Get all users (without passwords)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    
+    # Get all field configs
+    field_configs = await db.field_configs.find({}, {"_id": 0}).to_list(100)
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Loans sheet
+        if loans:
+            df_loans = pd.DataFrame(loans)
+            df_loans.to_excel(writer, index=False, sheet_name='Loans')
+        
+        # Users sheet
+        if users:
+            df_users = pd.DataFrame(users)
+            df_users.to_excel(writer, index=False, sheet_name='Users')
+        
+        # Field Configs sheet
+        if field_configs:
+            df_fields = pd.DataFrame(field_configs)
+            df_fields.to_excel(writer, index=False, sheet_name='Field_Configurations')
+    
+    output.seek(0)
+    
+    filename = f"mhp_fintech_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 # AI-powered features
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import json
