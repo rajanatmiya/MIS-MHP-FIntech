@@ -175,10 +175,18 @@ const Layout = ({ children }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="pt-16 lg:pt-0 lg:ml-64 min-h-screen">
-        <div className="p-4 lg:p-8">
+      <main className="pt-16 lg:pt-0 lg:ml-64 min-h-screen flex flex-col">
+        <div className="p-4 lg:p-8 flex-1">
           {children}
         </div>
+        
+        {/* Copyright Footer */}
+        <footer className="border-t border-slate-200 bg-slate-50 py-4 px-4 lg:px-8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-2 text-sm text-slate-600">
+            <p>© 2025 MHP Fintech Services Pvt Ltd. All rights reserved.</p>
+            <p className="text-xs">Built with ❤️ for efficient loan management</p>
+          </div>
+        </footer>
       </main>
     </div>
   );
