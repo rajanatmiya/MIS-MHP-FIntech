@@ -652,6 +652,62 @@ const MonthlyMIS = () => {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* AI Analysis Dialog */}
+      <Dialog open={showAIAnalysis} onOpenChange={setShowAIAnalysis}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-600" />
+              AI Data Analysis
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Ask a question about your data</Label>
+              <div className="flex gap-2 mt-2">
+                <Input
+                  placeholder='e.g., "What are the trends this month?" or "Which executive performed best?"'
+                  value={aiQuestion}
+                  onChange={(e) => setAiQuestion(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAIAnalysis()}
+                />
+                <Button
+                  onClick={handleAIAnalysis}
+                  disabled={aiLoading}
+                  className="bg-purple-600 hover:bg-purple-700"
+                >
+                  {aiLoading ? 'Analyzing...' : 'Analyze'}
+                </Button>
+              </div>
+            </div>
+
+            {aiAnalysis && (
+              <Card className="bg-purple-50 border-purple-200">
+                <CardContent className="p-4">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-purple-900 mb-2">AI Insights:</h4>
+                      <div className="text-slate-700 whitespace-pre-wrap">{aiAnalysis}</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="text-xs text-slate-500">
+              <p className="font-semibold mb-1">Try asking:</p>
+              <ul className="space-y-1 ml-4 list-disc">
+                <li>"What are the top performing banks this month?"</li>
+                <li>"Show me conversion rate trends"</li>
+                <li>"Which executive has the most disbursals?"</li>
+                <li>"What's the average sanction amount?"</li>
+              </ul>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
