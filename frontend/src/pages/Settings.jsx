@@ -20,6 +20,8 @@ const Settings = () => {
   const [backupLoading, setBackupLoading] = useState(false);
   const [deleteDate, setDeleteDate] = useState('');
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteAllConfirm, setDeleteAllConfirm] = useState('');
+  const [deleteAllLoading, setDeleteAllLoading] = useState(false);
 
   const handleBackupData = async () => {
     setBackupLoading(true);
