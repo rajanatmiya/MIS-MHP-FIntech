@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { API } from '@/App';
+import { API, AuthContext } from '@/App';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet } from 'lucide-react';
 
 const MonthlyMIS = () => {
+  const { user } = useContext(AuthContext);
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedMonths, setExpandedMonths] = useState(new Set());
@@ -19,6 +20,9 @@ const MonthlyMIS = () => {
   const [editValue, setEditValue] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLoanData, setNewLoanData] = useState({});
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
