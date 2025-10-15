@@ -733,6 +733,147 @@ async def export_loans(
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+# AI-powered features
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+import json
+
+class AISearchRequest(BaseModel):
+    query: str
+
+class AIAnalysisRequest(BaseModel):
+    month: Optional[str] = None
+    question: str
+
+@api_router.post("/ai/search")
+async def ai_natural_language_search(request: AISearchRequest, current_user: User = Depends(get_current_user)):
+    """Convert natural language query to filters"""
+    try:
+        llm_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"ai-search-{current_user.id}",
+            system_message="""You are an AI assistant that converts natural language queries into structured filters for a loan MIS system.
+
+Available filter fields:
+- status: string (e.g., "Pending", "Approved", "Disbursed", "Declined", "Hold")
+- bank: string (e.g., "HDFC", "ICICI", "SBI", "Axis")
+- month: string (e.g., "Jan'25", "Feb'25")
+- location: string (city or state)
+- agent_name: string (executive name)
+- customer_name: string
+- product_type: string (e.g., "Personal Loan", "Business Loan")
+
+Return ONLY a valid JSON object with the filters. Example:
+{"status": "Disbursed", "bank": "HDFC", "month": "Jan'25"}
+
+If no specific filters can be extracted, return an empty object: {}"""
+        ).with_model("openai", "gpt-4o-mini")
+        
+        user_message = UserMessage(text=f"Query: {request.query}")
+        response = await chat.send_message(user_message)
+        
+        # Parse JSON response
+        try:
+            filters = json.loads(response)
+        except:
+            filters = {}
+        
+        return {"filters": filters, "query": request.query}
+    except Exception as e:
+        logger.error(f"AI search error: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI search failed")
+
+@api_router.post("/ai/suggestions")
+async def ai_smart_suggestions(field: str, partial_value: str, current_user: User = Depends(get_current_user)):
+    """Get AI-powered suggestions for field values"""
+    try:
+        # Get existing values from database
+        loans = await db.loan_applications.find({}, {"_id": 0, field: 1}).to_list(1000)
+        existing_values = list(set([loan.get(field, "") for loan in loans if loan.get(field)]))
+        
+        # Filter matching values
+        suggestions = [val for val in existing_values if partial_value.lower() in val.lower()][:5]
+        
+        return {"suggestions": suggestions}
+    except Exception as e:
+        logger.error(f"Suggestions error: {str(e)}")
+        return {"suggestions": []}
+
+@api_router.post("/ai/analyze")
+async def ai_data_analysis(request: AIAnalysisRequest, current_user: User = Depends(get_current_user)):
+    """AI-powered data analysis and insights"""
+    try:
+        # Fetch data
+        query = {}
+        accessible_ids = await get_accessible_user_ids(current_user)
+        if accessible_ids is not None:
+            query["created_by"] = {"$in": accessible_ids}
+        
+        if request.month:
+            query["month"] = request.month
+        
+        loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+        
+        # Prepare data summary for AI
+        total_loans = len(loans)
+        status_counts = {}
+        bank_counts = {}
+        total_sanction = 0
+        total_disbursed = 0
+        
+        for loan in loans:
+            status = loan.get('status', 'Unknown')
+            bank = loan.get('bank', 'Unknown')
+            status_counts[status] = status_counts.get(status, 0) + 1
+            bank_counts[bank] = bank_counts.get(bank, 0) + 1
+            
+            try:
+                if loan.get('sanction'):
+                    total_sanction += float(str(loan.get('sanction', 0)).replace(',', ''))
+            except:
+                pass
+            try:
+                if loan.get('disbursed'):
+                    total_disbursed += float(str(loan.get('disbursed', 0)).replace(',', ''))
+            except:
+                pass
+        
+        data_summary = {
+            "total_loans": total_loans,
+            "status_breakdown": status_counts,
+            "bank_breakdown": bank_counts,
+            "total_sanction_amount": total_sanction,
+            "total_disbursed_amount": total_disbursed,
+            "month": request.month or "All months"
+        }
+        
+        # Ask AI to analyze
+        llm_key = os.environ.get('EMERGENT_LLM_KEY')
+        chat = LlmChat(
+            api_key=llm_key,
+            session_id=f"ai-analysis-{current_user.id}",
+            system_message="""You are a financial data analyst AI. Analyze loan data and provide clear, actionable insights.
+Be concise and highlight key trends, patterns, and recommendations."""
+        ).with_model("openai", "gpt-4o-mini")
+        
+        prompt = f"""Analyze this loan data and answer: {request.question}
+
+Data Summary:
+{json.dumps(data_summary, indent=2)}
+
+Provide a clear, concise analysis with specific numbers and actionable insights."""
+        
+        user_message = UserMessage(text=prompt)
+        response = await chat.send_message(user_message)
+        
+        return {
+            "analysis": response,
+            "data_summary": data_summary
+        }
+    except Exception as e:
+        logger.error(f"AI analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI analysis failed")
+
 # Include the router
 app.include_router(api_router)
 
