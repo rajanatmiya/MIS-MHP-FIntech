@@ -774,6 +774,140 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@api_router.post("/import/loans-excel")
+async def import_loans_from_excel(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+    """Import loans from Excel file"""
+    check_admin(current_user)
+    
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Only Excel files (.xlsx, .xls) are supported")
+    
+    try:
+        # Read Excel file
+        contents = await file.read()
+        df = pd.read_excel(BytesIO(contents))
+        
+        # Column mapping (case-insensitive)
+        column_mapping = {
+            'customer name': 'customer_name',
+            'customername': 'customer_name',
+            'customer': 'customer_name',
+            'company name': 'company_name',
+            'companyname': 'company_name',
+            'company': 'company_name',
+            'contact': 'contact_no',
+            'contact no': 'contact_no',
+            'contact number': 'contact_no',
+            'mobile': 'contact_no',
+            'phone': 'contact_no',
+            'location': 'location',
+            'city': 'location',
+            'agent name': 'agent_name',
+            'executive name': 'agent_name',
+            'executive': 'agent_name',
+            'agent': 'agent_name',
+            'status': 'status',
+            'bank': 'bank',
+            'sanction': 'sanction',
+            'sanction amount': 'sanction',
+            'disbursed': 'disbursed',
+            'disbursed amount': 'disbursed',
+            'rate of interest': 'rate_of_interest',
+            'roi': 'rate_of_interest',
+            'interest rate': 'rate_of_interest',
+            'tenure': 'tenure',
+            'tenure (months)': 'tenure',
+            'product type': 'product_type',
+            'product': 'product_type',
+            'login date': 'login_date',
+            'month': 'month',
+            'remark': 'remark',
+            'remarks': 'remark',
+            'scheme': 'scheme',
+            'case type': 'case_type',
+            'from location': 'from_location',
+            'branch': 'branch',
+            'team manager code': 'team_manager_code'
+        }
+        
+        # Normalize column names
+        df.columns = df.columns.str.strip().str.lower()
+        
+        # Rename columns
+        for old_col, new_col in column_mapping.items():
+            if old_col in df.columns:
+                df.rename(columns={old_col: new_col}, inplace=True)
+        
+        # Required fields
+        required_fields = ['customer_name', 'status', 'bank', 'month']
+        missing_fields = [field for field in required_fields if field not in df.columns]
+        
+        if missing_fields:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"Missing required columns: {', '.join(missing_fields)}"
+            )
+        
+        # Import loans
+        imported_count = 0
+        skipped_count = 0
+        errors = []
+        
+        for index, row in df.iterrows():
+            try:
+                # Skip empty rows
+                if pd.isna(row.get('customer_name')) or not str(row.get('customer_name')).strip():
+                    skipped_count += 1
+                    continue
+                
+                # Prepare loan data
+                loan_data = {
+                    "id": str(uuid.uuid4()),
+                    "customer_name": str(row.get('customer_name', '')).strip(),
+                    "company_name": str(row.get('company_name', '')).strip() if pd.notna(row.get('company_name')) else '',
+                    "contact_no": str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else '',
+                    "location": str(row.get('location', '')).strip() if pd.notna(row.get('location')) else '',
+                    "agent_name": str(row.get('agent_name', current_user.name)).strip(),
+                    "status": str(row.get('status', 'Pending')).strip(),
+                    "bank": str(row.get('bank', '')).strip(),
+                    "month": str(row.get('month', '')).strip(),
+                    "sanction": str(row.get('sanction', '')).strip() if pd.notna(row.get('sanction')) else '',
+                    "disbursed": str(row.get('disbursed', '')).strip() if pd.notna(row.get('disbursed')) else '',
+                    "rate_of_interest": str(row.get('rate_of_interest', '')).strip() if pd.notna(row.get('rate_of_interest')) else '',
+                    "tenure": str(row.get('tenure', '')).strip() if pd.notna(row.get('tenure')) else '',
+                    "product_type": str(row.get('product_type', '')).strip() if pd.notna(row.get('product_type')) else '',
+                    "login_date": str(row.get('login_date', '')).strip() if pd.notna(row.get('login_date')) else '',
+                    "remark": str(row.get('remark', '')).strip() if pd.notna(row.get('remark')) else '',
+                    "scheme": str(row.get('scheme', '')).strip() if pd.notna(row.get('scheme')) else '',
+                    "case_type": str(row.get('case_type', '')).strip() if pd.notna(row.get('case_type')) else '',
+                    "from_location": str(row.get('from_location', '')).strip() if pd.notna(row.get('from_location')) else '',
+                    "branch": str(row.get('branch', '')).strip() if pd.notna(row.get('branch')) else '',
+                    "team_manager_code": str(row.get('team_manager_code', '')).strip() if pd.notna(row.get('team_manager_code')) else '',
+                    "created_by": current_user.id,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "updated_at": datetime.now(timezone.utc).isoformat()
+                }
+                
+                # Insert into database
+                await db.loan_applications.insert_one(loan_data)
+                imported_count += 1
+                
+            except Exception as e:
+                errors.append(f"Row {index + 2}: {str(e)}")
+                skipped_count += 1
+        
+        return {
+            "message": "Import completed",
+            "imported": imported_count,
+            "skipped": skipped_count,
+            "total_rows": len(df),
+            "errors": errors[:10] if errors else []  # Return first 10 errors
+        }
+        
+    except Exception as e:
+        logger.error(f"Import error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Import failed: {str(e)}")
+
 # AI-powered features
 from emergentintegrations.llm.chat import LlmChat, UserMessage
 import json
