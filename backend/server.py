@@ -1266,7 +1266,7 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def create_default_admin():
-    """Create default admin user if it doesn't exist"""
+    """Create default admin user and schemes if they don't exist"""
     try:
         admin_email = "admin@mhpfintech.com"
         admin_password = "Admin@123"
@@ -1299,8 +1299,39 @@ async def create_default_admin():
                 logger.info(f"✅ Updated role to 'admin' for {admin_email}")
             else:
                 logger.info(f"✅ Admin user already exists: {admin_email}")
+        
+        # Initialize default schemes
+        default_schemes = [
+            {"name": "GST", "description": "GST Loan Scheme"},
+            {"name": "Degree Surrogate", "description": "Degree Surrogate Loan"},
+            {"name": "Prime Banking", "description": "Prime Banking Loan"},
+            {"name": "LTBL", "description": "LTBL Loan Scheme"},
+            {"name": "SEPL Income Programme", "description": "SEPL Income Programme"},
+            {"name": "Car loan", "description": "Car Loan Scheme"},
+            {"name": "Education Loan", "description": "Education Loan Scheme"}
+        ]
+        
+        admin_user_data = existing_admin or admin_user
+        admin_id = admin_user_data.get('id')
+        
+        for scheme_data in default_schemes:
+            existing_scheme = await db.schemes.find_one({"name": scheme_data["name"]})
+            if not existing_scheme:
+                scheme = {
+                    "id": str(uuid.uuid4()),
+                    "name": scheme_data["name"],
+                    "description": scheme_data["description"],
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": admin_id
+                }
+                await db.schemes.insert_one(scheme)
+                logger.info(f"✅ Created scheme: {scheme_data['name']}")
+        
+        scheme_count = await db.schemes.count_documents({})
+        logger.info(f"✅ Total schemes in database: {scheme_count}")
+        
     except Exception as e:
-        logger.error(f"❌ Error creating admin user: {str(e)}")
+        logger.error(f"❌ Error in startup: {str(e)}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
