@@ -321,12 +321,13 @@ const UserManagement = () => {
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Email</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Role</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Team</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {users.map(user => (
-                  <tr key={user.id} className="hover:bg-slate-50">
+                  <tr key={user.id} className={`hover:bg-slate-50 ${!user.active ? 'opacity-50' : ''}`}>
                     <td className="px-4 py-3 text-sm font-medium text-slate-800">{user.name}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{user.email}</td>
                     <td className="px-4 py-3">
@@ -335,6 +336,18 @@ const UserManagement = () => {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">{user.team_code || '-'}</td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <Switch
+                          checked={user.active !== false}
+                          onCheckedChange={() => handleToggleStatus(user.id, user.active)}
+                          disabled={user.id === currentUser.id}
+                        />
+                        <span className={`text-xs font-medium ${user.active !== false ? 'text-green-600' : 'text-red-600'}`}>
+                          {user.active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3 text-right space-x-2">
                       <Button variant="ghost" size="sm" onClick={() => handleEdit(user)} title="Edit User">
                         <Edit className="w-4 h-4 text-blue-600" />
