@@ -333,14 +333,24 @@ const MonthlyMIS = () => {
         </div>
         <div className="flex gap-2">
           {user?.role === 'admin' && (
-            <Button
-              onClick={() => setShowImportDialog(true)}
-              variant="outline"
-              className="border-green-600 text-green-600 hover:bg-green-50"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Import Excel
-            </Button>
+            <>
+              <Button
+                onClick={() => window.open(`${API}/export/loans`, '_blank')}
+                variant="outline"
+                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Export Excel
+              </Button>
+              <Button
+                onClick={() => setShowImportDialog(true)}
+                variant="outline"
+                className="border-green-600 text-green-600 hover:bg-green-50"
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Import Excel
+              </Button>
+            </>
           )}
           <Button
             onClick={() => setShowAddForm(true)}
