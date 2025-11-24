@@ -791,6 +791,22 @@ const MonthlyMIS = () => {
                 />
               </div>
               <div>
+                <Label>Scheme</Label>
+                <Select
+                  value={newLoanData.scheme || ''}
+                  onValueChange={(value) => setNewLoanData({...newLoanData, scheme: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select scheme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schemes.map(scheme => (
+                      <SelectItem key={scheme.id} value={scheme.name}>{scheme.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
                 <Label>Rate of Interest (%)</Label>
                 <Input
                   value={newLoanData.rate_of_interest || ''}
