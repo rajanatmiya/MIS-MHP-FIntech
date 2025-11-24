@@ -110,11 +110,18 @@ class LoanApplication(BaseModel):
     disbursed: Optional[str] = ""
     remark: Optional[str] = ""
     scheme: Optional[str] = ""
-    case_type: Optional[str] = ""
-    from_location: Optional[str] = ""
+    case_from: Optional[str] = ""
+    location: Optional[str] = ""
     branch: Optional[str] = ""
     executive_name: Optional[str] = ""
-    team_manager_code: Optional[str] = ""
+    team_manager: Optional[str] = ""
+    code: Optional[str] = ""
+    rate: Optional[str] = ""
+    pf: Optional[str] = ""
+    insurance: Optional[str] = ""
+    tenure: Optional[str] = ""
+    subvention: Optional[str] = ""
+    brokerage_subvention: Optional[str] = ""
     month: str
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
     file_count: Optional[int] = 0
