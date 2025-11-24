@@ -365,6 +365,300 @@ class MISBackendTester:
             self.log_test("Get Unique Values", False, f"Exception: {str(e)}")
             return False
 
+    def login_admin(self):
+        """Login as admin user for admin-only tests"""
+        admin_credentials = {
+            "email": "admin@mhpfintech.com",
+            "password": "Admin@123"
+        }
+        
+        try:
+            response = requests.post(f"{self.api_url}/auth/login", json=admin_credentials)
+            if response.status_code == 200:
+                data = response.json()
+                self.admin_token = data.get('access_token')
+                self.admin_user_id = data.get('user', {}).get('id')
+                self.log_test("Admin Login", True, "Admin login successful")
+                return True
+            else:
+                self.log_test("Admin Login", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+        except Exception as e:
+            self.log_test("Admin Login", False, f"Exception: {str(e)}")
+            return False
+
+    def test_scheme_management(self):
+        """Test scheme CRUD operations with role restrictions"""
+        if not hasattr(self, 'admin_token') or not self.admin_token:
+            self.log_test("Scheme Management Setup", False, "Admin token not available")
+            return False
+        
+        admin_headers = {'Authorization': f'Bearer {self.admin_token}', 'Content-Type': 'application/json'}
+        agent_headers = {'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json'}
+        
+        # Test 1: GET /api/schemes - Should work for all users
+        try:
+            response = requests.get(f"{self.api_url}/schemes", headers=admin_headers)
+            if response.status_code == 200:
+                schemes = response.json()
+                self.log_test("GET Schemes (Admin)", True, f"Retrieved {len(schemes)} schemes")
+            else:
+                self.log_test("GET Schemes (Admin)", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("GET Schemes (Admin)", False, f"Exception: {str(e)}")
+        
+        # Test 2: POST /api/schemes - Admin should succeed
+        test_scheme_name = f"Test Scheme {datetime.now().strftime('%H%M%S')}"
+        scheme_data = {
+            "name": test_scheme_name,
+            "description": "Test scheme for API testing"
+        }
+        
+        scheme_id = None
+        try:
+            response = requests.post(f"{self.api_url}/schemes", json=scheme_data, headers=admin_headers)
+            if response.status_code == 200:
+                created_scheme = response.json()
+                scheme_id = created_scheme.get('id')
+                self.log_test("POST Schemes (Admin)", True, f"Scheme created with ID: {scheme_id}")
+            else:
+                self.log_test("POST Schemes (Admin)", False, f"Status: {response.status_code}, Response: {response.text}")
+        except Exception as e:
+            self.log_test("POST Schemes (Admin)", False, f"Exception: {str(e)}")
+        
+        # Test 3: POST /api/schemes - Agent should fail (403)
+        try:
+            response = requests.post(f"{self.api_url}/schemes", json=scheme_data, headers=agent_headers)
+            if response.status_code == 403:
+                self.log_test("POST Schemes (Agent - Should Fail)", True, "Agent correctly denied access")
+            else:
+                self.log_test("POST Schemes (Agent - Should Fail)", False, f"Expected 403, got {response.status_code}")
+        except Exception as e:
+            self.log_test("POST Schemes (Agent - Should Fail)", False, f"Exception: {str(e)}")
+        
+        # Test 4: Test duplicate scheme name
+        if scheme_id:
+            try:
+                response = requests.post(f"{self.api_url}/schemes", json=scheme_data, headers=admin_headers)
+                if response.status_code == 400:
+                    self.log_test("POST Schemes (Duplicate Name)", True, "Duplicate name correctly rejected")
+                else:
+                    self.log_test("POST Schemes (Duplicate Name)", False, f"Expected 400, got {response.status_code}")
+            except Exception as e:
+                self.log_test("POST Schemes (Duplicate Name)", False, f"Exception: {str(e)}")
+        
+        # Test 5: PUT /api/schemes/{id} - Admin should succeed
+        if scheme_id:
+            update_data = {
+                "description": "Updated test scheme description"
+            }
+            try:
+                response = requests.put(f"{self.api_url}/schemes/{scheme_id}", json=update_data, headers=admin_headers)
+                if response.status_code == 200:
+                    self.log_test("PUT Schemes (Admin)", True, "Scheme updated successfully")
+                else:
+                    self.log_test("PUT Schemes (Admin)", False, f"Status: {response.status_code}")
+            except Exception as e:
+                self.log_test("PUT Schemes (Admin)", False, f"Exception: {str(e)}")
+        
+        # Test 6: PUT /api/schemes/{id} - Agent should fail (403)
+        if scheme_id:
+            try:
+                response = requests.put(f"{self.api_url}/schemes/{scheme_id}", json=update_data, headers=agent_headers)
+                if response.status_code == 403:
+                    self.log_test("PUT Schemes (Agent - Should Fail)", True, "Agent correctly denied access")
+                else:
+                    self.log_test("PUT Schemes (Agent - Should Fail)", False, f"Expected 403, got {response.status_code}")
+            except Exception as e:
+                self.log_test("PUT Schemes (Agent - Should Fail)", False, f"Exception: {str(e)}")
+        
+        # Test 7: DELETE /api/schemes/{id} - Admin should succeed
+        if scheme_id:
+            try:
+                response = requests.delete(f"{self.api_url}/schemes/{scheme_id}", headers=admin_headers)
+                if response.status_code == 200:
+                    self.log_test("DELETE Schemes (Admin)", True, "Scheme deleted successfully")
+                else:
+                    self.log_test("DELETE Schemes (Admin)", False, f"Status: {response.status_code}")
+            except Exception as e:
+                self.log_test("DELETE Schemes (Admin)", False, f"Exception: {str(e)}")
+        
+        return True
+
+    def test_loan_update_field_preservation(self):
+        """Test that updating one field doesn't clear other fields"""
+        if not self.token:
+            self.log_test("Loan Update Field Preservation", False, "No token available")
+            return False
+        
+        # First create a loan with multiple fields
+        loan_data = {
+            "agent_name": "Field Test Agent",
+            "customer_name": "Jane Smith",
+            "company_name": "XYZ Industries",
+            "contact_no": "9876543210",
+            "status": "Login Done",
+            "bank": "ICICI Bank",
+            "sanction": "750000",
+            "disbursed": "",
+            "remark": "Initial remark",
+            "scheme": "GST",
+            "case_from": "Direct",
+            "location": "Delhi",
+            "branch": "CP Branch",
+            "executive_name": "Test Executive",
+            "team_manager": "Test Manager",
+            "month": "Jan'25"
+        }
+        
+        headers = {'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json'}
+        
+        try:
+            # Create loan
+            response = requests.post(f"{self.api_url}/loans", json=loan_data, headers=headers)
+            if response.status_code != 200:
+                self.log_test("Loan Update Field Preservation - Create", False, f"Failed to create loan: {response.status_code}")
+                return False
+            
+            created_loan = response.json()
+            loan_id = created_loan.get('id')
+            
+            # Get original loan data
+            response = requests.get(f"{self.api_url}/loans/{loan_id}", headers=headers)
+            if response.status_code != 200:
+                self.log_test("Loan Update Field Preservation - Get Original", False, f"Failed to get loan: {response.status_code}")
+                return False
+            
+            original_loan = response.json()
+            
+            # Update only the remark field
+            update_data = {
+                "remark": "Updated remark - field preservation test"
+            }
+            
+            response = requests.put(f"{self.api_url}/loans/{loan_id}", json=update_data, headers=headers)
+            if response.status_code != 200:
+                self.log_test("Loan Update Field Preservation - Update", False, f"Failed to update loan: {response.status_code}")
+                return False
+            
+            # Get updated loan data
+            response = requests.get(f"{self.api_url}/loans/{loan_id}", headers=headers)
+            if response.status_code != 200:
+                self.log_test("Loan Update Field Preservation - Get Updated", False, f"Failed to get updated loan: {response.status_code}")
+                return False
+            
+            updated_loan = response.json()
+            
+            # Check that only remark was updated and other fields preserved
+            fields_to_check = ['customer_name', 'company_name', 'contact_no', 'status', 'bank', 'sanction', 'scheme', 'location', 'branch']
+            preserved_fields = []
+            lost_fields = []
+            
+            for field in fields_to_check:
+                if original_loan.get(field) == updated_loan.get(field):
+                    preserved_fields.append(field)
+                else:
+                    lost_fields.append(f"{field}: '{original_loan.get(field)}' -> '{updated_loan.get(field)}'")
+            
+            # Check remark was updated
+            remark_updated = updated_loan.get('remark') == "Updated remark - field preservation test"
+            
+            if len(lost_fields) == 0 and remark_updated:
+                self.log_test("Loan Update Field Preservation", True, f"All {len(preserved_fields)} fields preserved, remark updated correctly")
+            else:
+                details = f"Lost fields: {lost_fields}, Remark updated: {remark_updated}"
+                self.log_test("Loan Update Field Preservation", False, details)
+            
+            # Test updating scheme field specifically
+            scheme_update = {"scheme": "LTBL"}
+            response = requests.put(f"{self.api_url}/loans/{loan_id}", json=scheme_update, headers=headers)
+            if response.status_code == 200:
+                response = requests.get(f"{self.api_url}/loans/{loan_id}", headers=headers)
+                if response.status_code == 200:
+                    final_loan = response.json()
+                    if final_loan.get('scheme') == 'LTBL' and final_loan.get('customer_name') == original_loan.get('customer_name'):
+                        self.log_test("Loan Update Scheme Field", True, "Scheme updated, other fields preserved")
+                    else:
+                        self.log_test("Loan Update Scheme Field", False, "Scheme update affected other fields")
+                else:
+                    self.log_test("Loan Update Scheme Field", False, "Failed to get loan after scheme update")
+            else:
+                self.log_test("Loan Update Scheme Field", False, f"Failed to update scheme: {response.status_code}")
+            
+            # Clean up
+            requests.delete(f"{self.api_url}/loans/{loan_id}", headers={'Authorization': f'Bearer {self.admin_token}'})
+            
+            return len(lost_fields) == 0 and remark_updated
+            
+        except Exception as e:
+            self.log_test("Loan Update Field Preservation", False, f"Exception: {str(e)}")
+            return False
+
+    def test_export_admin_only(self):
+        """Test export endpoint is admin-only and works correctly"""
+        if not hasattr(self, 'admin_token') or not self.admin_token:
+            self.log_test("Export Admin Only Setup", False, "Admin token not available")
+            return False
+        
+        admin_headers = {'Authorization': f'Bearer {self.admin_token}'}
+        agent_headers = {'Authorization': f'Bearer {self.token}'}
+        
+        # Test 1: Agent should be denied access (403)
+        try:
+            response = requests.get(f"{self.api_url}/export/loans", headers=agent_headers)
+            if response.status_code == 403:
+                self.log_test("Export Access (Agent - Should Fail)", True, "Agent correctly denied export access")
+            else:
+                self.log_test("Export Access (Agent - Should Fail)", False, f"Expected 403, got {response.status_code}")
+        except Exception as e:
+            self.log_test("Export Access (Agent - Should Fail)", False, f"Exception: {str(e)}")
+        
+        # Test 2: Admin should have access
+        try:
+            response = requests.get(f"{self.api_url}/export/loans", headers=admin_headers)
+            if response.status_code == 200:
+                # Check content type
+                content_type = response.headers.get('content-type', '')
+                if 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in content_type:
+                    self.log_test("Export Access (Admin)", True, f"Export successful, file size: {len(response.content)} bytes")
+                else:
+                    self.log_test("Export Access (Admin)", False, f"Wrong content type: {content_type}")
+            else:
+                self.log_test("Export Access (Admin)", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("Export Access (Admin)", False, f"Exception: {str(e)}")
+        
+        # Test 3: Export with month filter
+        try:
+            response = requests.get(f"{self.api_url}/export/loans?month=Jan'25", headers=admin_headers)
+            if response.status_code == 200:
+                content_disposition = response.headers.get('content-disposition', '')
+                if 'filename=' in content_disposition:
+                    self.log_test("Export with Month Filter", True, f"Month filter export successful")
+                else:
+                    self.log_test("Export with Month Filter", False, "Missing filename in response")
+            else:
+                self.log_test("Export with Month Filter", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("Export with Month Filter", False, f"Exception: {str(e)}")
+        
+        # Test 4: Export with no filters (should work)
+        try:
+            response = requests.get(f"{self.api_url}/export/loans", headers=admin_headers)
+            if response.status_code == 200:
+                # Check if it's a valid Excel file by checking first few bytes
+                content = response.content
+                if content.startswith(b'PK'):  # Excel files start with PK (ZIP format)
+                    self.log_test("Export No Filters", True, "Export without filters successful")
+                else:
+                    self.log_test("Export No Filters", False, "Response doesn't appear to be Excel file")
+            else:
+                self.log_test("Export No Filters", False, f"Status: {response.status_code}")
+        except Exception as e:
+            self.log_test("Export No Filters", False, f"Exception: {str(e)}")
+        
+        return True
+
     def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting MIS Backend API Tests...")
