@@ -167,13 +167,20 @@ class LoanApplicationUpdate(BaseModel):
     disbursed: Optional[str] = None
     remark: Optional[str] = None
     scheme: Optional[str] = None
-    case_type: Optional[str] = None
-    from_location: Optional[str] = None
+    case_from: Optional[str] = None
+    location: Optional[str] = None
     branch: Optional[str] = None
     executive_name: Optional[str] = None
-    team_manager_code: Optional[str] = None
+    team_manager: Optional[str] = None
+    code: Optional[str] = None
+    rate: Optional[str] = None
+    pf: Optional[str] = None
+    insurance: Optional[str] = None
+    tenure: Optional[str] = None
+    subvention: Optional[str] = None
+    brokerage_subvention: Optional[str] = None
     month: Optional[str] = None
-    custom_fields: Optional[Dict[str, Any]] = None
+    custom_fields: Optional[str] = None
 
 # Auth helpers
 def hash_password(password: str) -> str:
