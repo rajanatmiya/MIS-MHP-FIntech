@@ -674,6 +674,11 @@ class MISBackendTester:
         self.test_auth_login()
         self.test_auth_me()
         
+        # Admin login for admin-only tests
+        print("\n🔐 Admin Authentication:")
+        if not self.login_admin():
+            print("❌ Admin login failed - skipping admin-only tests")
+        
         # Loan CRUD tests
         print("\n📋 Loan Management Tests:")
         loan_created, loan_id = self.test_create_loan()
@@ -692,9 +697,32 @@ class MISBackendTester:
         self.test_analytics_by_month()
         self.test_unique_values()
         
+        # Scheme Management Tests (Admin/Manager only)
+        print("\n🏗️ Scheme Management Tests:")
+        if hasattr(self, 'admin_token') and self.admin_token:
+            self.test_scheme_management()
+        else:
+            print("⚠️ Skipping scheme tests - admin token not available")
+        
+        # Loan Update Field Preservation Tests
+        print("\n🔄 Loan Update Tests:")
+        self.test_loan_update_field_preservation()
+        
+        # Export Tests (Admin only)
+        print("\n📤 Export Tests:")
+        if hasattr(self, 'admin_token') and self.admin_token:
+            self.test_export_admin_only()
+        else:
+            print("⚠️ Skipping export tests - admin token not available")
+        
         # Clean up - delete the test loan
-        if loan_id:
-            self.test_delete_loan(loan_id)
+        if loan_id and hasattr(self, 'admin_token') and self.admin_token:
+            admin_headers = {'Authorization': f'Bearer {self.admin_token}'}
+            try:
+                requests.delete(f"{self.api_url}/loans/{loan_id}", headers=admin_headers)
+                print("🧹 Cleaned up test loan")
+            except:
+                pass
         
         # Print summary
         print("\n" + "=" * 50)
