@@ -112,6 +112,18 @@ const UserManagement = () => {
     }
   };
 
+
+  const handleToggleStatus = async (userId, currentStatus) => {
+    try {
+      const response = await axios.patch(`${API}/users/${userId}/toggle-status`);
+      toast.success(response.data.message);
+      fetchUsers(); // Refresh the list
+    } catch (error) {
+      toast.error('Failed to toggle user status');
+    }
+  };
+
+
   const handleEdit = (user) => {
     setEditingUser(user);
     setFormData({
