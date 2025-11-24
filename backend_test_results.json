@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total_tests": 13,
-    "passed_tests": 13,
+    "total_tests": 26,
+    "passed_tests": 26,
     "failed_tests": 0,
     "success_rate": 100.0
   },
@@ -9,80 +9,158 @@
     {
       "test": "User Registration",
       "success": true,
-      "details": "User created with ID: 127b4820-3d30-49e3-a5a0-ba4bce7e7517",
-      "timestamp": "2025-10-14T00:40:29.552206"
+      "details": "User created with ID: 52a89db8-f144-4d31-944e-1870ad73ac4a",
+      "timestamp": "2025-11-24T14:32:01.936022"
     },
     {
       "test": "User Login",
       "success": true,
       "details": "Login successful, token received",
-      "timestamp": "2025-10-14T00:40:30.080979"
+      "timestamp": "2025-11-24T14:32:02.465153"
     },
     {
       "test": "Get Current User",
       "success": true,
       "details": "User data retrieved: Test User",
-      "timestamp": "2025-10-14T00:40:30.115229"
+      "timestamp": "2025-11-24T14:32:02.510966"
+    },
+    {
+      "test": "Admin Login",
+      "success": true,
+      "details": "Admin login successful",
+      "timestamp": "2025-11-24T14:32:02.777736"
     },
     {
       "test": "Create Loan",
       "success": true,
-      "details": "Loan created with ID: f000a908-ff93-4f54-93f7-8755a6f4647e",
-      "timestamp": "2025-10-14T00:40:30.195357"
+      "details": "Loan created with ID: 21779820-47c3-42b8-b9c7-a9e32a89424d",
+      "timestamp": "2025-11-24T14:32:02.824455"
     },
     {
       "test": "Get Loans",
       "success": true,
       "details": "Retrieved 1 loans",
-      "timestamp": "2025-10-14T00:40:30.231416"
+      "timestamp": "2025-11-24T14:32:02.864634"
     },
     {
       "test": "Get Loan by ID",
       "success": true,
       "details": "Retrieved loan: John Doe",
-      "timestamp": "2025-10-14T00:40:30.269674"
+      "timestamp": "2025-11-24T14:32:02.909249"
     },
     {
       "test": "Update Loan",
       "success": true,
       "details": "Loan updated, status: Disbursed",
-      "timestamp": "2025-10-14T00:40:30.306263"
+      "timestamp": "2025-11-24T14:32:02.953204"
     },
     {
       "test": "Analytics Overview",
       "success": true,
       "details": "Total: 1, Disbursed: 1",
-      "timestamp": "2025-10-14T00:40:30.346880"
+      "timestamp": "2025-11-24T14:32:02.993928"
     },
     {
       "test": "Analytics by Bank",
       "success": true,
       "details": "Bank stats retrieved: 1 banks",
-      "timestamp": "2025-10-14T00:40:30.421591"
+      "timestamp": "2025-11-24T14:32:03.036564"
     },
     {
       "test": "Analytics by Agent",
       "success": true,
       "details": "Agent stats retrieved: 1 agents",
-      "timestamp": "2025-10-14T00:40:30.456216"
+      "timestamp": "2025-11-24T14:32:03.073926"
     },
     {
       "test": "Analytics by Month",
       "success": true,
       "details": "Month stats retrieved: 1 months",
-      "timestamp": "2025-10-14T00:40:30.531933"
+      "timestamp": "2025-11-24T14:32:03.115020"
     },
     {
       "test": "Get Unique Values",
       "success": true,
       "details": "Banks: 1, Statuses: 1",
-      "timestamp": "2025-10-14T00:40:30.570396"
+      "timestamp": "2025-11-24T14:32:03.155993"
     },
     {
-      "test": "Delete Loan",
+      "test": "GET Schemes (Admin)",
       "success": true,
-      "details": "Loan deleted successfully",
-      "timestamp": "2025-10-14T00:40:30.608107"
+      "details": "Retrieved 7 schemes",
+      "timestamp": "2025-11-24T14:32:03.200572"
+    },
+    {
+      "test": "POST Schemes (Admin)",
+      "success": true,
+      "details": "Scheme created with ID: e80586bd-cc37-4bff-8728-06c26c3e613a",
+      "timestamp": "2025-11-24T14:32:03.243260"
+    },
+    {
+      "test": "POST Schemes (Agent - Should Fail)",
+      "success": true,
+      "details": "Agent correctly denied access",
+      "timestamp": "2025-11-24T14:32:03.285909"
+    },
+    {
+      "test": "POST Schemes (Duplicate Name)",
+      "success": true,
+      "details": "Duplicate name correctly rejected",
+      "timestamp": "2025-11-24T14:32:03.326105"
+    },
+    {
+      "test": "PUT Schemes (Admin)",
+      "success": true,
+      "details": "Scheme updated successfully",
+      "timestamp": "2025-11-24T14:32:03.369228"
+    },
+    {
+      "test": "PUT Schemes (Agent - Should Fail)",
+      "success": true,
+      "details": "Agent correctly denied access",
+      "timestamp": "2025-11-24T14:32:03.411543"
+    },
+    {
+      "test": "DELETE Schemes (Admin)",
+      "success": true,
+      "details": "Scheme deleted successfully",
+      "timestamp": "2025-11-24T14:32:03.491037"
+    },
+    {
+      "test": "Loan Update Field Preservation",
+      "success": true,
+      "details": "All 9 fields preserved, remark updated correctly",
+      "timestamp": "2025-11-24T14:32:03.698227"
+    },
+    {
+      "test": "Loan Update Scheme Field",
+      "success": true,
+      "details": "Scheme updated, other fields preserved",
+      "timestamp": "2025-11-24T14:32:03.782781"
+    },
+    {
+      "test": "Export Access (Agent - Should Fail)",
+      "success": true,
+      "details": "Agent correctly denied export access",
+      "timestamp": "2025-11-24T14:32:03.900746"
+    },
+    {
+      "test": "Export Access (Admin)",
+      "success": true,
+      "details": "Export successful, file size: 5520 bytes",
+      "timestamp": "2025-11-24T14:32:04.522375"
+    },
+    {
+      "test": "Export with Month Filter",
+      "success": true,
+      "details": "Month filter export successful",
+      "timestamp": "2025-11-24T14:32:04.572774"
+    },
+    {
+      "test": "Export No Filters",
+      "success": true,
+      "details": "Export without filters successful",
+      "timestamp": "2025-11-24T14:32:04.622082"
     }
   ]
 }
