@@ -22,6 +22,11 @@ const Layout = ({ children }) => {
     navigation.push({ name: 'Field Config', href: '/field-management', icon: Sliders, testId: 'nav-field-management' });
   }
   
+  // Add Scheme Management for admins and managers
+  if (user?.role === 'admin' || user?.role === 'manager') {
+    navigation.push({ name: 'Schemes', href: '/scheme-management', icon: FileText, testId: 'nav-scheme-management' });
+  }
+  
   // Add Settings for everyone
   navigation.push({ name: 'Settings', href: '/settings', icon: SettingsIcon, testId: 'nav-settings' });
 
