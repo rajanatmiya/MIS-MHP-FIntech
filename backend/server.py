@@ -180,7 +180,7 @@ class LoanApplicationUpdate(BaseModel):
     subvention: Optional[str] = None
     brokerage_subvention: Optional[str] = None
     month: Optional[str] = None
-    custom_fields: Optional[str] = None
+    custom_fields: Optional[Dict[str, Any]] = None
 
 # Auth helpers
 def hash_password(password: str) -> str:
