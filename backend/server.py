@@ -300,6 +300,10 @@ async def login(credentials: UserLogin):
     if not verify_password(credentials.password, user['password']):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
+    # Check if user is active
+    if not user.get('active', True):
+        raise HTTPException(status_code=403, detail="Your account has been deactivated. Please contact admin.")
+    
     if isinstance(user.get('created_at'), str):
         user['created_at'] = datetime.fromisoformat(user['created_at'])
     
