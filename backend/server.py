@@ -62,6 +62,7 @@ class UserUpdate(BaseModel):
     role: Optional[str] = None
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
+    active: Optional[bool] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
