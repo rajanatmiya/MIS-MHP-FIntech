@@ -850,6 +850,15 @@ const MonthlyMIS = () => {
                   placeholder="Additional notes"
                 />
               </div>
+              <div className="md:col-span-2">
+                <Label className="text-red-600">Decline Reason (if rejected)</Label>
+                <Input
+                  value={newLoanData.decline_reason || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, decline_reason: e.target.value})}
+                  placeholder="Reason for decline/rejection"
+                  className="border-red-300 focus:border-red-500"
+                />
+              </div>
             </div>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
