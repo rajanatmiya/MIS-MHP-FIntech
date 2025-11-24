@@ -373,6 +373,31 @@ async def delete_user(user_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "User deleted successfully"}
 
+
+# Toggle user active status (Admin only)
+@api_router.patch("/users/{user_id}/toggle-status")
+async def toggle_user_status(user_id: str, current_user: User = Depends(get_current_user)):
+    """Enable or disable a user (Admin only)"""
+    check_admin(current_user)
+    
+    user = await db.users.find_one({"id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Toggle active status
+    new_status = not user.get('active', True)
+    
+    await db.users.update_one(
+        {"id": user_id},
+        {"$set": {"active": new_status}}
+    )
+    
+    return {
+        "message": f"User {'activated' if new_status else 'deactivated'} successfully",
+        "active": new_status
+    }
+
+
 # Admin password reset
 class PasswordResetRequest(BaseModel):
     new_password: str
