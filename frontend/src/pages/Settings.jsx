@@ -317,6 +317,11 @@ const Settings = () => {
         </CardContent>
       </Card>
 
+
+
+      {/* Organization Schedule - Admin Only */}
+      {user?.role === 'admin' && <OrganizationSchedule />}
+
       {/* Data Backup - Admin Only */}
       {user?.role === 'admin' && (
         <>
