@@ -443,6 +443,70 @@ async def delete_field_config(field_id: str, current_user: User = Depends(get_cu
     
     return {"message": "Field configuration deleted successfully"}
 
+
+# Scheme Management routes (Admin/Manager only)
+@api_router.get("/schemes", response_model=List[Scheme])
+async def get_schemes(current_user: User = Depends(get_current_user)):
+    """Get all schemes"""
+    schemes = await db.schemes.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    
+    for scheme in schemes:
+        if isinstance(scheme.get('created_at'), str):
+            scheme['created_at'] = datetime.fromisoformat(scheme['created_at'])
+    
+    return schemes
+
+@api_router.post("/schemes", response_model=Scheme)
+async def create_scheme(scheme_data: SchemeCreate, current_user: User = Depends(get_current_user)):
+    """Create a new scheme (Admin/Manager only)"""
+    if current_user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can create schemes")
+    
+    # Check if scheme name already exists
+    existing = await db.schemes.find_one({"name": scheme_data.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Scheme name already exists")
+    
+    scheme = Scheme(**scheme_data.model_dump(), created_by=current_user.id)
+    
+    scheme_dict = scheme.model_dump()
+    scheme_dict['created_at'] = scheme_dict['created_at'].isoformat()
+    
+    await db.schemes.insert_one(scheme_dict)
+    return scheme
+
+@api_router.put("/schemes/{scheme_id}", response_model=Scheme)
+async def update_scheme(scheme_id: str, scheme_data: SchemeUpdate, current_user: User = Depends(get_current_user)):
+    """Update a scheme (Admin/Manager only)"""
+    if current_user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can update schemes")
+    
+    update_dict = {k: v for k, v in scheme_data.model_dump().items() if v is not None}
+    
+    if update_dict:
+        await db.schemes.update_one({"id": scheme_id}, {"$set": update_dict})
+    
+    updated_scheme = await db.schemes.find_one({"id": scheme_id}, {"_id": 0})
+    if not updated_scheme:
+        raise HTTPException(status_code=404, detail="Scheme not found")
+    
+    if isinstance(updated_scheme.get('created_at'), str):
+        updated_scheme['created_at'] = datetime.fromisoformat(updated_scheme['created_at'])
+    
+    return Scheme(**updated_scheme)
+
+@api_router.delete("/schemes/{scheme_id}")
+async def delete_scheme(scheme_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a scheme (Admin/Manager only)"""
+    if current_user.role not in ["admin", "manager"]:
+        raise HTTPException(status_code=403, detail="Only admins and managers can delete schemes")
+    
+    result = await db.schemes.delete_one({"id": scheme_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Scheme not found")
+    
+    return {"message": "Scheme deleted successfully"}
+
 # Loan routes with role-based access
 @api_router.get("/loans", response_model=List[LoanApplication])
 async def get_loans(
