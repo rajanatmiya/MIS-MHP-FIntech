@@ -97,6 +97,23 @@ class CustomFieldConfigUpdate(BaseModel):
     options: Optional[List[str]] = None
     order: Optional[int] = None
 
+
+class Scheme(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str
+
+class SchemeCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+
+class SchemeUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+
 class LoanApplication(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
