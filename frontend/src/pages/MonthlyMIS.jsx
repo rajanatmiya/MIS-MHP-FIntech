@@ -308,6 +308,25 @@ const MonthlyMIS = () => {
     const value = loan[field] || '';
 
     if (isEditing) {
+      // Special handling for scheme field - show dropdown
+      if (field === 'scheme') {
+        return (
+          <select
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => handleCellSave(loan.id, field)}
+            onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
+            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+          >
+            <option value="">Select scheme</option>
+            {schemes.map(scheme => (
+              <option key={scheme.id} value={scheme.name}>{scheme.name}</option>
+            ))}
+          </select>
+        );
+      }
+      
       return (
         <input
           type="text"
