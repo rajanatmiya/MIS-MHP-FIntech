@@ -991,8 +991,8 @@ const MonthlyMIS = () => {
                 </div>
               </div>
             )}
-          </form>
-            <div className="flex gap-2 justify-end">
+            
+            <div className="flex gap-2 justify-end mt-4">
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                 Cancel
               </Button>
