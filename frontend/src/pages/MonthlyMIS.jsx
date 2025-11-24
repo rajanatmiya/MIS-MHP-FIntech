@@ -605,6 +605,9 @@ const MonthlyMIS = () => {
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'remark', 'Remark')}
                             </td>
+                            <td className="px-4 py-2 text-sm text-red-50 bg-red-50">
+                              {renderCell(loan, 'decline_reason', 'Decline Reason')}
+                            </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'scheme', 'Scheme')}
                             </td>
