@@ -538,10 +538,7 @@ const MonthlyMIS = () => {
                         {monthLoans.map(loan => (
                           <tr key={loan.id} className="hover:bg-slate-50">
                             <td className="px-4 py-2 text-sm text-slate-700 whitespace-nowrap">
-                              {new Date(loan.created_at).toLocaleDateString('en-GB')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'name', 'Name')}
+                              {loan.month}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'customer_name', 'Customer Name')}
@@ -552,11 +549,14 @@ const MonthlyMIS = () => {
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'contact_no', 'Contact Number')}
                             </td>
+                            <td className="px-4 py-2 text-sm text-slate-800">
+                              {renderCell(loan, 'bank', 'Bank/NBFC')}
+                            </td>
                             <td className="px-4 py-2 text-sm">
                               {renderCell(loan, 'status', 'Status')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'sanction', 'Bank Sanctioned')}
+                              {renderCell(loan, 'sanction', 'Sanctioned')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'disbursed', 'Disbursed')}
@@ -577,7 +577,7 @@ const MonthlyMIS = () => {
                               {renderCell(loan, 'branch', 'Branch')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'agent_name', 'Executive Name')}
+                              {renderCell(loan, 'executive_name', 'Executive Name')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'team_manager', 'Team Manager')}
@@ -601,10 +601,10 @@ const MonthlyMIS = () => {
                               {renderCell(loan, 'subvention', 'Subvention')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'brokerage', 'Brokerage')}
+                              {renderCell(loan, 'brokerage_subvention', 'Brokerage Subvention')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'subvention_0', 'Subvention 0')}
+                              {renderCell(loan, 'agent_name', 'Agent Name')}
                             </td>
                           </tr>
                         ))}
