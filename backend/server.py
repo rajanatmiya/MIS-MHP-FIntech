@@ -116,6 +116,21 @@ class SchemeUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
+
+class OrganizationSchedule(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = "default"  # Only one schedule config
+    working_days: List[str] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    start_time: str = "09:00"
+    end_time: str = "18:00"
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_by: Optional[str] = None
+
+class OrganizationScheduleUpdate(BaseModel):
+    working_days: Optional[List[str]] = None
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+
 class LoanApplication(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
