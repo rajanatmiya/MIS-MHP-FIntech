@@ -200,6 +200,7 @@ class LoanApplicationUpdate(BaseModel):
     sanction: Optional[str] = None
     disbursed: Optional[str] = None
     remark: Optional[str] = None
+    decline_reason: Optional[str] = None
     scheme: Optional[str] = None
     case_from: Optional[str] = None
     location: Optional[str] = None
