@@ -701,7 +701,7 @@ const MonthlyMIS = () => {
                 />
               </div>
               <div>
-                <Label>Executive Name *</Label>
+                <Label>Agent Name *</Label>
                 <Input
                   required
                   value={newLoanData.agent_name || ''}
