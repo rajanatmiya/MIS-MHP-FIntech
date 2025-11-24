@@ -885,9 +885,10 @@ async def export_loans(
     df = pd.DataFrame(loans)
     if not df.empty:
         columns_order = [
-            'month', 'agent_name', 'customer_name', 'company_name', 'contact_no',
-            'status', 'bank', 'sanction', 'disbursed', 'scheme', 'case_type',
-            'from_location', 'branch', 'executive_name', 'team_manager_code', 'remark'
+            'month', 'customer_name', 'company_name', 'contact_no', 'bank', 'status',
+            'sanction', 'disbursed', 'remark', 'scheme', 'case_from', 'location',
+            'branch', 'executive_name', 'team_manager', 'code', 'rate', 'pf',
+            'insurance', 'tenure', 'subvention', 'brokerage_subvention', 'agent_name'
         ]
         existing_cols = [col for col in columns_order if col in df.columns]
         df = df[existing_cols]
