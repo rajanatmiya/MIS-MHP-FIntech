@@ -856,7 +856,7 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
         "schemes": sorted(list(schemes))
     }
 
-# Excel Export
+# Excel Export (Admin only)
 @api_router.get("/export/loans")
 async def export_loans(
     month: Optional[str] = None,
@@ -864,7 +864,11 @@ async def export_loans(
     bank: Optional[str] = None,
     current_user: User = Depends(get_current_user)
 ):
+    # Restrict to admin only
+    check_admin(current_user)
+    
     query = {}
+    # Admin can export all data
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
