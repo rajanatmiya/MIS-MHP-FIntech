@@ -711,155 +711,287 @@ const MonthlyMIS = () => {
             <DialogTitle>Add New Entry</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddLoan} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Customer Name *</Label>
-                <Input
-                  required
-                  value={newLoanData.customer_name || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})}
-                />
+            {/* Agent Role: Limited Fields */}
+            {user?.role === 'agent' && (
+              <>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-blue-900">
+                    <strong>Agent View:</strong> Please fill in the Executive Name and Team Manager fields. Admin will complete other details.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Customer Name *</Label>
+                    <Input
+                      required
+                      value={newLoanData.customer_name || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Company Name *</Label>
+                    <Input
+                      required
+                      value={newLoanData.company_name || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Contact Number *</Label>
+                    <Input
+                      required
+                      value={newLoanData.contact_no || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, contact_no: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Bank *</Label>
+                    <Input
+                      required
+                      value={newLoanData.bank || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <Label>Executive Name *</Label>
+                    <Input
+                      required
+                      value={newLoanData.executive_name || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, executive_name: e.target.value})}
+                      placeholder="Name of the executive"
+                    />
+                  </div>
+                  <div>
+                    <Label>Team Manager *</Label>
+                    <Input
+                      required
+                      value={newLoanData.team_manager || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, team_manager: e.target.value})}
+                      placeholder="Name of the team manager"
+                    />
+                  </div>
+                  <div>
+                    <Label>Status *</Label>
+                    <Input
+                      required
+                      value={newLoanData.status || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, status: e.target.value})}
+                      placeholder="e.g., Pending, Approved, Disbursed"
+                    />
+                  </div>
+                  <div>
+                    <Label>Month *</Label>
+                    <Input
+                      required
+                      value={newLoanData.month || ''}
+                      onChange={(e) => setNewLoanData({...newLoanData, month: e.target.value})}
+                      placeholder="e.g., Jan'25, Feb'25"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Admin/Manager Role: All Fields */}
+            {(user?.role === 'admin' || user?.role === 'manager') && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Customer Name *</Label>
+                  <Input
+                    required
+                    value={newLoanData.customer_name || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Company Name *</Label>
+                  <Input
+                    required
+                    value={newLoanData.company_name || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Contact Number *</Label>
+                  <Input
+                    required
+                    value={newLoanData.contact_no || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, contact_no: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Location</Label>
+                  <Input
+                    value={newLoanData.location || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, location: e.target.value})}
+                    placeholder="City, State"
+                  />
+                </div>
+                <div>
+                  <Label>Agent Name *</Label>
+                  <Input
+                    required
+                    value={newLoanData.agent_name || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, agent_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Executive Name</Label>
+                  <Input
+                    value={newLoanData.executive_name || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, executive_name: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Team Manager</Label>
+                  <Input
+                    value={newLoanData.team_manager || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, team_manager: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Status *</Label>
+                  <Input
+                    required
+                    value={newLoanData.status || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, status: e.target.value})}
+                    placeholder="e.g., Pending, Approved, Disbursed"
+                  />
+                </div>
+                <div>
+                  <Label>Bank *</Label>
+                  <Input
+                    required
+                    value={newLoanData.bank || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Month *</Label>
+                  <Input
+                    required
+                    value={newLoanData.month || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, month: e.target.value})}
+                    placeholder="e.g., Jan'25, Feb'25"
+                  />
+                </div>
+                <div>
+                  <Label>Sanction Amount</Label>
+                  <Input
+                    value={newLoanData.sanction || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})}
+                    placeholder="e.g., 500000"
+                  />
+                </div>
+                <div>
+                  <Label>Disbursed Amount</Label>
+                  <Input
+                    value={newLoanData.disbursed || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})}
+                    placeholder="e.g., 500000"
+                  />
+                </div>
+                <div>
+                  <Label>Scheme</Label>
+                  <Select
+                    value={newLoanData.scheme || ''}
+                    onValueChange={(value) => setNewLoanData({...newLoanData, scheme: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select scheme" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schemes.map(scheme => (
+                        <SelectItem key={scheme.id} value={scheme.name}>{scheme.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Rate of Interest (%)</Label>
+                  <Input
+                    value={newLoanData.rate || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, rate: e.target.value})}
+                    placeholder="e.g., 10.5"
+                  />
+                </div>
+                <div>
+                  <Label>PF</Label>
+                  <Input
+                    value={newLoanData.pf || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, pf: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Insurance</Label>
+                  <Input
+                    value={newLoanData.insurance || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, insurance: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Tenure (Months)</Label>
+                  <Input
+                    value={newLoanData.tenure || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, tenure: e.target.value})}
+                    placeholder="e.g., 24, 36, 60"
+                  />
+                </div>
+                <div>
+                  <Label>Subvention</Label>
+                  <Input
+                    value={newLoanData.subvention || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, subvention: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Brokerage Subvention</Label>
+                  <Input
+                    value={newLoanData.brokerage_subvention || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, brokerage_subvention: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Case From</Label>
+                  <Input
+                    value={newLoanData.case_from || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, case_from: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Branch</Label>
+                  <Input
+                    value={newLoanData.branch || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, branch: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <Label>Code</Label>
+                  <Input
+                    value={newLoanData.code || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, code: e.target.value})}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Remark</Label>
+                  <Input
+                    value={newLoanData.remark || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})}
+                    placeholder="Additional notes"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Label className="text-red-600">Decline Reason (if rejected)</Label>
+                  <Input
+                    value={newLoanData.decline_reason || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, decline_reason: e.target.value})}
+                    placeholder="Reason for decline/rejection"
+                    className="border-red-300 focus:border-red-500"
+                  />
+                </div>
               </div>
-              <div>
-                <Label>Company Name *</Label>
-                <Input
-                  required
-                  value={newLoanData.company_name || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Contact Number *</Label>
-                <Input
-                  required
-                  value={newLoanData.contact_no || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, contact_no: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Location</Label>
-                <Input
-                  value={newLoanData.location || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, location: e.target.value})}
-                  placeholder="City, State"
-                />
-              </div>
-              <div>
-                <Label>Agent Name *</Label>
-                <Input
-                  required
-                  value={newLoanData.agent_name || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, agent_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Status *</Label>
-                <Input
-                  required
-                  value={newLoanData.status || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, status: e.target.value})}
-                  placeholder="e.g., Pending, Approved, Disbursed"
-                />
-              </div>
-              <div>
-                <Label>Bank *</Label>
-                <Input
-                  required
-                  value={newLoanData.bank || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Month *</Label>
-                <Input
-                  required
-                  value={newLoanData.month || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, month: e.target.value})}
-                  placeholder="e.g., Jan'25, Feb'25"
-                />
-              </div>
-              <div>
-                <Label>Sanction Amount</Label>
-                <Input
-                  value={newLoanData.sanction || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})}
-                  placeholder="e.g., 500000"
-                />
-              </div>
-              <div>
-                <Label>Disbursed Amount</Label>
-                <Input
-                  value={newLoanData.disbursed || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})}
-                  placeholder="e.g., 500000"
-                />
-              </div>
-              <div>
-                <Label>Scheme</Label>
-                <Select
-                  value={newLoanData.scheme || ''}
-                  onValueChange={(value) => setNewLoanData({...newLoanData, scheme: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select scheme" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {schemes.map(scheme => (
-                      <SelectItem key={scheme.id} value={scheme.name}>{scheme.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Rate of Interest (%)</Label>
-                <Input
-                  value={newLoanData.rate_of_interest || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, rate_of_interest: e.target.value})}
-                  placeholder="e.g., 10.5"
-                />
-              </div>
-              <div>
-                <Label>Tenure (Months)</Label>
-                <Input
-                  value={newLoanData.tenure || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, tenure: e.target.value})}
-                  placeholder="e.g., 24, 36, 60"
-                />
-              </div>
-              <div>
-                <Label>Product Type</Label>
-                <Input
-                  value={newLoanData.product_type || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, product_type: e.target.value})}
-                  placeholder="e.g., Personal Loan, Business Loan"
-                />
-              </div>
-              <div>
-                <Label>Login Date</Label>
-                <Input
-                  type="date"
-                  value={newLoanData.login_date || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, login_date: e.target.value})}
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label>Remark</Label>
-                <Input
-                  value={newLoanData.remark || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})}
-                  placeholder="Additional notes"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <Label className="text-red-600">Decline Reason (if rejected)</Label>
-                <Input
-                  value={newLoanData.decline_reason || ''}
-                  onChange={(e) => setNewLoanData({...newLoanData, decline_reason: e.target.value})}
-                  placeholder="Reason for decline/rejection"
-                  className="border-red-300 focus:border-red-500"
-                />
-              </div>
-            </div>
+            )}
+          </form>
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
                 Cancel
