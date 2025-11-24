@@ -425,6 +425,57 @@ async def admin_reset_password(
     
     return {"message": f"Password reset successfully for {user.get('email', 'user')}"}
 
+
+# Organization Schedule routes (Admin only)
+@api_router.get("/organization/schedule", response_model=OrganizationSchedule)
+async def get_organization_schedule(current_user: User = Depends(get_current_user)):
+    """Get organization working schedule"""
+    schedule = await db.organization_schedule.find_one({"id": "default"}, {"_id": 0})
+    
+    if not schedule:
+        # Return default schedule if none exists
+        default_schedule = OrganizationSchedule()
+        return default_schedule
+    
+    if isinstance(schedule.get('updated_at'), str):
+        schedule['updated_at'] = datetime.fromisoformat(schedule['updated_at'])
+    
+    return OrganizationSchedule(**schedule)
+
+@api_router.put("/organization/schedule", response_model=OrganizationSchedule)
+async def update_organization_schedule(
+    schedule_data: OrganizationScheduleUpdate, 
+    current_user: User = Depends(get_current_user)
+):
+    """Update organization working schedule (Admin only)"""
+    check_admin(current_user)
+    
+    update_dict = {k: v for k, v in schedule_data.model_dump().items() if v is not None}
+    update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
+    update_dict['updated_by'] = current_user.id
+    
+    # Check if schedule exists
+    existing = await db.organization_schedule.find_one({"id": "default"})
+    
+    if existing:
+        await db.organization_schedule.update_one(
+            {"id": "default"},
+            {"$set": update_dict}
+        )
+    else:
+        # Create new schedule
+        schedule = OrganizationSchedule(**schedule_data.model_dump(), updated_by=current_user.id)
+        schedule_dict = schedule.model_dump()
+        schedule_dict['updated_at'] = schedule_dict['updated_at'].isoformat()
+        await db.organization_schedule.insert_one(schedule_dict)
+    
+    updated_schedule = await db.organization_schedule.find_one({"id": "default"}, {"_id": 0})
+    
+    if isinstance(updated_schedule.get('updated_at'), str):
+        updated_schedule['updated_at'] = datetime.fromisoformat(updated_schedule['updated_at'])
+    
+    return OrganizationSchedule(**updated_schedule)
+
 # Custom Field Configuration routes (Admin only)
 @api_router.get("/field-configs", response_model=List[CustomFieldConfig])
 async def get_field_configs(current_user: User = Depends(get_current_user)):
