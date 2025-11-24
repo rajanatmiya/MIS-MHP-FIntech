@@ -7,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Users, Edit, Trash2, Plus, Shield, Key } from 'lucide-react';
+import { Users, Edit, Trash2, Plus, Shield, Key, Power } from 'lucide-react';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
