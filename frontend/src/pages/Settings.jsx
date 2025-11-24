@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '@/App';
 import axios from 'axios';
 import { API } from '@/App';
@@ -7,7 +7,131 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { User, Lock, Shield, Download, Database, Trash2 } from 'lucide-react';
+import { User, Lock, Shield, Download, Database, Trash2, Clock, Calendar } from 'lucide-react';
+
+// Organization Schedule Component
+const OrganizationSchedule = () => {
+  const [schedule, setSchedule] = useState({
+    working_days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+    start_time: '09:00',
+    end_time: '18:00'
+  });
+  const [loading, setLoading] = useState(false);
+
+  const allDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+  useEffect(() => {
+    fetchSchedule();
+  }, []);
+
+  const fetchSchedule = async () => {
+    try {
+      const response = await axios.get(`${API}/organization/schedule`);
+      setSchedule(response.data);
+    } catch (error) {
+      console.error('Failed to fetch schedule');
+    }
+  };
+
+  const handleDayToggle = (day) => {
+    setSchedule(prev => ({
+      ...prev,
+      working_days: prev.working_days.includes(day)
+        ? prev.working_days.filter(d => d !== day)
+        : [...prev.working_days, day]
+    }));
+  };
+
+  const handleSaveSchedule = async () => {
+    if (schedule.working_days.length === 0) {
+      toast.error('Please select at least one working day');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await axios.put(`${API}/organization/schedule`, schedule);
+      toast.success('Schedule updated successfully');
+    } catch (error) {
+      toast.error('Failed to update schedule');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Card className="border-blue-200 bg-blue-50">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-blue-800">
+          <Calendar className="w-5 h-5" />
+          Organization Schedule
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <Label className="text-sm font-semibold text-blue-900 mb-3 block">Working Days</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            {allDays.map(day => (
+              <button
+                key={day}
+                onClick={() => handleDayToggle(day)}
+                className={`px-4 py-2 rounded-lg border-2 font-medium text-sm transition-all ${
+                  schedule.working_days.includes(day)
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
+                }`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Start Time
+            </Label>
+            <Input
+              type="time"
+              value={schedule.start_time}
+              onChange={(e) => setSchedule({ ...schedule, start_time: e.target.value })}
+              className="border-blue-300 focus:border-blue-600"
+            />
+          </div>
+
+          <div>
+            <Label className="text-sm font-semibold text-blue-900 mb-2 flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              End Time
+            </Label>
+            <Input
+              type="time"
+              value={schedule.end_time}
+              onChange={(e) => setSchedule({ ...schedule, end_time: e.target.value })}
+              className="border-blue-300 focus:border-blue-600"
+            />
+          </div>
+        </div>
+
+        <Button
+          onClick={handleSaveSchedule}
+          disabled={loading}
+          className="w-full bg-blue-600 hover:bg-blue-700"
+        >
+          {loading ? 'Saving...' : 'Save Schedule'}
+        </Button>
+
+        <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 text-sm text-blue-900">
+          <p className="font-semibold mb-1">Current Schedule:</p>
+          <p>{schedule.working_days.join(', ')}</p>
+          <p>{schedule.start_time} - {schedule.end_time}</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 const Settings = () => {
   const { user } = useContext(AuthContext);
