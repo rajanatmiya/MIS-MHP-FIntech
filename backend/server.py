@@ -46,6 +46,7 @@ class User(BaseModel):
     role: str = "agent"  # admin, manager, agent
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
+    active: bool = True  # Admin can enable/disable users
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class UserCreate(BaseModel):
