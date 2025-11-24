@@ -175,6 +175,7 @@ class LoanApplicationCreate(BaseModel):
     sanction: Optional[str] = ""
     disbursed: Optional[str] = ""
     remark: Optional[str] = ""
+    decline_reason: Optional[str] = ""
     scheme: Optional[str] = ""
     case_from: Optional[str] = ""
     location: Optional[str] = ""
