@@ -168,6 +168,7 @@ function App() {
                     <Route path="/analytics" element={<AnalyticsEnhanced />} />
                     <Route path="/users" element={<UserManagement />} />
                     <Route path="/field-management" element={<FieldManagement />} />
+                    <Route path="/scheme-management" element={<SchemeManagement />} />
                     <Route path="/settings" element={<Settings />} />
                   </Routes>
                 </Layout>
