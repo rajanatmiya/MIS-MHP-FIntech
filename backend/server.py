@@ -119,6 +119,30 @@ class SchemeUpdate(BaseModel):
     description: Optional[str] = None
 
 
+class Status(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    description: Optional[str] = ""
+    color: Optional[str] = "#3B82F6"  # Default blue color
+    order: Optional[int] = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_by: str
+
+class StatusCreate(BaseModel):
+    name: str
+    description: Optional[str] = ""
+    color: Optional[str] = "#3B82F6"
+    order: Optional[int] = 0
+
+class StatusUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    order: Optional[int] = None
+
+
+
 class OrganizationSchedule(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str = "default"  # Only one schedule config
