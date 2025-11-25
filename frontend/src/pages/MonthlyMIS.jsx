@@ -1097,7 +1097,6 @@ const MonthlyMIS = () => {
                   />
                 </div>
               </div>
-            </div>
             
             <div className="flex gap-2 justify-end mt-4">
               <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
