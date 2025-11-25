@@ -65,6 +65,7 @@ const MonthlyMIS = () => {
   useEffect(() => {
     fetchLoans();
     fetchSchemes();
+    fetchStatuses();
   }, []);
   
   const fetchSchemes = async () => {
@@ -73,6 +74,15 @@ const MonthlyMIS = () => {
       setSchemes(response.data);
     } catch (error) {
       console.error('Failed to fetch schemes');
+    }
+  };
+  
+  const fetchStatuses = async () => {
+    try {
+      const response = await axios.get(`${API}/statuses`);
+      setStatuses(response.data);
+    } catch (error) {
+      console.error('Failed to fetch statuses');
     }
   };
 
