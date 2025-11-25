@@ -958,12 +958,27 @@ const MonthlyMIS = () => {
                 </div>
                 <div>
                   <Label>Status *</Label>
-                  <Input
+                  <Select
                     required
                     value={newLoanData.status || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, status: e.target.value})}
-                    placeholder="e.g., Pending, Approved, Disbursed"
-                  />
+                    onValueChange={(value) => setNewLoanData({...newLoanData, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Login">Login</SelectItem>
+                      <SelectItem value="Query">Query</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Post PD Docs">Post PD Docs</SelectItem>
+                      <SelectItem value="Sanctioned">Sanctioned</SelectItem>
+                      <SelectItem value="Disbursed">Disbursed</SelectItem>
+                      <SelectItem value="Decline">Decline</SelectItem>
+                      <SelectItem value="Hold">Hold</SelectItem>
+                      <SelectItem value="Rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label>Bank *</Label>
