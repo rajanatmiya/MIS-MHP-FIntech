@@ -1522,6 +1522,38 @@ async def create_default_admin():
         scheme_count = await db.schemes.count_documents({})
         logger.info(f"✅ Total schemes in database: {scheme_count}")
         
+        # Initialize default statuses
+        default_statuses = [
+            {"name": "Pending", "description": "Application pending", "color": "#FFA500", "order": 1},
+            {"name": "Login", "description": "Login stage", "color": "#00BFFF", "order": 2},
+            {"name": "Query", "description": "Query raised", "color": "#FFD700", "order": 3},
+            {"name": "Approved", "description": "Application approved", "color": "#32CD32", "order": 4},
+            {"name": "Post PD Docs", "description": "Post PD documents stage", "color": "#9370DB", "order": 5},
+            {"name": "Sanctioned", "description": "Loan sanctioned", "color": "#00CED1", "order": 6},
+            {"name": "Disbursed", "description": "Loan disbursed", "color": "#228B22", "order": 7},
+            {"name": "Decline", "description": "Application declined", "color": "#DC143C", "order": 8},
+            {"name": "Hold", "description": "Application on hold", "color": "#FF8C00", "order": 9},
+            {"name": "Rejected", "description": "Application rejected", "color": "#B22222", "order": 10}
+        ]
+        
+        for status_data in default_statuses:
+            existing_status = await db.statuses.find_one({"name": status_data["name"]})
+            if not existing_status:
+                status = {
+                    "id": str(uuid.uuid4()),
+                    "name": status_data["name"],
+                    "description": status_data["description"],
+                    "color": status_data["color"],
+                    "order": status_data["order"],
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": admin_id
+                }
+                await db.statuses.insert_one(status)
+                logger.info(f"✅ Created status: {status_data['name']}")
+        
+        status_count = await db.statuses.count_documents({})
+        logger.info(f"✅ Total statuses in database: {status_count}")
+        
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")
 
