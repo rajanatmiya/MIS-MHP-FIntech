@@ -28,10 +28,30 @@ const MonthlyMIS = () => {
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState({
-    status: '',
+    customer_name: '',
+    company_name: '',
+    contact_no: '',
     bank: '',
-    month: '',
-    agent_name: ''
+    status: '',
+    sanction: '',
+    disbursed: '',
+    remark: '',
+    decline_reason: '',
+    scheme: '',
+    case_from: '',
+    location: '',
+    branch: '',
+    executive_name: '',
+    team_manager: '',
+    code: '',
+    rate: '',
+    pf: '',
+    insurance: '',
+    tenure: '',
+    subvention: '',
+    brokerage_subvention: '',
+    agent_name: '',
+    month: ''
   });
   
   // AI states
