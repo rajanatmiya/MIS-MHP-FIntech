@@ -633,6 +633,67 @@ async def delete_scheme(scheme_id: str, current_user: User = Depends(get_current
     
     return {"message": "Scheme deleted successfully"}
 
+
+# Status Management routes (Admin only)
+@api_router.get("/statuses", response_model=List[Status])
+async def get_statuses(current_user: User = Depends(get_current_user)):
+    """Get all statuses"""
+    statuses = await db.statuses.find({}, {"_id": 0}).sort("order", 1).to_list(1000)
+    
+    for status in statuses:
+        if isinstance(status.get('created_at'), str):
+            status['created_at'] = datetime.fromisoformat(status['created_at'])
+    
+    return statuses
+
+@api_router.post("/statuses", response_model=Status)
+async def create_status(status_data: StatusCreate, current_user: User = Depends(get_current_user)):
+    """Create a new status (Admin only)"""
+    check_admin(current_user)
+    
+    # Check if status name already exists
+    existing = await db.statuses.find_one({"name": status_data.name})
+    if existing:
+        raise HTTPException(status_code=400, detail="Status name already exists")
+    
+    status = Status(**status_data.model_dump(), created_by=current_user.id)
+    
+    status_dict = status.model_dump()
+    status_dict['created_at'] = status_dict['created_at'].isoformat()
+    
+    await db.statuses.insert_one(status_dict)
+    return status
+
+@api_router.put("/statuses/{status_id}", response_model=Status)
+async def update_status(status_id: str, status_data: StatusUpdate, current_user: User = Depends(get_current_user)):
+    """Update a status (Admin only)"""
+    check_admin(current_user)
+    
+    update_dict = {k: v for k, v in status_data.model_dump().items() if v is not None}
+    
+    if update_dict:
+        await db.statuses.update_one({"id": status_id}, {"$set": update_dict})
+    
+    updated_status = await db.statuses.find_one({"id": status_id}, {"_id": 0})
+    if not updated_status:
+        raise HTTPException(status_code=404, detail="Status not found")
+    
+    if isinstance(updated_status.get('created_at'), str):
+        updated_status['created_at'] = datetime.fromisoformat(updated_status['created_at'])
+    
+    return Status(**updated_status)
+
+@api_router.delete("/statuses/{status_id}")
+async def delete_status(status_id: str, current_user: User = Depends(get_current_user)):
+    """Delete a status (Admin only)"""
+    check_admin(current_user)
+    
+    result = await db.statuses.delete_one({"id": status_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Status not found")
+    
+    return {"message": "Status deleted successfully"}
+
 # Loan routes with role-based access
 @api_router.get("/loans", response_model=List[LoanApplication])
 async def get_loans(
