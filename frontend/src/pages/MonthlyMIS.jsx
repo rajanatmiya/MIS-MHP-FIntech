@@ -997,16 +997,9 @@ const MonthlyMIS = () => {
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Login">Login</SelectItem>
-                      <SelectItem value="Query">Query</SelectItem>
-                      <SelectItem value="Approved">Approved</SelectItem>
-                      <SelectItem value="Post PD Docs">Post PD Docs</SelectItem>
-                      <SelectItem value="Sanctioned">Sanctioned</SelectItem>
-                      <SelectItem value="Disbursed">Disbursed</SelectItem>
-                      <SelectItem value="Decline">Decline</SelectItem>
-                      <SelectItem value="Hold">Hold</SelectItem>
-                      <SelectItem value="Rejected">Rejected</SelectItem>
+                      {statuses.map(status => (
+                        <SelectItem key={status.id} value={status.name}>{status.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
