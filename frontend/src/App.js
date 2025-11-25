@@ -170,6 +170,7 @@ function App() {
                     <Route path="/users" element={<UserManagement />} />
                     <Route path="/field-management" element={<FieldManagement />} />
                     <Route path="/scheme-management" element={<SchemeManagement />} />
+                    <Route path="/status-management" element={<StatusManagement />} />
                     <Route path="/settings" element={<Settings />} />
                   </Routes>
                 </Layout>
