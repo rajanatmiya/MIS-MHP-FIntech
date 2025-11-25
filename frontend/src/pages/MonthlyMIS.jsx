@@ -374,16 +374,9 @@ const MonthlyMIS = () => {
             autoFocus
           >
             <option value="">Select status</option>
-            <option value="Pending">Pending</option>
-            <option value="Login">Login</option>
-            <option value="Query">Query</option>
-            <option value="Approved">Approved</option>
-            <option value="Post PD Docs">Post PD Docs</option>
-            <option value="Sanctioned">Sanctioned</option>
-            <option value="Disbursed">Disbursed</option>
-            <option value="Decline">Decline</option>
-            <option value="Hold">Hold</option>
-            <option value="Rejected">Rejected</option>
+            {statuses.map(status => (
+              <option key={status.id} value={status.name}>{status.name}</option>
+            ))}
           </select>
         );
       }
