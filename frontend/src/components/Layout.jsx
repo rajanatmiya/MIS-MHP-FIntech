@@ -16,15 +16,13 @@ const Layout = ({ children }) => {
     { name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' }
   ];
 
+  // Add Scheme Management for everyone
+  navigation.push({ name: 'Schemes', href: '/scheme-management', icon: FileText, testId: 'nav-scheme-management' });
+  
   // Add User Management and Field Management for admins
   if (user?.role === 'admin') {
     navigation.push({ name: 'Users', href: '/users', icon: Shield, testId: 'nav-users' });
     navigation.push({ name: 'Field Config', href: '/field-management', icon: Sliders, testId: 'nav-field-management' });
-  }
-  
-  // Add Scheme Management for admins and managers
-  if (user?.role === 'admin' || user?.role === 'manager') {
-    navigation.push({ name: 'Schemes', href: '/scheme-management', icon: FileText, testId: 'nav-scheme-management' });
   }
   
   // Add Settings for everyone
