@@ -14,6 +14,7 @@ const MonthlyMIS = () => {
   const { user } = useContext(AuthContext);
   const [loans, setLoans] = useState([]);
   const [schemes, setSchemes] = useState([]);
+  const [statuses, setStatuses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedMonths, setExpandedMonths] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
