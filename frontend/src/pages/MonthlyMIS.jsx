@@ -496,20 +496,28 @@ const MonthlyMIS = () => {
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Label>Status</Label>
-                <Select value={filters.status} onValueChange={(val) => setFilters({...filters, status: val})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value=" ">All Status</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                    <SelectItem value="Approved">Approved</SelectItem>
-                    <SelectItem value="Disbursed">Disbursed</SelectItem>
-                    <SelectItem value="Declined">Declined</SelectItem>
-                    <SelectItem value="Hold">Hold</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Customer Name</Label>
+                <Input
+                  placeholder="Filter by customer"
+                  value={filters.customer_name}
+                  onChange={(e) => setFilters({...filters, customer_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Company Name</Label>
+                <Input
+                  placeholder="Filter by company"
+                  value={filters.company_name}
+                  onChange={(e) => setFilters({...filters, company_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Contact Number</Label>
+                <Input
+                  placeholder="Filter by contact"
+                  value={filters.contact_no}
+                  onChange={(e) => setFilters({...filters, contact_no: e.target.value})}
+                />
               </div>
               <div>
                 <Label>Bank</Label>
@@ -520,6 +528,158 @@ const MonthlyMIS = () => {
                 />
               </div>
               <div>
+                <Label>Status</Label>
+                <Input
+                  placeholder="e.g., Pending, Approved"
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Sanctioned Amount</Label>
+                <Input
+                  placeholder="Filter by sanction"
+                  value={filters.sanction}
+                  onChange={(e) => setFilters({...filters, sanction: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Disbursed Amount</Label>
+                <Input
+                  placeholder="Filter by disbursed"
+                  value={filters.disbursed}
+                  onChange={(e) => setFilters({...filters, disbursed: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Remark</Label>
+                <Input
+                  placeholder="Filter by remark"
+                  value={filters.remark}
+                  onChange={(e) => setFilters({...filters, remark: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Decline Reason</Label>
+                <Input
+                  placeholder="Filter by decline reason"
+                  value={filters.decline_reason}
+                  onChange={(e) => setFilters({...filters, decline_reason: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Scheme</Label>
+                <Input
+                  placeholder="Filter by scheme"
+                  value={filters.scheme}
+                  onChange={(e) => setFilters({...filters, scheme: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Case From</Label>
+                <Input
+                  placeholder="Filter by case from"
+                  value={filters.case_from}
+                  onChange={(e) => setFilters({...filters, case_from: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Location</Label>
+                <Input
+                  placeholder="Filter by location"
+                  value={filters.location}
+                  onChange={(e) => setFilters({...filters, location: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Branch</Label>
+                <Input
+                  placeholder="Filter by branch"
+                  value={filters.branch}
+                  onChange={(e) => setFilters({...filters, branch: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Executive Name</Label>
+                <Input
+                  placeholder="Filter by executive"
+                  value={filters.executive_name}
+                  onChange={(e) => setFilters({...filters, executive_name: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Team Manager</Label>
+                <Input
+                  placeholder="Filter by manager"
+                  value={filters.team_manager}
+                  onChange={(e) => setFilters({...filters, team_manager: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Code</Label>
+                <Input
+                  placeholder="Filter by code"
+                  value={filters.code}
+                  onChange={(e) => setFilters({...filters, code: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Rate</Label>
+                <Input
+                  placeholder="Filter by rate"
+                  value={filters.rate}
+                  onChange={(e) => setFilters({...filters, rate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>PF</Label>
+                <Input
+                  placeholder="Filter by PF"
+                  value={filters.pf}
+                  onChange={(e) => setFilters({...filters, pf: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Insurance</Label>
+                <Input
+                  placeholder="Filter by insurance"
+                  value={filters.insurance}
+                  onChange={(e) => setFilters({...filters, insurance: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Tenure</Label>
+                <Input
+                  placeholder="Filter by tenure"
+                  value={filters.tenure}
+                  onChange={(e) => setFilters({...filters, tenure: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Subvention</Label>
+                <Input
+                  placeholder="Filter by subvention"
+                  value={filters.subvention}
+                  onChange={(e) => setFilters({...filters, subvention: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Brokerage Subvention</Label>
+                <Input
+                  placeholder="Filter by brokerage"
+                  value={filters.brokerage_subvention}
+                  onChange={(e) => setFilters({...filters, brokerage_subvention: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Agent Name</Label>
+                <Input
+                  placeholder="Filter by agent"
+                  value={filters.agent_name}
+                  onChange={(e) => setFilters({...filters, agent_name: e.target.value})}
+                />
+              </div>
+              <div>
                 <Label>Month</Label>
                 <Input
                   placeholder="e.g., Jan'25"
@@ -527,14 +687,20 @@ const MonthlyMIS = () => {
                   onChange={(e) => setFilters({...filters, month: e.target.value})}
                 />
               </div>
-              <div>
-                <Label>Executive Name</Label>
-                <Input
-                  placeholder="Agent name"
-                  value={filters.agent_name}
-                  onChange={(e) => setFilters({...filters, agent_name: e.target.value})}
-                />
-              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setFilters({
+                  customer_name: '', company_name: '', contact_no: '', bank: '', status: '',
+                  sanction: '', disbursed: '', remark: '', decline_reason: '', scheme: '',
+                  case_from: '', location: '', branch: '', executive_name: '', team_manager: '',
+                  code: '', rate: '', pf: '', insurance: '', tenure: '', subvention: '',
+                  brokerage_subvention: '', agent_name: '', month: ''
+                })}
+              >
+                Clear All Filters
+              </Button>
             </div>
           </CardContent>
         </Card>
