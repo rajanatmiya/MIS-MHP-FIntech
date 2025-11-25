@@ -10,6 +10,7 @@ import MonthlyMIS from '@/pages/MonthlyMIS';
 import UserManagement from '@/pages/UserManagement';
 import FieldManagement from '@/pages/FieldManagement';
 import SchemeManagement from '@/pages/SchemeManagement';
+import StatusManagement from '@/pages/StatusManagement';
 import Settings from '@/pages/Settings';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
