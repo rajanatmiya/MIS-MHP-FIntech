@@ -22,6 +22,7 @@ const Layout = ({ children }) => {
   // Add User Management and Field Management for admins
   if (user?.role === 'admin') {
     navigation.push({ name: 'Users', href: '/users', icon: Shield, testId: 'nav-users' });
+    navigation.push({ name: 'Statuses', href: '/status-management', icon: Flag, testId: 'nav-status-management' });
     navigation.push({ name: 'Field Config', href: '/field-management', icon: Sliders, testId: 'nav-field-management' });
   }
   
