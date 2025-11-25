@@ -77,14 +77,6 @@ const SchemeManagement = () => {
     setShowDialog(true);
   };
 
-  if (user?.role !== 'admin' && user?.role !== 'manager') {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <p className="text-slate-600">You don't have permission to access this page.</p>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -93,20 +85,26 @@ const SchemeManagement = () => {
     );
   }
 
+  const canEdit = user?.role === 'admin' || user?.role === 'manager';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">Scheme Management</h1>
-          <p className="text-slate-600 mt-1">Manage loan schemes available in the system</p>
+          <p className="text-slate-600 mt-1">
+            {canEdit ? 'Manage loan schemes available in the system' : 'View available loan schemes'}
+          </p>
         </div>
-        <Button
-          onClick={handleAddNew}
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add Scheme
-        </Button>
+        {canEdit && (
+          <Button
+            onClick={handleAddNew}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add Scheme
+          </Button>
+        )}
       </div>
 
       <Card>
