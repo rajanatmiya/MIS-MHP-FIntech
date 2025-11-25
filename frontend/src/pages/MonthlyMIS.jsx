@@ -289,17 +289,21 @@ const MonthlyMIS = () => {
       loan.contact_no?.toLowerCase().includes(searchLower) ||
       loan.location?.toLowerCase().includes(searchLower) ||
       loan.agent_name?.toLowerCase().includes(searchLower) ||
+      loan.executive_name?.toLowerCase().includes(searchLower) ||
+      loan.team_manager?.toLowerCase().includes(searchLower) ||
       loan.status?.toLowerCase().includes(searchLower) ||
       loan.bank?.toLowerCase().includes(searchLower) ||
-      loan.product_type?.toLowerCase().includes(searchLower)
+      loan.scheme?.toLowerCase().includes(searchLower) ||
+      loan.decline_reason?.toLowerCase().includes(searchLower) ||
+      loan.remark?.toLowerCase().includes(searchLower)
     );
     
-    const matchesFilters = (
-      (!filters.status || loan.status === filters.status) &&
-      (!filters.bank || loan.bank === filters.bank) &&
-      (!filters.month || loan.month === filters.month) &&
-      (!filters.agent_name || loan.agent_name === filters.agent_name)
-    );
+    const matchesFilters = Object.keys(filters).every(key => {
+      if (!filters[key]) return true;
+      const loanValue = loan[key]?.toString().toLowerCase() || '';
+      const filterValue = filters[key].toLowerCase();
+      return loanValue.includes(filterValue);
+    });
     
     return matchesSearch && matchesFilters;
   });
