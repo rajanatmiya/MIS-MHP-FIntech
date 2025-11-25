@@ -123,22 +123,24 @@ const SchemeManagement = () => {
                     <FileText className="w-5 h-5 text-blue-600" />
                     <h3 className="font-semibold text-slate-800">{scheme.name}</h3>
                   </div>
-                  <div className="flex gap-1">
-                    <button
-                      onClick={() => handleEdit(scheme)}
-                      className="p-1.5 hover:bg-slate-100 rounded"
-                      title="Edit scheme"
-                    >
-                      <Edit2 className="w-4 h-4 text-slate-600" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(scheme.id)}
-                      className="p-1.5 hover:bg-red-50 rounded"
-                      title="Delete scheme"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
+                  {canEdit && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEdit(scheme)}
+                        className="p-1.5 hover:bg-slate-100 rounded"
+                        title="Edit scheme"
+                      >
+                        <Edit2 className="w-4 h-4 text-slate-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(scheme.id)}
+                        className="p-1.5 hover:bg-red-50 rounded"
+                        title="Delete scheme"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {scheme.description && (
                   <p className="text-sm text-slate-600">{scheme.description}</p>
