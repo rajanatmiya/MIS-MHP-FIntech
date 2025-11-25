@@ -351,6 +351,32 @@ const MonthlyMIS = () => {
         );
       }
       
+      // Special handling for status field - show dropdown
+      if (field === 'status') {
+        return (
+          <select
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => handleCellSave(loan.id, field)}
+            onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
+            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+          >
+            <option value="">Select status</option>
+            <option value="Pending">Pending</option>
+            <option value="Login">Login</option>
+            <option value="Query">Query</option>
+            <option value="Approved">Approved</option>
+            <option value="Post PD Docs">Post PD Docs</option>
+            <option value="Sanctioned">Sanctioned</option>
+            <option value="Disbursed">Disbursed</option>
+            <option value="Decline">Decline</option>
+            <option value="Hold">Hold</option>
+            <option value="Rejected">Rejected</option>
+          </select>
+        );
+      }
+      
       return (
         <input
           type="text"
