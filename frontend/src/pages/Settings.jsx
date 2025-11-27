@@ -483,6 +483,51 @@ const Settings = () => {
             </CardContent>
           </Card>
 
+
+          {/* Normalize Months - Admin Only */}
+          <Card className="border-blue-200 bg-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-blue-800">
+                <Calendar className="w-5 h-5" />
+                Normalize Month Formats
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-sm text-slate-700">
+                  <p className="mb-2">Standardize all month formats to a consistent format (Mon-YY):</p>
+                  <ul className="list-disc ml-5 space-y-1">
+                    <li>"November" → "Nov-25"</li>
+                    <li>"NOV-2025" → "Nov-25"</li>
+                    <li>"Nov 25" → "Nov-25"</li>
+                  </ul>
+                  <p className="mt-2 font-semibold">This will merge duplicate month groups in MIS board.</p>
+                </div>
+                
+                <Button
+                  onClick={async () => {
+                    if (!window.confirm('Normalize all month formats? This will update all loan entries.')) return;
+                    try {
+                      const response = await axios.post(`${API}/loans/normalize-months`);
+                      toast.success(`Normalized ${response.data.updated_count} entries!`);
+                    } catch (error) {
+                      toast.error('Failed to normalize months');
+                    }
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Normalize Month Formats
+                </Button>
+
+                <p className="text-xs text-slate-500">
+                  💡 This will standardize all existing month values to "Mon-YY" format (e.g., Nov-25, Dec-25).
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+
           {/* Delete by Date - Admin Only */}
           <Card className="border-red-200 bg-red-50">
             <CardHeader>
