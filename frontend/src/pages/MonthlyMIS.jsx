@@ -1015,10 +1015,22 @@ const MonthlyMIS = () => {
                   <Label>Month *</Label>
                   <Input
                     required
+                    type="month"
                     value={newLoanData.month || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, month: e.target.value})}
-                    placeholder="e.g., Jan'25, Feb'25"
+                    onChange={(e) => {
+                      // Convert YYYY-MM to "Mon-YY" format
+                      if (e.target.value) {
+                        const [year, month] = e.target.value.split('-');
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        const formattedMonth = `${monthNames[parseInt(month) - 1]}-${year.slice(2)}`;
+                        setNewLoanData({...newLoanData, month: formattedMonth});
+                      }
+                    }}
+                    className="cursor-pointer"
                   />
+                  {newLoanData.month && (
+                    <p className="text-xs text-slate-500 mt-1">Selected: {newLoanData.month}</p>
+                  )}
                 </div>
                 <div>
                   <Label>Sanction Amount</Label>
