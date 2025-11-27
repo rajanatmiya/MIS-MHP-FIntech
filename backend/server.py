@@ -865,6 +865,82 @@ async def delete_all_loans(confirm: str, current_user: User = Depends(get_curren
         logger.error(f"Delete all error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete all entries: {str(e)}")
 
+
+@api_router.post("/loans/normalize-months")
+async def normalize_months(current_user: User = Depends(get_current_user)):
+    """Normalize all month formats to 'Mon-YY' format - Admin only"""
+    check_admin(current_user)
+    
+    try:
+        import re
+        
+        # Mapping of month names
+        month_map = {
+            'january': 'Jan', 'february': 'Feb', 'march': 'Mar', 'april': 'Apr',
+            'may': 'May', 'june': 'Jun', 'july': 'Jul', 'august': 'Aug',
+            'september': 'Sep', 'october': 'Oct', 'november': 'Nov', 'december': 'Dec'
+        }
+        
+        all_loans = await db.loan_applications.find({}).to_list(10000)
+        updated_count = 0
+        
+        for loan in all_loans:
+            original_month = loan.get('month', '').strip()
+            if not original_month:
+                continue
+                
+            normalized_month = None
+            original_lower = original_month.lower()
+            
+            # Try different formats
+            # Format: "November", "NOVEMBER"
+            if original_lower in month_map:
+                normalized_month = f"{month_map[original_lower]}-25"  # Default to 25 if no year
+            
+            # Format: "Nov 25", "NOV 25"
+            match = re.match(r'(\w{3})\s+(\d{2})', original_month, re.IGNORECASE)
+            if match:
+                month_abbr = match.group(1).capitalize()
+                year = match.group(2)
+                normalized_month = f"{month_abbr}-{year}"
+            
+            # Format: "Nov-25", "NOV-25", "nov-2025", "NOV-2025"
+            match = re.match(r'(\w{3})-(\d{2,4})', original_month, re.IGNORECASE)
+            if match:
+                month_abbr = match.group(1).capitalize()
+                year = match.group(2)
+                if len(year) == 4:
+                    year = year[2:]  # Convert 2025 to 25
+                normalized_month = f"{month_abbr}-{year}"
+            
+            # Format: "November 2025", "NOVEMBER 2025"
+            match = re.match(r'(\w+)\s+(\d{4})', original_month, re.IGNORECASE)
+            if match:
+                month_name = match.group(1).lower()
+                year = match.group(2)[2:]  # Get last 2 digits
+                if month_name in month_map:
+                    normalized_month = f"{month_map[month_name]}-{year}"
+            
+            # Update if normalized
+            if normalized_month and normalized_month != original_month:
+                await db.loan_applications.update_one(
+                    {"id": loan['id']},
+                    {"$set": {"month": normalized_month}}
+                )
+                updated_count += 1
+                logger.info(f"Normalized: '{original_month}' -> '{normalized_month}'")
+        
+        return {
+            "message": f"Successfully normalized {updated_count} month values",
+            "updated_count": updated_count,
+            "total_checked": len(all_loans)
+        }
+        
+    except Exception as e:
+        logger.error(f"Month normalization error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to normalize months: {str(e)}")
+
+
 # Analytics routes
 @api_router.get("/analytics/overview")
 async def get_overview(current_user: User = Depends(get_current_user)):
