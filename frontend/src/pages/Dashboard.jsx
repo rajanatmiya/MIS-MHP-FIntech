@@ -32,6 +32,14 @@ const Dashboard = () => {
     );
   }
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount || 0);
+  };
+
   const stats = [
     {
       title: 'Total Applications',
@@ -42,7 +50,23 @@ const Dashboard = () => {
       testId: 'total-applications-card'
     },
     {
-      title: 'Disbursed',
+      title: 'Total Sanctioned Amount',
+      value: formatCurrency(overview?.total_sanction_amount),
+      icon: TrendingUp,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      testId: 'sanction-amount-card'
+    },
+    {
+      title: 'Total Disbursed Amount',
+      value: formatCurrency(overview?.total_disbursed_amount),
+      icon: CheckCircle2,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      testId: 'disbursed-amount-card'
+    },
+    {
+      title: 'Disbursed Cases',
       value: overview?.disbursed || 0,
       icon: CheckCircle2,
       color: 'text-green-600',
