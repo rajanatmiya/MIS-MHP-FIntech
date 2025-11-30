@@ -956,10 +956,28 @@ async def get_overview(current_user: User = Depends(get_current_user)):
     disbursed_count = 0
     declined_count = 0
     pending_count = 0
+    total_sanction_amount = 0
+    total_disbursed_amount = 0
     
     for loan in loans:
         status = loan.get('status', '')
         status_counts[status] += 1
+        
+        # Calculate amounts
+        sanction_str = loan.get('sanction', '0')
+        disbursed_str = loan.get('disbursed', '0')
+        
+        try:
+            sanction_amt = float(str(sanction_str).replace(',', '')) if sanction_str else 0
+            total_sanction_amount += sanction_amt
+        except:
+            pass
+        
+        try:
+            disbursed_amt = float(str(disbursed_str).replace(',', '')) if disbursed_str else 0
+            total_disbursed_amount += disbursed_amt
+        except:
+            pass
         
         if status == 'Disbursed':
             disbursed_count += 1
@@ -973,6 +991,8 @@ async def get_overview(current_user: User = Depends(get_current_user)):
         "disbursed": disbursed_count,
         "declined": declined_count,
         "pending": pending_count,
+        "total_sanction_amount": total_sanction_amount,
+        "total_disbursed_amount": total_disbursed_amount,
         "status_breakdown": dict(status_counts)
     }
 
