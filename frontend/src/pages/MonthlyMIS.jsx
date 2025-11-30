@@ -799,7 +799,7 @@ const MonthlyMIS = () => {
                         {monthLoans.map(loan => (
                           <tr key={loan.id} className="hover:bg-slate-50">
                             <td className="px-4 py-2 text-sm text-slate-700 whitespace-nowrap">
-                              {loan.month}
+                              {renderCell(loan, 'month', 'Month')}
                             </td>
                             <td className="px-4 py-2 text-sm text-slate-800">
                               {renderCell(loan, 'customer_name', 'Customer Name')}
