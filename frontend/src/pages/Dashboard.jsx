@@ -210,6 +210,88 @@ const Dashboard = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Bank-wise Filter and Breakdown */}
+      <Card className="card-hover">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>Bank-wise Analysis</CardTitle>
+            <select
+              value={selectedBank}
+              onChange={(e) => setSelectedBank(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Banks</option>
+              {banks.map(bank => (
+                <option key={bank} value={bank}>{bank}</option>
+              ))}
+            </select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {(() => {
+            const filteredLoans = selectedBank 
+              ? loans.filter(loan => loan.bank === selectedBank)
+              : loans;
+            
+            const bankStats = {
+              total: filteredLoans.length,
+              sanctioned: filteredLoans.reduce((sum, loan) => {
+                const amt = parseFloat(String(loan.sanction || '0').replace(/,/g, ''));
+                return sum + (isNaN(amt) ? 0 : amt);
+              }, 0),
+              disbursed: filteredLoans.reduce((sum, loan) => {
+                const amt = parseFloat(String(loan.disbursed || '0').replace(/,/g, ''));
+                return sum + (isNaN(amt) ? 0 : amt);
+              }, 0),
+              statusBreakdown: filteredLoans.reduce((acc, loan) => {
+                const status = loan.status || 'Unknown';
+                acc[status] = (acc[status] || 0) + 1;
+                return acc;
+              }, {})
+            };
+
+            return (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <p className="text-sm font-medium text-blue-900 mb-1">Total Applications</p>
+                    <p className="text-2xl font-bold text-blue-800">{bankStats.total}</p>
+                  </div>
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <p className="text-sm font-medium text-purple-900 mb-1">Total Sanctioned</p>
+                    <p className="text-2xl font-bold text-purple-800">{formatCurrency(bankStats.sanctioned)}</p>
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <p className="text-sm font-medium text-green-900 mb-1">Total Disbursed</p>
+                    <p className="text-2xl font-bold text-green-800">{formatCurrency(bankStats.disbursed)}</p>
+                  </div>
+                </div>
+
+                {Object.keys(bankStats.statusBreakdown).length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Status Distribution</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {Object.entries(bankStats.statusBreakdown).map(([status, count]) => (
+                        <div key={status} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-xs font-medium text-slate-600 mb-1">{status}</p>
+                          <p className="text-xl font-bold text-slate-800">{count}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {selectedBank && (
+                  <p className="text-sm text-slate-500 italic">
+                    Showing data for: <span className="font-semibold text-slate-700">{selectedBank}</span>
+                  </p>
+                )}
+              </div>
+            );
+          })()}
+        </CardContent>
+      </Card>
     </div>
   );
 };
