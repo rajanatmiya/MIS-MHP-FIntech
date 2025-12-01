@@ -706,9 +706,10 @@ async def get_loans(
 ):
     query = {}
     
-    accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
+    # Allow all users to see all loans (removed role-based filtering)
+    # accessible_ids = await get_accessible_user_ids(current_user)
+    # if accessible_ids is not None:
+    #     query["created_by"] = {"$in": accessible_ids}
     
     if status:
         query["status"] = status
