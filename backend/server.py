@@ -946,9 +946,10 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
 @api_router.get("/analytics/overview")
 async def get_overview(current_user: User = Depends(get_current_user)):
     query = {}
-    accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
+    # Allow all users to see all data in dashboard
+    # accessible_ids = await get_accessible_user_ids(current_user)
+    # if accessible_ids is not None:
+    #     query["created_by"] = {"$in": accessible_ids}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
