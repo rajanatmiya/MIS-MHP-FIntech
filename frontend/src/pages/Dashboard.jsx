@@ -7,10 +7,14 @@ import { toast } from 'sonner';
 
 const Dashboard = () => {
   const [overview, setOverview] = useState(null);
+  const [loans, setLoans] = useState([]);
+  const [banks, setBanks] = useState([]);
+  const [selectedBank, setSelectedBank] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchOverview();
+    fetchLoans();
   }, []);
 
   const fetchOverview = async () => {
@@ -21,6 +25,19 @@ const Dashboard = () => {
       toast.error('Failed to fetch overview data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLoans = async () => {
+    try {
+      const response = await axios.get(`${API}/loans`);
+      setLoans(response.data);
+      
+      // Extract unique banks
+      const uniqueBanks = [...new Set(response.data.map(loan => loan.bank).filter(Boolean))];
+      setBanks(uniqueBanks.sort());
+    } catch (error) {
+      console.error('Failed to fetch loans');
     }
   };
 
