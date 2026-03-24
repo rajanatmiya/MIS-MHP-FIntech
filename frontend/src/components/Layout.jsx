@@ -51,7 +51,7 @@ const Layout = ({ children }) => {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 bg-[#1e40af] z-50 px-4 py-2.5 shadow-md">
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-[#2c587a] z-50 px-4 py-2.5 shadow-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img 
@@ -125,7 +125,7 @@ const Layout = ({ children }) => {
       )}
 
       {/* Desktop Sidebar - Blue Theme */}
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-56 bg-[#1e40af] z-50 shadow-xl" data-testid="sidebar">
+      <aside className="hidden lg:block fixed inset-y-0 left-0 w-56 bg-[#2c587a] z-50 shadow-xl" data-testid="sidebar">
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="px-4 py-4 border-b border-white/10">
