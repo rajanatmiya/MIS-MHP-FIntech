@@ -22,7 +22,13 @@ A comprehensive MIS (Management Information System) dashboard for a loan agency 
 - Unified Add Entry form
 - PWA: manifest, service worker, install prompt, offline page
 
-## PWA Implementation (Feb 2026)
+## UI Redesign (Feb 2026)
+- Blue sidebar (#1e40af) matching logo color, white text, active state with `bg-white/20`
+- Reduced global font size to 13px base
+- Smaller stat cards, compact headings, tighter spacing
+- Mobile header changed to blue with white text
+- Login page compacted with smaller form fields
+- Footer cleaned up with smaller text
 - Updated `manifest.json` with 4 proper PNG icons (192x192 & 512x512, any + maskable)
 - Rewrote `service-worker.js` with smart caching strategies (network-first for API, stale-while-revalidate for assets)
 - Added `offline.html` fallback page
