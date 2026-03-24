@@ -4,10 +4,28 @@
   "description": "Management Information System for Direct Selling Agents - Your Growth is our Vision",
   "icons": [
     {
-      "src": "https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg",
-      "type": "image/jpeg",
+      "src": "https://static.prod-images.emergentagent.com/jobs/46930f94-9cc5-47e6-be61-9f03c7ab1a15/images/eaa944141c6fa3be0dd5ef80adff0e2a50e0c763e4f7a5a14509fc07b90fac99.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "https://static.prod-images.emergentagent.com/jobs/46930f94-9cc5-47e6-be61-9f03c7ab1a15/images/eaa944141c6fa3be0dd5ef80adff0e2a50e0c763e4f7a5a14509fc07b90fac99.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://static.prod-images.emergentagent.com/jobs/46930f94-9cc5-47e6-be61-9f03c7ab1a15/images/0cb6de02d4b2726a18c125d92488f2d57cf7bbffa324bb069e1c943dcfd79713.png",
+      "type": "image/png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "https://static.prod-images.emergentagent.com/jobs/46930f94-9cc5-47e6-be61-9f03c7ab1a15/images/0cb6de02d4b2726a18c125d92488f2d57cf7bbffa324bb069e1c943dcfd79713.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     }
   ],
   "start_url": "/",
@@ -16,12 +34,5 @@
   "background_color": "#f8fafc",
   "orientation": "portrait",
   "scope": "/",
-  "categories": ["business", "finance", "productivity"],
-  "screenshots": [
-    {
-      "src": "https://customer-assets.emergentagent.com/job_loan-agent-hub/artifacts/i7e9c2jc_IMG_9156.jpeg",
-      "type": "image/jpeg",
-      "sizes": "1280x720"
-    }
-  ]
+  "categories": ["business", "finance", "productivity"]
 }
