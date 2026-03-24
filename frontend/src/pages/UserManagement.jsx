@@ -161,8 +161,8 @@ const UserManagement = () => {
     return (
       <div className="text-center py-12">
         <Shield className="w-16 h-16 mx-auto text-slate-400 mb-4" />
-        <h2 className="text-2xl font-bold text-slate-800 mb-2">Admin Access Required</h2>
-        <p className="text-slate-600">You don't have permission to access this page.</p>
+        <h2 className="text-sm font-bold text-slate-800 mb-1">Admin Access Required</h2>
+        <p className="text-xs text-slate-500">You don't have permission to access this page.</p>
       </div>
     );
   }
@@ -182,10 +182,10 @@ const UserManagement = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h1 className="text-sm font-bold text-slate-800 mb-0.5">
             User Management
           </h1>
-          <p className="text-sm lg:text-base text-slate-600">Manage users, roles, and permissions</p>
+          <p className="text-[11px] text-slate-500">Manage users, roles, and permissions</p>
         </div>
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
@@ -194,7 +194,7 @@ const UserManagement = () => {
                 setEditingUser(null);
                 resetForm();
               }}
-              className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white"
+              className="w-full sm:w-auto bg-[#2c587a] hover:bg-[#234a68] text-white text-xs h-8"
               data-testid="add-user-button"
             >
               <Plus className="w-4 h-4 mr-2" />

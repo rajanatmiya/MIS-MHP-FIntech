@@ -86,10 +86,10 @@ const AnalyticsEnhanced = () => {
     <div className="space-y-6 fade-in" data-testid="analytics-enhanced-page">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h1 className="text-sm font-bold text-slate-800 mb-0.5">
             Month-wise MIS Analytics
           </h1>
-          <p className="text-sm lg:text-base text-slate-600">Comprehensive monthly performance insights</p>
+          <p className="text-[11px] text-slate-500">Comprehensive monthly performance insights</p>
         </div>
         
         <div className="flex flex-col sm:flex-row gap-3">

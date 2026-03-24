@@ -267,13 +267,13 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-6 fade-in" data-testid="settings-page">
+    <div className="space-y-4 fade-in" data-testid="settings-page">
       {/* Header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <h1 className="text-sm font-bold text-slate-800 mb-0.5">
           Account Settings
         </h1>
-        <p className="text-sm lg:text-base text-slate-600">Manage your account and security settings</p>
+        <p className="text-[11px] text-slate-500">Manage your account and security settings</p>
       </div>
 
       {/* Profile Information */}
@@ -289,11 +289,11 @@ const Settings = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-slate-600 text-sm">Full Name</Label>
-                <p className="text-lg font-semibold text-slate-800 mt-1">{user?.name}</p>
+                <p className="text-xs font-semibold text-slate-800 mt-0.5">{user?.name}</p>
               </div>
               <div>
-                <Label className="text-slate-600 text-sm">Email Address</Label>
-                <p className="text-lg font-semibold text-slate-800 mt-1">{user?.email}</p>
+                <Label className="text-slate-600 text-[11px]">Email Address</Label>
+                <p className="text-xs font-semibold text-slate-800 mt-0.5">{user?.email}</p>
               </div>
               <div>
                 <Label className="text-slate-600 text-sm">Role</Label>
@@ -304,7 +304,7 @@ const Settings = () => {
               {user?.team_code && (
                 <div>
                   <Label className="text-slate-600 text-sm">Team Code</Label>
-                  <p className="text-lg font-semibold text-slate-800 mt-1">{user.team_code}</p>
+                  <p className="text-xs font-semibold text-slate-800 mt-0.5">{user.team_code}</p>
                 </div>
               )}
             </div>

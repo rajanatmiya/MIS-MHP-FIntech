@@ -88,70 +88,71 @@ const SchemeManagement = () => {
   const canEdit = user?.role === 'admin' || user?.role === 'manager';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Scheme Management</h1>
-          <p className="text-slate-600 mt-1">
+          <h1 className="text-sm font-bold text-slate-800">Scheme Management</h1>
+          <p className="text-[11px] text-slate-500 mt-0.5">
             {canEdit ? 'Manage loan schemes available in the system' : 'View available loan schemes'}
           </p>
         </div>
         {canEdit && (
           <Button
             onClick={handleAddNew}
-            className="bg-blue-600 hover:bg-blue-700"
+            className="bg-[#2c587a] hover:bg-[#234a68] text-xs h-8"
+            size="sm"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-3.5 h-3.5 mr-1.5" />
             Add Scheme
           </Button>
         )}
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">All Schemes ({schemes.length})</CardTitle>
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-xs">All Schemes ({schemes.length})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="px-4 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {schemes.map(scheme => (
               <div
                 key={scheme.id}
-                className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border border-slate-200 rounded-lg p-3 hover:shadow-sm transition-shadow"
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-semibold text-slate-800">{scheme.name}</h3>
+                <div className="flex items-start justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-[#2c587a]" />
+                    <h3 className="font-semibold text-xs text-slate-800">{scheme.name}</h3>
                   </div>
                   {canEdit && (
-                    <div className="flex gap-1">
+                    <div className="flex gap-0.5">
                       <button
                         onClick={() => handleEdit(scheme)}
-                        className="p-1.5 hover:bg-slate-100 rounded"
+                        className="p-1 hover:bg-slate-100 rounded"
                         title="Edit scheme"
                       >
-                        <Edit2 className="w-4 h-4 text-slate-600" />
+                        <Edit2 className="w-3.5 h-3.5 text-slate-500" />
                       </button>
                       <button
                         onClick={() => handleDelete(scheme.id)}
-                        className="p-1.5 hover:bg-red-50 rounded"
+                        className="p-1 hover:bg-red-50 rounded"
                         title="Delete scheme"
                       >
-                        <Trash2 className="w-4 h-4 text-red-600" />
+                        <Trash2 className="w-3.5 h-3.5 text-red-500" />
                       </button>
                     </div>
                   )}
                 </div>
                 {scheme.description && (
-                  <p className="text-sm text-slate-600">{scheme.description}</p>
+                  <p className="text-[11px] text-slate-500">{scheme.description}</p>
                 )}
               </div>
             ))}
           </div>
 
           {schemes.length === 0 && (
-            <div className="text-center py-12">
-              <p className="text-slate-600">No schemes found. Click "Add Scheme" to create one.</p>
+            <div className="text-center py-8">
+              <p className="text-xs text-slate-500">No schemes found. Click "Add Scheme" to create one.</p>
             </div>
           )}
         </CardContent>
@@ -161,32 +162,36 @@ const SchemeManagement = () => {
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingScheme ? 'Edit Scheme' : 'Add New Scheme'}</DialogTitle>
+            <DialogTitle className="text-sm">{editingScheme ? 'Edit Scheme' : 'Add New Scheme'}</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <Label htmlFor="name">Scheme Name *</Label>
+              <Label htmlFor="name" className="text-xs">Scheme Name *</Label>
               <Input
                 id="name"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="e.g., GST, Car Loan"
+                className="h-8 text-xs"
               />
             </div>
             <div>
-              <Label htmlFor="description">Description</Label>
+              <Label htmlFor="description" className="text-xs">Description</Label>
               <Input
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Brief description of the scheme"
+                className="h-8 text-xs"
               />
             </div>
             <div className="flex gap-2 justify-end">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
+                className="text-xs h-8"
                 onClick={() => {
                   setShowDialog(false);
                   setEditingScheme(null);
@@ -195,7 +200,7 @@ const SchemeManagement = () => {
               >
                 Cancel
               </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Button type="submit" size="sm" className="bg-[#2c587a] hover:bg-[#234a68] text-xs h-8">
                 {editingScheme ? 'Update' : 'Create'}
               </Button>
             </div>

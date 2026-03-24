@@ -99,61 +99,62 @@ const StatusManagement = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800">Status Management</h1>
-          <p className="text-slate-600 mt-1">Manage loan application statuses</p>
+          <h1 className="text-sm font-bold text-slate-800">Status Management</h1>
+          <p className="text-[11px] text-slate-500 mt-0.5">Manage loan application statuses</p>
         </div>
         <Button
           onClick={handleAddNew}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-[#2c587a] hover:bg-[#234a68] text-xs h-8"
+          size="sm"
         >
-          <Plus className="w-4 h-4 mr-2" />
+          <Plus className="w-3.5 h-3.5 mr-1.5" />
           Add Status
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">All Statuses ({statuses.length})</CardTitle>
+        <CardHeader className="pb-2 pt-3 px-4">
+          <CardTitle className="text-xs">All Statuses ({statuses.length})</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <CardContent className="px-4 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {statuses.map(status => (
               <div
                 key={status.id}
-                className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                style={{ borderLeftWidth: '4px', borderLeftColor: status.color }}
+                className="border border-slate-200 rounded-lg p-3 hover:shadow-sm transition-shadow"
+                style={{ borderLeftWidth: '3px', borderLeftColor: status.color }}
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Flag className="w-5 h-5" style={{ color: status.color }} />
-                    <h3 className="font-semibold text-slate-800">{status.name}</h3>
+                <div className="flex items-start justify-between mb-1">
+                  <div className="flex items-center gap-1.5">
+                    <Flag className="w-3.5 h-3.5" style={{ color: status.color }} />
+                    <h3 className="font-semibold text-xs text-slate-800">{status.name}</h3>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-0.5">
                     <button
                       onClick={() => handleEdit(status)}
-                      className="p-1.5 hover:bg-slate-100 rounded"
+                      className="p-1 hover:bg-slate-100 rounded"
                       title="Edit status"
                     >
-                      <Edit2 className="w-4 h-4 text-slate-600" />
+                      <Edit2 className="w-3.5 h-3.5 text-slate-500" />
                     </button>
                     <button
                       onClick={() => handleDelete(status.id)}
-                      className="p-1.5 hover:bg-red-50 rounded"
+                      className="p-1 hover:bg-red-50 rounded"
                       title="Delete status"
                     >
-                      <Trash2 className="w-4 h-4 text-red-600" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
                     </button>
                   </div>
                 </div>
                 {status.description && (
-                  <p className="text-sm text-slate-600 mb-2">{status.description}</p>
+                  <p className="text-[11px] text-slate-500 mb-1">{status.description}</p>
                 )}
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                   <span>Order: {status.order}</span>
-                  <span className="w-6 h-6 rounded" style={{ backgroundColor: status.color }}></span>
+                  <span className="w-4 h-4 rounded" style={{ backgroundColor: status.color }}></span>
                 </div>
               </div>
             ))}

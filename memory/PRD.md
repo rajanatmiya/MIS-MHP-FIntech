@@ -23,12 +23,12 @@ A comprehensive MIS (Management Information System) dashboard for a loan agency 
 - PWA: manifest, service worker, install prompt, offline page
 
 ## UI Redesign (Feb 2026)
-- Blue sidebar (#1e40af) matching logo color, white text, active state with `bg-white/20`
-- Reduced global font size to 13px base
-- Smaller stat cards, compact headings, tighter spacing
-- Mobile header changed to blue with white text
-- Login page compacted with smaller form fields
-- Footer cleaned up with smaller text
+- Sidebar color changed to `#2c587a`, white text, active state `bg-white/20`
+- Global base font reduced to 12px matching sidebar `text-xs`
+- All page headings: `text-sm font-bold`, subtitles: `text-[11px]`
+- Cards, labels, buttons all scaled down proportionally
+- Mobile header matches sidebar color
+- Login page compacted, Settings page cleaned up
 - Updated `manifest.json` with 4 proper PNG icons (192x192 & 512x512, any + maskable)
 - Rewrote `service-worker.js` with smart caching strategies (network-first for API, stale-while-revalidate for assets)
 - Added `offline.html` fallback page

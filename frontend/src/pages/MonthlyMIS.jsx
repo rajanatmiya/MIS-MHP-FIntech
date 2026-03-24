@@ -410,10 +410,10 @@ const MonthlyMIS = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-1" style={{ fontFamily: 'Manrope, sans-serif' }}>
+          <h1 className="text-sm font-bold text-slate-800 mb-0.5">
             MIS Board
           </h1>
-          <p className="text-sm text-slate-600">Month-wise loan management • Click any cell to edit</p>
+          <p className="text-[11px] text-slate-500">Month-wise loan management • Click any cell to edit</p>
         </div>
         <div className="flex gap-2">
           {user?.role === 'admin' && (
