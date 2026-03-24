@@ -33,57 +33,57 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-cyan-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid md:grid-cols-2 gap-8 items-center">
+      <div className="w-full max-w-5xl grid md:grid-cols-2 gap-6 items-center">
         {/* Left side - Branding */}
-        <div className="hidden md:flex flex-col justify-center space-y-6 p-8">
-          <div className="space-y-4">
+        <div className="hidden md:flex flex-col justify-center space-y-5 p-6">
+          <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <img 
                 src={process.env.REACT_APP_LOGO_URL} 
                 alt="MHP Fintech Logo" 
-                className="h-24 w-auto object-contain"
+                className="h-20 w-auto object-contain"
               />
             </div>
-            <p className="text-lg text-slate-600 leading-relaxed">
+            <p className="text-sm text-slate-600 leading-relaxed">
               MIS Dashboard - Mhp fintech services Pvt ltd
             </p>
-            <p className="text-sm text-slate-500 italic">Your Growth is our Vision</p>
+            <p className="text-xs text-slate-500 italic">Your Growth is our Vision</p>
           </div>
           
-          <div className="space-y-4 pt-8">
+          <div className="space-y-3 pt-4">
             <div className="flex items-start space-x-3">
-              <div className="mt-1 bg-blue-100 p-2 rounded-lg">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
+              <div className="mt-0.5 bg-blue-100 p-1.5 rounded-lg">
+                <TrendingUp className="w-4 h-4 text-[#1e40af]" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Track Performance</h3>
-                <p className="text-sm text-slate-600">Monitor loan applications and agent performance in real-time</p>
+                <h3 className="font-semibold text-slate-800 text-sm mb-0.5">Track Performance</h3>
+                <p className="text-xs text-slate-500">Monitor loan applications and agent performance in real-time</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="mt-1 bg-cyan-100 p-2 rounded-lg">
-                <BarChart3 className="w-5 h-5 text-cyan-600" />
+              <div className="mt-0.5 bg-cyan-100 p-1.5 rounded-lg">
+                <BarChart3 className="w-4 h-4 text-cyan-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-slate-800 mb-1">Analytics Dashboard</h3>
-                <p className="text-sm text-slate-600">Get insights with bank-wise, agent-wise, and monthly reports</p>
+                <h3 className="font-semibold text-slate-800 text-sm mb-0.5">Analytics Dashboard</h3>
+                <p className="text-xs text-slate-500">Get insights with bank-wise, agent-wise, and monthly reports</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Right side - Login Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 border border-slate-200">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8 border border-slate-200">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-slate-800 mb-1">
               Welcome Back
             </h2>
-            <p className="text-slate-600">Sign in to your account to continue</p>
+            <p className="text-xs text-slate-500">Sign in to your account to continue</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-slate-700 font-medium">Email Address</Label>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-slate-600 font-medium text-xs">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -91,13 +91,13 @@ const Login = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="h-11"
+                className="h-9 text-xs"
                 data-testid="login-email-input"
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-slate-700 font-medium">Password</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-slate-600 font-medium text-xs">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -105,14 +105,14 @@ const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="h-11"
+                className="h-9 text-xs"
                 data-testid="login-password-input"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full h-11 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+              className="w-full h-9 bg-[#1e40af] hover:bg-[#1d4ed8] text-white font-medium text-xs rounded-lg transition-all duration-200"
               disabled={loading}
               data-testid="login-submit-button"
             >
@@ -120,8 +120,8 @@ const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-500">
+          <div className="mt-4 text-center">
+            <p className="text-[11px] text-slate-400">
               Don't have access? Contact your administrator
             </p>
           </div>

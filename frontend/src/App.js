@@ -57,35 +57,39 @@ const InstallPrompt = () => {
   if (!showInstall) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-96 bg-white rounded-lg shadow-xl border border-slate-200 p-4 z-50 animate-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-3 left-3 right-3 md:left-auto md:right-3 md:w-80 bg-white rounded-lg shadow-xl border border-slate-200 p-3 z-50 animate-in slide-in-from-bottom duration-300">
       <button
         onClick={() => setShowInstall(false)}
-        className="absolute top-2 right-2 p-1 hover:bg-slate-100 rounded"
+        className="absolute top-2 right-2 p-0.5 hover:bg-slate-100 rounded"
+        data-testid="install-dismiss-btn"
       >
-        <X className="w-4 h-4 text-slate-500" />
+        <X className="w-3.5 h-3.5 text-slate-400" />
       </button>
       
-      <div className="flex items-start gap-3">
-        <div className="bg-blue-50 p-2 rounded-lg">
-          <Download className="w-6 h-6 text-blue-600" />
+      <div className="flex items-start gap-2.5">
+        <div className="bg-blue-50 p-1.5 rounded-lg">
+          <Download className="w-4 h-4 text-[#1e40af]" />
         </div>
         <div className="flex-1">
-          <h3 className="font-semibold text-slate-800 mb-1">Install MHP Fintech</h3>
-          <p className="text-sm text-slate-600 mb-3">Install our app for quick access and offline use</p>
+          <h3 className="font-semibold text-slate-800 text-xs mb-0.5">Install MHP Fintech</h3>
+          <p className="text-[11px] text-slate-500 mb-2">Quick access and offline use</p>
           <div className="flex gap-2">
             <Button
               onClick={handleInstall}
-              className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600"
+              className="flex-1 bg-[#1e40af] hover:bg-[#1d4ed8] text-[11px] h-7"
               size="sm"
+              data-testid="install-app-btn"
             >
-              Install App
+              Install
             </Button>
             <Button
               onClick={() => setShowInstall(false)}
               variant="outline"
               size="sm"
+              className="text-[11px] h-7"
+              data-testid="install-later-btn"
             >
-              Not Now
+              Later
             </Button>
           </div>
         </div>

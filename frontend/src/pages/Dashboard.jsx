@@ -112,29 +112,29 @@ const Dashboard = () => {
   const declineRate = overview?.total > 0 ? ((overview?.declined / overview?.total) * 100).toFixed(1) : 0;
 
   return (
-    <div className="space-y-6 lg:space-y-8 fade-in" data-testid="dashboard-page">
+    <div className="space-y-4 lg:space-y-6 fade-in" data-testid="dashboard-page">
       {/* Header */}
       <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-slate-800 mb-2" style={{ fontFamily: 'Manrope, sans-serif' }}>
+        <h1 className="text-lg lg:text-xl font-bold text-slate-800 mb-1">
           Dashboard Overview
         </h1>
-        <p className="text-sm lg:text-base text-slate-600">Monitor your loan application metrics and performance</p>
+        <p className="text-xs text-slate-500">Monitor your loan application metrics and performance</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 gap-3 lg:gap-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <Card key={index} className="stat-card card-hover" data-testid={stat.testId}>
-              <CardContent className="p-4 lg:p-6">
+              <CardContent className="p-3 lg:p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs lg:text-sm font-medium text-slate-600 mb-1">{stat.title}</p>
-                    <p className="text-2xl lg:text-3xl font-bold text-slate-800">{stat.value}</p>
+                    <p className="text-[11px] font-medium text-slate-500 mb-0.5">{stat.title}</p>
+                    <p className="text-lg lg:text-xl font-bold text-slate-800">{stat.value}</p>
                   </div>
-                  <div className={`${stat.bgColor} ${stat.color} p-2 lg:p-3 rounded-xl`}>
-                    <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
+                  <div className={`${stat.bgColor} ${stat.color} p-2 rounded-lg`}>
+                    <Icon className="w-4 h-4" />
                   </div>
                 </div>
               </CardContent>
@@ -144,23 +144,23 @@ const Dashboard = () => {
       </div>
 
       {/* Performance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="card-hover" data-testid="conversion-rate-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingUp className="w-5 h-5 text-green-600" />
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <TrendingUp className="w-4 h-4 text-green-600" />
               Conversion Rate
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-green-600">{conversionRate}%</span>
-                <span className="text-sm text-slate-600">of applications disbursed</span>
+                <span className="text-2xl font-bold text-green-600">{conversionRate}%</span>
+                <span className="text-[11px] text-slate-500">of applications disbursed</span>
               </div>
-              <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 h-full transition-all duration-500"
+                  className="bg-green-500 h-full transition-all duration-500 rounded-full"
                   style={{ width: `${conversionRate}%` }}
                 ></div>
               </div>
@@ -169,21 +169,21 @@ const Dashboard = () => {
         </Card>
 
         <Card className="card-hover" data-testid="decline-rate-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <TrendingDown className="w-5 h-5 text-red-600" />
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <TrendingDown className="w-4 h-4 text-red-600" />
               Decline Rate
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-red-600">{declineRate}%</span>
-                <span className="text-sm text-slate-600">of applications declined</span>
+                <span className="text-2xl font-bold text-red-600">{declineRate}%</span>
+                <span className="text-[11px] text-slate-500">of applications declined</span>
               </div>
-              <div className="bg-slate-100 rounded-full h-3 overflow-hidden">
+              <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-red-500 to-rose-500 h-full transition-all duration-500"
+                  className="bg-red-500 h-full transition-all duration-500 rounded-full"
                   style={{ width: `${declineRate}%` }}
                 ></div>
               </div>
@@ -195,15 +195,15 @@ const Dashboard = () => {
       {/* Status Breakdown */}
       {overview?.status_breakdown && Object.keys(overview.status_breakdown).length > 0 && (
         <Card className="card-hover" data-testid="status-breakdown-card">
-          <CardHeader>
-            <CardTitle>Status Breakdown</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Status Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {Object.entries(overview.status_breakdown).map(([status, count]) => (
-                <div key={status} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                  <p className="text-sm font-medium text-slate-600 mb-1">{status}</p>
-                  <p className="text-2xl font-bold text-slate-800">{count}</p>
+                <div key={status} className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                  <p className="text-[11px] font-medium text-slate-500 mb-0.5">{status}</p>
+                  <p className="text-lg font-bold text-slate-800">{count}</p>
                 </div>
               ))}
             </div>
@@ -213,13 +213,13 @@ const Dashboard = () => {
 
       {/* Bank-wise Filter and Breakdown */}
       <Card className="card-hover">
-        <CardHeader>
+        <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle>Bank-wise Analysis</CardTitle>
+            <CardTitle className="text-sm">Bank-wise Analysis</CardTitle>
             <select
               value={selectedBank}
               onChange={(e) => setSelectedBank(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-2.5 py-1.5 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
             >
               <option value="">All Banks</option>
               {banks.map(bank => (
@@ -252,30 +252,30 @@ const Dashboard = () => {
             };
 
             return (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                    <p className="text-sm font-medium text-blue-900 mb-1">Total Applications</p>
-                    <p className="text-2xl font-bold text-blue-800">{bankStats.total}</p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
+                    <p className="text-[11px] font-medium text-blue-800 mb-0.5">Total Applications</p>
+                    <p className="text-lg font-bold text-blue-900">{bankStats.total}</p>
                   </div>
-                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                    <p className="text-sm font-medium text-purple-900 mb-1">Total Sanctioned</p>
-                    <p className="text-2xl font-bold text-purple-800">{formatCurrency(bankStats.sanctioned)}</p>
+                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-100">
+                    <p className="text-[11px] font-medium text-purple-800 mb-0.5">Total Sanctioned</p>
+                    <p className="text-lg font-bold text-purple-900">{formatCurrency(bankStats.sanctioned)}</p>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                    <p className="text-sm font-medium text-green-900 mb-1">Total Disbursed</p>
-                    <p className="text-2xl font-bold text-green-800">{formatCurrency(bankStats.disbursed)}</p>
+                  <div className="bg-green-50 rounded-lg p-3 border border-green-100">
+                    <p className="text-[11px] font-medium text-green-800 mb-0.5">Total Disbursed</p>
+                    <p className="text-lg font-bold text-green-900">{formatCurrency(bankStats.disbursed)}</p>
                   </div>
                 </div>
 
                 {Object.keys(bankStats.statusBreakdown).length > 0 && (
                   <div>
-                    <h4 className="text-sm font-semibold text-slate-700 mb-3">Status Distribution</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <h4 className="text-xs font-semibold text-slate-600 mb-2">Status Distribution</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       {Object.entries(bankStats.statusBreakdown).map(([status, count]) => (
-                        <div key={status} className="bg-slate-50 rounded-lg p-3 border border-slate-200">
-                          <p className="text-xs font-medium text-slate-600 mb-1">{status}</p>
-                          <p className="text-xl font-bold text-slate-800">{count}</p>
+                        <div key={status} className="bg-slate-50 rounded-lg p-2.5 border border-slate-100">
+                          <p className="text-[10px] font-medium text-slate-500 mb-0.5">{status}</p>
+                          <p className="text-base font-bold text-slate-800">{count}</p>
                         </div>
                       ))}
                     </div>
@@ -283,7 +283,7 @@ const Dashboard = () => {
                 )}
 
                 {selectedBank && (
-                  <p className="text-sm text-slate-500 italic">
+                  <p className="text-[11px] text-slate-500 italic">
                     Showing data for: <span className="font-semibold text-slate-700">{selectedBank}</span>
                   </p>
                 )}
