@@ -345,6 +345,34 @@ const MonthlyMIS = () => {
     const value = loan[field] || '';
 
     if (isEditing) {
+      // Special handling for month field - show date picker
+      if (field === 'month') {
+        // Convert dd-mm-yyyy to yyyy-mm-dd for the date input
+        let dateInputVal = editValue;
+        if (editValue && /^\d{2}-\d{2}-\d{4}$/.test(editValue)) {
+          const [d, m, y] = editValue.split('-');
+          dateInputVal = `${y}-${m}-${d}`;
+        }
+        return (
+          <input
+            type="date"
+            value={dateInputVal}
+            onChange={(e) => {
+              if (e.target.value) {
+                const [year, month, day] = e.target.value.split('-');
+                setEditValue(`${day}-${month}-${year}`);
+              } else {
+                setEditValue('');
+              }
+            }}
+            onBlur={() => handleCellSave(loan.id, field)}
+            onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
+            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            autoFocus
+          />
+        );
+      }
+
       // Special handling for scheme field - show dropdown
       if (field === 'scheme') {
         return (
@@ -1014,18 +1042,17 @@ const MonthlyMIS = () => {
                   />
                 </div>
                 <div>
-                  <Label>Month *</Label>
+                  <Label>Date *</Label>
                   <Input
                     required
-                    type="month"
+                    type="date"
                     value={monthInputValue}
                     onChange={(e) => {
                       setMonthInputValue(e.target.value);
                       if (e.target.value) {
-                        const [year, month] = e.target.value.split('-');
-                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                        const formattedMonth = `${monthNames[parseInt(month) - 1]}-${year.slice(2)}`;
-                        setNewLoanData({...newLoanData, month: formattedMonth});
+                        const [year, month, day] = e.target.value.split('-');
+                        const formatted = `${day}-${month}-${year}`;
+                        setNewLoanData({...newLoanData, month: formatted});
                       } else {
                         setNewLoanData({...newLoanData, month: ''});
                       }
