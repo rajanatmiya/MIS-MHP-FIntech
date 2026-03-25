@@ -22,6 +22,7 @@ const MonthlyMIS = () => {
   const [editValue, setEditValue] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newLoanData, setNewLoanData] = useState({});
+  const [monthInputValue, setMonthInputValue] = useState('');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
@@ -254,6 +255,7 @@ const MonthlyMIS = () => {
       toast.success('Loan added successfully');
       setShowAddForm(false);
       setNewLoanData({});
+      setMonthInputValue('');
     } catch (error) {
       toast.error('Failed to add loan');
     }
@@ -1016,14 +1018,16 @@ const MonthlyMIS = () => {
                   <Input
                     required
                     type="month"
-                    value={newLoanData.month || ''}
+                    value={monthInputValue}
                     onChange={(e) => {
-                      // Convert YYYY-MM to "Mon-YY" format
+                      setMonthInputValue(e.target.value);
                       if (e.target.value) {
                         const [year, month] = e.target.value.split('-');
                         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
                         const formattedMonth = `${monthNames[parseInt(month) - 1]}-${year.slice(2)}`;
                         setNewLoanData({...newLoanData, month: formattedMonth});
+                      } else {
+                        setNewLoanData({...newLoanData, month: ''});
                       }
                     }}
                     className="cursor-pointer"
