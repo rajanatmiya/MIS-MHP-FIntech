@@ -34,9 +34,10 @@ const Loans = () => {
 
   const fetchLoans = async () => {
     try {
-      const response = await axios.get(`${API}/loans`);
-      setLoans(response.data);
-      setFilteredLoans(response.data);
+      const response = await axios.get(`${API}/loans?limit=2000`);
+      const data = response.data.loans || response.data;
+      setLoans(data);
+      setFilteredLoans(data);
     } catch (error) {
       toast.error('Failed to fetch loans');
     } finally {

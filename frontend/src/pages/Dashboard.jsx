@@ -30,11 +30,12 @@ const Dashboard = () => {
 
   const fetchLoans = async () => {
     try {
-      const response = await axios.get(`${API}/loans`);
-      setLoans(response.data);
+      const response = await axios.get(`${API}/loans?limit=2000`);
+      const data = response.data.loans || response.data;
+      setLoans(data);
       
       // Extract unique banks
-      const uniqueBanks = [...new Set(response.data.map(loan => loan.bank).filter(Boolean))];
+      const uniqueBanks = [...new Set(data.map(loan => loan.bank).filter(Boolean))];
       setBanks(uniqueBanks.sort());
     } catch (error) {
       console.error('Failed to fetch loans');

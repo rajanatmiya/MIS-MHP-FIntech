@@ -89,12 +89,13 @@ const MonthlyMIS = () => {
 
   const fetchLoans = async () => {
     try {
-      const response = await axios.get(`${API}/loans`);
-      setLoans(response.data);
+      const response = await axios.get(`${API}/loans?limit=2000`);
+      const data = response.data.loans || response.data;
+      setLoans(data);
       
       // Auto-expand first month
-      if (response.data.length > 0) {
-        const firstMonth = response.data[0].month;
+      if (data.length > 0) {
+        const firstMonth = data[0].month;
         setExpandedMonths(new Set([firstMonth]));
       }
     } catch (error) {

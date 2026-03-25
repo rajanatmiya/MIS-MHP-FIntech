@@ -695,13 +695,15 @@ async def delete_status(status_id: str, current_user: User = Depends(get_current
     return {"message": "Status deleted successfully"}
 
 # Loan routes with role-based access
-@api_router.get("/loans", response_model=List[LoanApplication])
+@api_router.get("/loans")
 async def get_loans(
     status: Optional[str] = None,
     bank: Optional[str] = None,
     agent_name: Optional[str] = None,
     month: Optional[str] = None,
     search: Optional[str] = None,
+    page: int = 1,
+    limit: int = 500,
     current_user: User = Depends(get_current_user)
 ):
     query = {}
@@ -729,7 +731,12 @@ async def get_loans(
             {"contact_no": {"$regex": search, "$options": "i"}}
         ]
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).sort("created_at", -1).to_list(100000)
+    # Cap limit to prevent abuse
+    limit = min(limit, 2000)
+    skip = (page - 1) * limit
+    
+    total = await db.loan_applications.count_documents(query)
+    loans = await db.loan_applications.find(query, {"_id": 0}).sort("created_at", -1).skip(skip).limit(limit).to_list(limit)
     
     for loan in loans:
         if isinstance(loan.get('created_at'), str):
@@ -737,7 +744,13 @@ async def get_loans(
         if isinstance(loan.get('updated_at'), str):
             loan['updated_at'] = datetime.fromisoformat(loan['updated_at'])
     
-    return loans
+    return {
+        "loans": loans,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "total_pages": (total + limit - 1) // limit
+    }
 
 @api_router.post("/loans", response_model=LoanApplication)
 async def create_loan(loan_data: LoanApplicationCreate, current_user: User = Depends(get_current_user)):
@@ -1653,7 +1666,16 @@ async def create_default_admin():
                 logger.info(f"✅ Created status: {status_data['name']}")
         
         status_count = await db.statuses.count_documents({})
-        logger.info(f"✅ Total statuses in database: {status_count}")
+        logger.info(f"Total statuses in database: {status_count}")
+        
+        # Create database indexes for performance
+        await db.loan_applications.create_index("created_by")
+        await db.loan_applications.create_index("month")
+        await db.loan_applications.create_index("status")
+        await db.loan_applications.create_index("bank")
+        await db.loan_applications.create_index("created_at")
+        await db.users.create_index("email", unique=True)
+        logger.info("Database indexes created")
         
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")
