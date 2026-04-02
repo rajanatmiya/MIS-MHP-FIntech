@@ -4,45 +4,42 @@
 A comprehensive MIS (Management Information System) dashboard for a loan agency (MHP Fintech). The app manages loan applications, agents, schemes, statuses, and provides analytics — all with role-based access control (Admin, Manager, Agent).
 
 ## Tech Stack
-- **Backend:** FastAPI (Python), MongoDB
-- **Frontend:** React 19, Tailwind CSS, Shadcn/UI
-- **Auth:** JWT with RBAC
-- **PWA:** Service Worker, Web App Manifest
+- **Backend:** FastAPI (Python), MongoDB (Motor async)
+- **Frontend:** React 19, Tailwind CSS, Shadcn/UI, Recharts
+- **Auth:** JWT with RBAC (Admin/Manager/Agent)
+- **PWA:** Service Worker, Web App Manifest, Offline fallback
 
 ## What's Been Implemented
-- Role-Based Access Control (Admin/Manager/Agent)
+- Role-Based Access Control (Admin/Manager/Agent) — fully verified
 - MIS Board with inline editing, filters, dynamic columns
 - Scheme & Status management (Admin CRUD)
 - User management with activate/deactivate
 - Organization schedule management
-- Dashboard analytics (totals, bank-wise, conversion rates)
+- Dashboard analytics with creative design (rate rings, stat tiles, status bars, bank table)
 - Excel export (admin-only)
 - Month normalization tools
 - Decline reason field
 - Unified Add Entry form
 - PWA: manifest, service worker, install prompt, offline page
+- Delete loan (admin-only) — verified working
+- Paginated /api/loans endpoint with DB indexing
 
-## UI Redesign (Feb 2026)
-- Sidebar color changed to `#2c587a`, white text, active state `bg-white/20`
-- Global base font reduced to 12px matching sidebar `text-xs`
-- All page headings: `text-sm font-bold`, subtitles: `text-[11px]`
-- Cards, labels, buttons all scaled down proportionally
-- Mobile header matches sidebar color
-- Login page compacted, Settings page cleaned up
-- Updated `manifest.json` with 4 proper PNG icons (192x192 & 512x512, any + maskable)
-- Rewrote `service-worker.js` with smart caching strategies (network-first for API, stale-while-revalidate for assets)
-- Added `offline.html` fallback page
-- Service worker registration in App.js
-- Install prompt component in App.js
+## UI Redesign (Feb 2026) — COMPLETE
+- All pages redesigned with compact `text-xs` / `text-[10px]` fonts
+- Sidebar: `#2c587a` brand color, white text, `bg-white/20` active state
+- Dashboard Overview: Personalized greeting, 6-column MiniStat tiles, SVG RateRing charts, HBar status breakdown, bank-wise analysis table
+- MonthlyMIS, Loans, Analytics, Schemes, Users, Statuses, FieldConfig, Settings — all redesigned
+- Mobile responsive with collapsible menu
 
-## Pending / In Progress
-- **P0:** Full RBAC verification (Manager user not yet created)
-- **P1:** Fix delete loan functionality, status dropdown, modal overlay issues
-- **P2:** Backend pagination, database indexing
+## RBAC Verification — COMPLETE
+- Admin: Full access to all data, delete, user management
+- Agent: Sees only own data, no delete button, no user management access
+- Analytics/overview endpoint RBAC re-enabled
 
-## Backlog
-- Refactor `backend/server.py` into modular routers
-- Refactor `MonthlyMIS.jsx` into smaller components
+## Pending / Backlog
+- **P2:** Refactor `backend/server.py` into modular routers (routes/auth.py, routes/loans.py, etc.)
+- **P2:** Refactor `MonthlyMIS.jsx` into smaller reusable components
+- **LOW:** Agent user has empty 'id' field in login response (cosmetic, login still works)
 
 ## Credentials
 - Admin: admin@mhpfintech.com / Admin@123
