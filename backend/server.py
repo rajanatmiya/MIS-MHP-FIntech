@@ -1031,6 +1031,8 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1068,6 +1070,8 @@ async def get_by_bank(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1091,6 +1095,8 @@ async def get_by_agent(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1116,6 +1122,8 @@ async def get_by_month(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1139,6 +1147,8 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     

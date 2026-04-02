@@ -15,6 +15,14 @@ import Settings from '@/pages/Settings';
 import MasterFile from '@/pages/MasterFile';
 import DBBackup from '@/pages/DBBackup';
 import Layout from '@/components/Layout';
+
+const RoleGuard = ({ children, allowed, user }) => {
+  if (!allowed.includes(user?.role)) {
+    const defaultPath = user?.role === 'agent' ? '/monthly-mis' : '/';
+    return <Navigate to={defaultPath} replace />;
+  }
+  return children;
+};
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -169,17 +177,38 @@ function App() {
               user ? (
                 <Layout>
                   <Routes>
-                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/" element={
+                      user?.role === 'agent' ? <Navigate to="/monthly-mis" replace /> : <Dashboard />
+                    } />
                     <Route path="/monthly-mis" element={<MonthlyMIS />} />
                     <Route path="/loans" element={<Loans />} />
-                    <Route path="/analytics" element={<AnalyticsEnhanced />} />
-                    <Route path="/users" element={<UserManagement />} />
-                    <Route path="/field-management" element={<FieldManagement />} />
-                    <Route path="/scheme-management" element={<SchemeManagement />} />
-                    <Route path="/status-management" element={<StatusManagement />} />
-                    <Route path="/settings" element={<Settings />} />
-                    <Route path="/master-file" element={<MasterFile />} />
-                    <Route path="/db-backup" element={<DBBackup />} />
+                    <Route path="/analytics" element={
+                      <RoleGuard allowed={['admin', 'manager']} user={user}><AnalyticsEnhanced /></RoleGuard>
+                    } />
+                    <Route path="/users" element={
+                      <RoleGuard allowed={['admin']} user={user}><UserManagement /></RoleGuard>
+                    } />
+                    <Route path="/field-management" element={
+                      <RoleGuard allowed={['admin']} user={user}><FieldManagement /></RoleGuard>
+                    } />
+                    <Route path="/scheme-management" element={
+                      <RoleGuard allowed={['admin']} user={user}><SchemeManagement /></RoleGuard>
+                    } />
+                    <Route path="/status-management" element={
+                      <RoleGuard allowed={['admin']} user={user}><StatusManagement /></RoleGuard>
+                    } />
+                    <Route path="/settings" element={
+                      <RoleGuard allowed={['admin']} user={user}><Settings /></RoleGuard>
+                    } />
+                    <Route path="/master-file" element={
+                      <RoleGuard allowed={['admin']} user={user}><MasterFile /></RoleGuard>
+                    } />
+                    <Route path="/db-backup" element={
+                      <RoleGuard allowed={['admin']} user={user}><DBBackup /></RoleGuard>
+                    } />
+                    <Route path="*" element={
+                      <Navigate to={user?.role === 'agent' ? '/monthly-mis' : '/'} replace />
+                    } />
                   </Routes>
                 </Layout>
               ) : (

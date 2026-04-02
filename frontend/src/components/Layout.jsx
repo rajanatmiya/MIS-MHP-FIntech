@@ -9,24 +9,30 @@ const Layout = ({ children }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: LayoutDashboard, testId: 'nav-dashboard' },
-    { name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' },
-    { name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' }
-  ];
-
-  navigation.push({ name: 'Schemes', href: '/scheme-management', icon: FileText, testId: 'nav-scheme-management' });
-  navigation.push({ name: 'Master File', href: '/master-file', icon: FolderOpen, testId: 'nav-master-file' });
+  const navigation = [];
   
   if (user?.role === 'admin') {
+    navigation.push({ name: 'Dashboard', href: '/', icon: LayoutDashboard, testId: 'nav-dashboard' });
+    navigation.push({ name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' });
+    navigation.push({ name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' });
+    navigation.push({ name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' });
+    navigation.push({ name: 'Schemes', href: '/scheme-management', icon: FileText, testId: 'nav-scheme-management' });
+    navigation.push({ name: 'Master File', href: '/master-file', icon: FolderOpen, testId: 'nav-master-file' });
     navigation.push({ name: 'Users', href: '/users', icon: Shield, testId: 'nav-users' });
     navigation.push({ name: 'Statuses', href: '/status-management', icon: Flag, testId: 'nav-status-management' });
     navigation.push({ name: 'Field Config', href: '/field-management', icon: Sliders, testId: 'nav-field-management' });
     navigation.push({ name: 'DB Backup', href: '/db-backup', icon: Database, testId: 'nav-db-backup' });
+    navigation.push({ name: 'Settings', href: '/settings', icon: SettingsIcon, testId: 'nav-settings' });
+  } else if (user?.role === 'manager') {
+    navigation.push({ name: 'Dashboard', href: '/', icon: LayoutDashboard, testId: 'nav-dashboard' });
+    navigation.push({ name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' });
+    navigation.push({ name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' });
+    navigation.push({ name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' });
+  } else {
+    // Agent: only MIS and Loans
+    navigation.push({ name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' });
+    navigation.push({ name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' });
   }
-  
-  navigation.push({ name: 'Settings', href: '/settings', icon: SettingsIcon, testId: 'nav-settings' });
 
   const isActive = (path) => location.pathname === path;
 
