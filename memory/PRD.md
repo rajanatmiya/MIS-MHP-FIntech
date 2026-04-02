@@ -16,17 +16,18 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - Scheme & Status management (Admin CRUD)
 - User management with manager assignment
 - Dashboard analytics (rate rings, stat tiles, status bars, bank table)
-- **Master File page** — Bank Names and Agent Names CRUD, search, RBAC
-- **DB Backup page** — Collection stats, full JSON backup download
-- **Form dropdowns** — Bank and Agent fields use master data in MIS Form and Loan Form
-- Excel export (readable headers, auto-fit widths) / import (duplicate detection)
+- **Master File page** — 5 categories: Bank Names, Agent Names, Company Names, Branches, Locations (CRUD, search, RBAC)
+- **DB Backup page** — Collection stats for 9 collections, full JSON backup download
+- **Form dropdowns** — Bank, Agent, Company, Branch, Location fields use master data in MIS Form and Loan Form
+- Excel export (readable headers, auto-fit) / import (duplicate detection)
 - LoanForm date picker (dd-mm-yyyy format)
 - PWA: manifest, service worker, install prompt, offline page
 - Delete loan (admin-only) on both MIS and Loans pages
 - Paginated /api/loans endpoint with DB indexing
 
 ## Key DB Collections
-- `users`, `loan_applications`, `schemes`, `statuses`, `master_banks`, `master_agents`
+- `users`, `loan_applications`, `schemes`, `statuses`
+- `master_banks`, `master_agents`, `master_companies`, `master_branches`, `master_locations`
 
 ## Pending / Backlog
 - **P2:** Refactor `backend/server.py` into modular routers
