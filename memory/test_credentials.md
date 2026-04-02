@@ -13,3 +13,4 @@
 - Email: agent@mhpfintech.com
 - Password: Admin@123
 - Team: TEAM-A (assigned to Manager User)
+- Assigned Banks: SBI, HDFC Bank

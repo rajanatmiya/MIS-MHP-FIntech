@@ -260,7 +260,7 @@ const UserManagement = () => {
                   <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected banks</p>
                   <div className="border border-slate-200 rounded-md p-2 max-h-[140px] overflow-y-auto space-y-1" data-testid="assigned-banks-container">
                     {masterBanks.map(bank => {
-                      const selected = (formData.assigned_banks || []).includes(bank.name);
+                      const selected = (formData.assigned_banks || []).some(b => b.toLowerCase() === bank.name.toLowerCase());
                       return (
                         <label key={bank.id} className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-blue-50/40 transition-colors ${selected ? 'bg-blue-50' : ''}`}>
                           <input
