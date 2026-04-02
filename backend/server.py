@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Response
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Response, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
@@ -1590,6 +1590,135 @@ Provide a clear, concise analysis with specific numbers and actionable insights.
         logger.error(f"AI analysis error: {str(e)}")
         raise HTTPException(status_code=500, detail="AI analysis failed")
 
+# ==================== Master File Endpoints ====================
+
+@api_router.get("/master/banks")
+async def get_master_banks(current_user: User = Depends(get_current_user)):
+    banks = await db.master_banks.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return banks
+
+@api_router.post("/master/banks")
+async def add_master_bank(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Bank name is required")
+    existing = await db.master_banks.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Bank name already exists")
+    bank = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user.id
+    }
+    await db.master_banks.insert_one(bank)
+    del bank["_id"]
+    return bank
+
+@api_router.put("/master/banks/{bank_id}")
+async def update_master_bank(bank_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Bank name is required")
+    existing = await db.master_banks.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": bank_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Bank name already exists")
+    result = await db.master_banks.update_one({"id": bank_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Bank not found")
+    return {"id": bank_id, "name": name}
+
+@api_router.delete("/master/banks/{bank_id}")
+async def delete_master_bank(bank_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_banks.delete_one({"id": bank_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Bank not found")
+    return {"message": "Bank deleted"}
+
+@api_router.get("/master/agents")
+async def get_master_agents(current_user: User = Depends(get_current_user)):
+    agents = await db.master_agents.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return agents
+
+@api_router.post("/master/agents")
+async def add_master_agent(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Agent name is required")
+    agent = {
+        "id": str(uuid.uuid4()),
+        "name": name,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "created_by": current_user.id
+    }
+    await db.master_agents.insert_one(agent)
+    del agent["_id"]
+    return agent
+
+@api_router.put("/master/agents/{agent_id}")
+async def update_master_agent(agent_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Agent name is required")
+    result = await db.master_agents.update_one({"id": agent_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {"id": agent_id, "name": name}
+
+@api_router.delete("/master/agents/{agent_id}")
+async def delete_master_agent(agent_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_agents.delete_one({"id": agent_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Agent not found")
+    return {"message": "Agent deleted"}
+
+# ==================== DB Backup Endpoints ====================
+
+@api_router.get("/backup/download")
+async def download_backup(current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    import json as json_lib
+    backup = {}
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents"]
+    for col_name in collections:
+        docs = await db[col_name].find({}, {"_id": 0}).to_list(100000)
+        backup[col_name] = docs
+    backup["metadata"] = {
+        "backup_date": datetime.now(timezone.utc).isoformat(),
+        "backed_up_by": current_user.email,
+        "collections": {col: len(backup[col]) for col in collections}
+    }
+    content = json_lib.dumps(backup, indent=2, default=str)
+    filename = f"mhp_backup_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+@api_router.get("/backup/stats")
+async def get_backup_stats(current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents"]
+    stats = {}
+    total = 0
+    for col_name in collections:
+        count = await db[col_name].count_documents({})
+        stats[col_name] = count
+        total += count
+    stats["total_records"] = total
+    return stats
+
 # Include the router
 app.include_router(api_router)
 
@@ -1776,6 +1905,8 @@ async def create_default_admin():
         await db.loan_applications.create_index("created_at")
         await db.loan_applications.create_index([("customer_name", 1), ("contact_no", 1), ("bank", 1)])
         await db.users.create_index("email", unique=True)
+        await db.master_banks.create_index("name", unique=True)
+        await db.master_agents.create_index("name")
         logger.info("Database indexes created")
         
     except Exception as e:

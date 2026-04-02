@@ -27,6 +27,10 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
   const [uniqueValues, setUniqueValues] = useState({ banks: [], agents: [] });
+  const [masterBanks, setMasterBanks] = useState([]);
+  const [masterAgents, setMasterAgents] = useState([]);
+  const [statuses, setStatuses] = useState([]);
+  const [schemes, setSchemes] = useState([]);
   const [formData, setFormData] = useState({
     agent_name: '',
     customer_name: '',
@@ -72,10 +76,20 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
 
   const fetchUniqueValues = async () => {
     try {
-      const response = await axios.get(`${API}/analytics/unique-values`);
-      setUniqueValues(response.data);
+      const [uniqueRes, banksRes, agentsRes, statusesRes, schemesRes] = await Promise.all([
+        axios.get(`${API}/analytics/unique-values`),
+        axios.get(`${API}/master/banks`),
+        axios.get(`${API}/master/agents`),
+        axios.get(`${API}/statuses`),
+        axios.get(`${API}/schemes`)
+      ]);
+      setUniqueValues(uniqueRes.data);
+      setMasterBanks(banksRes.data);
+      setMasterAgents(agentsRes.data);
+      setStatuses(statusesRes.data);
+      setSchemes(schemesRes.data);
     } catch (error) {
-      console.error('Failed to fetch unique values');
+      console.error('Failed to fetch form data');
     }
   };
 
@@ -109,13 +123,26 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
         {/* Agent Name */}
         <div className="space-y-2">
           <Label htmlFor="agent_name">Agent Name *</Label>
-          <Input
-            id="agent_name"
-            value={formData.agent_name}
-            onChange={(e) => handleChange('agent_name', e.target.value)}
-            required
-            data-testid="agent-name-input"
-          />
+          {masterAgents.length > 0 ? (
+            <Select value={formData.agent_name} onValueChange={(value) => handleChange('agent_name', value)} required>
+              <SelectTrigger data-testid="agent-name-input">
+                <SelectValue placeholder="Select agent" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterAgents.map(a => (
+                  <SelectItem key={a.id} value={a.name}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="agent_name"
+              value={formData.agent_name}
+              onChange={(e) => handleChange('agent_name', e.target.value)}
+              required
+              data-testid="agent-name-input"
+            />
+          )}
         </div>
 
         {/* Customer Name */}
@@ -162,7 +189,9 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              {STATUS_OPTIONS.map(status => (
+              {statuses.length > 0 ? statuses.map(s => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+              )) : STATUS_OPTIONS.map(status => (
                 <SelectItem key={status} value={status}>{status}</SelectItem>
               ))}
             </SelectContent>
@@ -172,13 +201,26 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
         {/* Bank */}
         <div className="space-y-2">
           <Label htmlFor="bank">Bank *</Label>
-          <Input
-            id="bank"
-            value={formData.bank}
-            onChange={(e) => handleChange('bank', e.target.value)}
-            required
-            data-testid="bank-input"
-          />
+          {masterBanks.length > 0 ? (
+            <Select value={formData.bank} onValueChange={(value) => handleChange('bank', value)} required>
+              <SelectTrigger data-testid="bank-input">
+                <SelectValue placeholder="Select bank" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterBanks.map(b => (
+                  <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="bank"
+              value={formData.bank}
+              onChange={(e) => handleChange('bank', e.target.value)}
+              required
+              data-testid="bank-input"
+            />
+          )}
         </div>
 
         {/* Sanction */}
@@ -211,7 +253,9 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
               <SelectValue placeholder="Select scheme" />
             </SelectTrigger>
             <SelectContent>
-              {SCHEME_OPTIONS.map(scheme => (
+              {schemes.length > 0 ? schemes.map(s => (
+                <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+              )) : SCHEME_OPTIONS.map(scheme => (
                 <SelectItem key={scheme} value={scheme}>{scheme}</SelectItem>
               ))}
             </SelectContent>

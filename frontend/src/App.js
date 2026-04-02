@@ -12,6 +12,8 @@ import FieldManagement from '@/pages/FieldManagement';
 import SchemeManagement from '@/pages/SchemeManagement';
 import StatusManagement from '@/pages/StatusManagement';
 import Settings from '@/pages/Settings';
+import MasterFile from '@/pages/MasterFile';
+import DBBackup from '@/pages/DBBackup';
 import Layout from '@/components/Layout';
 import { Toaster } from '@/components/ui/sonner';
 import { toast } from 'sonner';
@@ -176,6 +178,8 @@ function App() {
                     <Route path="/scheme-management" element={<SchemeManagement />} />
                     <Route path="/status-management" element={<StatusManagement />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/master-file" element={<MasterFile />} />
+                    <Route path="/db-backup" element={<DBBackup />} />
                   </Routes>
                 </Layout>
               ) : (
