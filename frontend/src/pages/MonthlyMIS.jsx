@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2 } from 'lucide-react';
 
 const MonthlyMIS = () => {
   const { user } = useContext(AuthContext);
@@ -26,6 +26,10 @@ const MonthlyMIS = () => {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [editingLoan, setEditingLoan] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editFormData, setEditFormData] = useState({});
+  const [editMonthInput, setEditMonthInput] = useState('');
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -259,6 +263,44 @@ const MonthlyMIS = () => {
       setMonthInputValue('');
     } catch (error) {
       toast.error('Failed to add loan');
+    }
+  };
+
+  const handleEditOpen = (loan) => {
+    setEditingLoan(loan);
+    setEditFormData({ ...loan });
+    // Convert dd-mm-yyyy to yyyy-mm-dd for date input
+    const m = loan.month || '';
+    const parts = m.split('-');
+    if (parts.length === 3 && parts[0].length === 2) {
+      setEditMonthInput(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    } else {
+      setEditMonthInput('');
+    }
+    setShowEditForm(true);
+  };
+
+  const handleEditSave = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.put(`${API}/loans/${editingLoan.id}`, editFormData);
+      setLoans(loans.map(l => l.id === editingLoan.id ? { ...l, ...editFormData } : l));
+      toast.success('Loan updated successfully');
+      setShowEditForm(false);
+      setEditingLoan(null);
+    } catch (error) {
+      toast.error('Failed to update loan');
+    }
+  };
+
+  const handleDeleteLoan = async (loanId) => {
+    if (!window.confirm('Are you sure you want to delete this entry?')) return;
+    try {
+      await axios.delete(`${API}/loans/${loanId}`);
+      setLoans(loans.filter(l => l.id !== loanId));
+      toast.success('Entry deleted successfully');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete');
     }
   };
 
@@ -634,7 +676,7 @@ const MonthlyMIS = () => {
                   <table className="w-full text-[11px]">
                     <thead>
                       <tr className="border-b border-slate-200 bg-[#2c587a]/5">
-                        {['Date','Customer','Company','Contact','Bank','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent'].map(h => (
+                        {['Date','Customer','Company','Contact','Bank','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent',''].map(h => (
                           <th key={h} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -647,6 +689,28 @@ const MonthlyMIS = () => {
                               {renderCell(loan, field, field)}
                             </td>
                           ))}
+                          <td className="px-2 py-1 whitespace-nowrap sticky right-0 bg-white">
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                onClick={() => handleEditOpen(loan)}
+                                className="p-1 rounded hover:bg-blue-50 transition-colors"
+                                title="Edit"
+                                data-testid={`mis-edit-${loan.id}`}
+                              >
+                                <Edit className="w-3.5 h-3.5 text-[#2c587a]" />
+                              </button>
+                              {user?.role === 'admin' && (
+                                <button
+                                  onClick={() => handleDeleteLoan(loan.id)}
+                                  className="p-1 rounded hover:bg-red-50 transition-colors"
+                                  title="Delete"
+                                  data-testid={`mis-delete-${loan.id}`}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                       
@@ -663,6 +727,7 @@ const MonthlyMIS = () => {
                         <td className="px-2 py-1.5"></td>
                         <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.subvention)}</td>
                         <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.brokerage)}</td>
+                        <td className="px-2 py-1.5"></td>
                         <td className="px-2 py-1.5"></td>
                       </tr>
                     </tbody>
@@ -788,6 +853,115 @@ const MonthlyMIS = () => {
             <div className="flex gap-2 justify-end pt-1">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(false)} className="h-7 text-[11px]">Cancel</Button>
               <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">Add Entry</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Form Dialog */}
+      <Dialog open={showEditForm} onOpenChange={setShowEditForm}>
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Edit Entry</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEditSave} className="space-y-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {[
+                { key: 'customer_name', label: 'Customer Name *', required: true },
+                { key: 'company_name', label: 'Company Name *', required: true },
+                { key: 'contact_no', label: 'Contact Number *', required: true },
+                { key: 'location', label: 'Location' },
+                { key: 'agent_name', label: 'Agent Name *', required: true },
+                { key: 'executive_name', label: 'Executive Name' },
+                { key: 'team_manager', label: 'Team Manager' },
+              ].map(f => (
+                <div key={f.key}>
+                  <Label className="text-[11px] text-slate-600">{f.label}</Label>
+                  <Input
+                    required={f.required}
+                    value={editFormData[f.key] || ''}
+                    onChange={(e) => setEditFormData({...editFormData, [f.key]: e.target.value})}
+                    className="h-8 text-[11px] mt-0.5"
+                  />
+                </div>
+              ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Status *</Label>
+                <Select value={editFormData.status || ''} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{statuses.map(s => <SelectItem key={s.id} value={s.name} className="text-[11px]">{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Bank *</Label>
+                <Input required value={editFormData.bank || ''} onChange={(e) => setEditFormData({...editFormData, bank: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Date *</Label>
+                <Input
+                  required
+                  type="date"
+                  value={editMonthInput}
+                  onChange={(e) => {
+                    setEditMonthInput(e.target.value);
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      setEditFormData({...editFormData, month: `${day}-${month}-${year}`});
+                    } else {
+                      setEditFormData({...editFormData, month: ''});
+                    }
+                  }}
+                  className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                />
+                {editFormData.month && <p className="text-[10px] text-slate-400 mt-0.5">{editFormData.month}</p>}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Sanction Amt</Label>
+                <Input value={editFormData.sanction || ''} onChange={(e) => setEditFormData({...editFormData, sanction: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Disbursed Amt</Label>
+                <Input value={editFormData.disbursed || ''} onChange={(e) => setEditFormData({...editFormData, disbursed: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Scheme</Label>
+                <Select value={editFormData.scheme || ''} onValueChange={(value) => setEditFormData({...editFormData, scheme: value})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{schemes.map(s => <SelectItem key={s.id} value={s.name} className="text-[11px]">{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              {[
+                { key: 'rate', label: 'Rate (%)' },
+                { key: 'pf', label: 'PF' },
+                { key: 'insurance', label: 'Insurance' },
+                { key: 'tenure', label: 'Tenure (Months)' },
+                { key: 'subvention', label: 'Subvention' },
+                { key: 'brokerage_subvention', label: 'Brokerage' },
+                { key: 'case_from', label: 'Case From' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'code', label: 'Code' },
+              ].map(f => (
+                <div key={f.key}>
+                  <Label className="text-[11px] text-slate-600">{f.label}</Label>
+                  <Input
+                    value={editFormData[f.key] || ''}
+                    onChange={(e) => setEditFormData({...editFormData, [f.key]: e.target.value})}
+                    className="h-8 text-[11px] mt-0.5"
+                  />
+                </div>
+              ))}
+              <div className="col-span-2">
+                <Label className="text-[11px] text-slate-600">Remark</Label>
+                <Input value={editFormData.remark || ''} onChange={(e) => setEditFormData({...editFormData, remark: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-[11px] text-red-500">Decline Reason</Label>
+                <Input value={editFormData.decline_reason || ''} onChange={(e) => setEditFormData({...editFormData, decline_reason: e.target.value})} className="h-8 text-[11px] mt-0.5 border-red-200 focus:border-red-400" />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowEditForm(false)} className="h-7 text-[11px]">Cancel</Button>
+              <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">Save Changes</Button>
             </div>
           </form>
         </DialogContent>
