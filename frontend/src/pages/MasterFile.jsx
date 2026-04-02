@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Building2, UserCheck, Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 
 const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAdmin }) => {
@@ -38,7 +38,7 @@ const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAd
             data-testid={`search-${title.toLowerCase().replace(/\s/g, '-')}`}
           />
         </div>
-        <div className="max-h-[340px] overflow-y-auto space-y-0.5">
+        <div className="max-h-[280px] overflow-y-auto space-y-0.5">
           {filtered.length > 0 ? filtered.map((item, idx) => (
             <div key={item.id} className={`flex items-center justify-between px-2.5 py-1.5 rounded ${idx % 2 === 0 ? 'bg-slate-50/60' : ''} hover:bg-blue-50/40 transition-colors group`}>
               <div className="flex items-center gap-2 min-w-0">
@@ -65,13 +65,20 @@ const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAd
   );
 };
 
+const CATEGORIES = [
+  { key: 'banks', endpoint: 'banks', title: 'Bank Names', icon: Building2, placeholder: 'e.g., State Bank of India' },
+  { key: 'agents', endpoint: 'agents', title: 'Agent Names', icon: UserCheck, placeholder: 'e.g., Rajesh Kumar' },
+  { key: 'companies', endpoint: 'companies', title: 'Company Names', icon: Briefcase, placeholder: 'e.g., Tata Consultancy' },
+  { key: 'branches', endpoint: 'branches', title: 'Branches', icon: GitBranch, placeholder: 'e.g., Andheri West' },
+  { key: 'locations', endpoint: 'locations', title: 'Locations', icon: MapPin, placeholder: 'e.g., Mumbai, Maharashtra' },
+];
+
 const MasterFile = () => {
   const { user } = useContext(AuthContext);
-  const [banks, setBanks] = useState([]);
-  const [agents, setAgents] = useState([]);
+  const [data, setData] = useState({ banks: [], agents: [], companies: [], branches: [], locations: [] });
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  const [dialogType, setDialogType] = useState('');
+  const [activeCategory, setActiveCategory] = useState(null);
   const [dialogMode, setDialogMode] = useState('add');
   const [editItem, setEditItem] = useState(null);
   const [inputValue, setInputValue] = useState('');
@@ -82,26 +89,26 @@ const MasterFile = () => {
 
   const fetchAll = async () => {
     try {
-      const [banksRes, agentsRes] = await Promise.all([
-        axios.get(`${API}/master/banks`),
-        axios.get(`${API}/master/agents`)
-      ]);
-      setBanks(banksRes.data);
-      setAgents(agentsRes.data);
+      const results = await Promise.all(
+        CATEGORIES.map(c => axios.get(`${API}/master/${c.endpoint}`))
+      );
+      const newData = {};
+      CATEGORIES.forEach((c, i) => { newData[c.key] = results[i].data; });
+      setData(newData);
     } catch (error) { toast.error('Failed to fetch master data'); }
     finally { setLoading(false); }
   };
 
-  const openAddDialog = (type) => {
-    setDialogType(type);
+  const openAdd = (cat) => {
+    setActiveCategory(cat);
     setDialogMode('add');
     setEditItem(null);
     setInputValue('');
     setShowDialog(true);
   };
 
-  const openEditDialog = (type, item) => {
-    setDialogType(type);
+  const openEdit = (cat, item) => {
+    setActiveCategory(cat);
     setDialogMode('edit');
     setEditItem(item);
     setInputValue(item.name);
@@ -110,20 +117,19 @@ const MasterFile = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
-    const endpoint = dialogType === 'bank' ? 'banks' : 'agents';
+    if (!inputValue.trim() || !activeCategory) return;
     try {
       if (dialogMode === 'add') {
-        const res = await axios.post(`${API}/master/${endpoint}`, { name: inputValue.trim() });
-        if (dialogType === 'bank') setBanks([...banks, res.data]);
-        else setAgents([...agents, res.data]);
-        toast.success(`${dialogType === 'bank' ? 'Bank' : 'Agent'} added`);
+        const res = await axios.post(`${API}/master/${activeCategory.endpoint}`, { name: inputValue.trim() });
+        setData(prev => ({ ...prev, [activeCategory.key]: [...prev[activeCategory.key], res.data] }));
+        toast.success(`${activeCategory.title.replace(/s$/, '')} added`);
       } else {
-        await axios.put(`${API}/master/${endpoint}/${editItem.id}`, { name: inputValue.trim() });
-        const updater = (list) => list.map(i => i.id === editItem.id ? { ...i, name: inputValue.trim() } : i);
-        if (dialogType === 'bank') setBanks(updater(banks));
-        else setAgents(updater(agents));
-        toast.success(`${dialogType === 'bank' ? 'Bank' : 'Agent'} updated`);
+        await axios.put(`${API}/master/${activeCategory.endpoint}/${editItem.id}`, { name: inputValue.trim() });
+        setData(prev => ({
+          ...prev,
+          [activeCategory.key]: prev[activeCategory.key].map(i => i.id === editItem.id ? { ...i, name: inputValue.trim() } : i)
+        }));
+        toast.success('Updated');
       }
       setShowDialog(false);
     } catch (error) {
@@ -131,13 +137,11 @@ const MasterFile = () => {
     }
   };
 
-  const handleDelete = async (type, item) => {
+  const handleDelete = async (cat, item) => {
     if (!window.confirm(`Delete "${item.name}"?`)) return;
-    const endpoint = type === 'bank' ? 'banks' : 'agents';
     try {
-      await axios.delete(`${API}/master/${endpoint}/${item.id}`);
-      if (type === 'bank') setBanks(banks.filter(b => b.id !== item.id));
-      else setAgents(agents.filter(a => a.id !== item.id));
+      await axios.delete(`${API}/master/${cat.endpoint}/${item.id}`);
+      setData(prev => ({ ...prev, [cat.key]: prev[cat.key].filter(i => i.id !== item.id) }));
       toast.success('Deleted');
     } catch (error) { toast.error('Failed to delete'); }
   };
@@ -154,35 +158,29 @@ const MasterFile = () => {
     <div className="space-y-3 fade-in" data-testid="master-file-page">
       <div>
         <h1 className="text-sm font-bold text-slate-800" data-testid="master-file-title">Master File</h1>
-        <p className="text-[10px] text-slate-400 mt-0.5">Manage bank names, agent names and other master data</p>
+        <p className="text-[10px] text-slate-400 mt-0.5">Manage banks, agents, companies, branches, and locations</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        <MasterSection
-          title="Bank Names"
-          icon={Building2}
-          items={banks}
-          isAdmin={isAdmin}
-          onAdd={() => openAddDialog('bank')}
-          onEdit={(item) => openEditDialog('bank', item)}
-          onDelete={(item) => handleDelete('bank', item)}
-        />
-        <MasterSection
-          title="Agent Names"
-          icon={UserCheck}
-          items={agents}
-          isAdmin={isAdmin}
-          onAdd={() => openAddDialog('agent')}
-          onEdit={(item) => openEditDialog('agent', item)}
-          onDelete={(item) => handleDelete('agent', item)}
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {CATEGORIES.map(cat => (
+          <MasterSection
+            key={cat.key}
+            title={cat.title}
+            icon={cat.icon}
+            items={data[cat.key]}
+            isAdmin={isAdmin}
+            onAdd={() => openAdd(cat)}
+            onEdit={(item) => openEdit(cat, item)}
+            onDelete={(item) => handleDelete(cat, item)}
+          />
+        ))}
       </div>
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle className="text-sm">
-              {dialogMode === 'add' ? 'Add' : 'Edit'} {dialogType === 'bank' ? 'Bank Name' : 'Agent Name'}
+              {dialogMode === 'add' ? 'Add' : 'Edit'} {activeCategory?.title.replace(/s$/, '')}
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSave} className="space-y-3">
@@ -193,7 +191,7 @@ const MasterFile = () => {
                 required
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder={dialogType === 'bank' ? 'e.g., State Bank of India' : 'e.g., Rajesh Kumar'}
+                placeholder={activeCategory?.placeholder || ''}
                 className="h-8 text-[11px] mt-0.5"
                 data-testid="master-name-input"
               />

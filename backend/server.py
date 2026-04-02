@@ -1682,6 +1682,135 @@ async def delete_master_agent(agent_id: str, current_user: User = Depends(get_cu
         raise HTTPException(status_code=404, detail="Agent not found")
     return {"message": "Agent deleted"}
 
+# --- Master Companies ---
+@api_router.get("/master/companies")
+async def get_master_companies(current_user: User = Depends(get_current_user)):
+    return await db.master_companies.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/companies")
+async def add_master_company(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Company name is required")
+    existing = await db.master_companies.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Company name already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_companies.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/companies/{item_id}")
+async def update_master_company(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Company name is required")
+    existing = await db.master_companies.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Company name already exists")
+    result = await db.master_companies.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/companies/{item_id}")
+async def delete_master_company(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_companies.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return {"message": "Company deleted"}
+
+# --- Master Branches ---
+@api_router.get("/master/branches")
+async def get_master_branches(current_user: User = Depends(get_current_user)):
+    return await db.master_branches.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/branches")
+async def add_master_branch(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Branch name is required")
+    existing = await db.master_branches.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Branch name already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_branches.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/branches/{item_id}")
+async def update_master_branch(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Branch name is required")
+    existing = await db.master_branches.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Branch name already exists")
+    result = await db.master_branches.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/branches/{item_id}")
+async def delete_master_branch(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_branches.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Branch not found")
+    return {"message": "Branch deleted"}
+
+# --- Master Locations ---
+@api_router.get("/master/locations")
+async def get_master_locations(current_user: User = Depends(get_current_user)):
+    return await db.master_locations.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/locations")
+async def add_master_location(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Location name is required")
+    existing = await db.master_locations.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Location already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_locations.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/locations/{item_id}")
+async def update_master_location(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Location name is required")
+    existing = await db.master_locations.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Location already exists")
+    result = await db.master_locations.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Location not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/locations/{item_id}")
+async def delete_master_location(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_locations.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Location not found")
+    return {"message": "Location deleted"}
+
 # ==================== DB Backup Endpoints ====================
 
 @api_router.get("/backup/download")
@@ -1689,7 +1818,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
     import json as json_lib
     backup = {}
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations"]
     for col_name in collections:
         docs = await db[col_name].find({}, {"_id": 0}).to_list(100000)
         backup[col_name] = docs
@@ -1709,7 +1838,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
 @api_router.get("/backup/stats")
 async def get_backup_stats(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations"]
     stats = {}
     total = 0
     for col_name in collections:
@@ -1907,6 +2036,9 @@ async def create_default_admin():
         await db.users.create_index("email", unique=True)
         await db.master_banks.create_index("name", unique=True)
         await db.master_agents.create_index("name")
+        await db.master_companies.create_index("name", unique=True)
+        await db.master_branches.create_index("name", unique=True)
+        await db.master_locations.create_index("name", unique=True)
         logger.info("Database indexes created")
         
     except Exception as e:

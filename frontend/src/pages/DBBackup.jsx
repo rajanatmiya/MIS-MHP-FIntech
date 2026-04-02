@@ -68,6 +68,9 @@ const DBBackup = () => {
     { key: 'statuses', label: 'Statuses', icon: Flag, color: 'bg-amber-50 text-amber-600' },
     { key: 'master_banks', label: 'Master Banks', icon: Building2, color: 'bg-cyan-50 text-cyan-600' },
     { key: 'master_agents', label: 'Master Agents', icon: UserCheck, color: 'bg-pink-50 text-pink-600' },
+    { key: 'master_companies', label: 'Master Companies', icon: Building2, color: 'bg-indigo-50 text-indigo-600' },
+    { key: 'master_branches', label: 'Master Branches', icon: Building2, color: 'bg-teal-50 text-teal-600' },
+    { key: 'master_locations', label: 'Master Locations', icon: Building2, color: 'bg-orange-50 text-orange-600' },
   ];
 
   return (

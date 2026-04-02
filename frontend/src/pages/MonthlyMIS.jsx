@@ -32,6 +32,9 @@ const MonthlyMIS = () => {
   const [editMonthInput, setEditMonthInput] = useState('');
   const [masterBanks, setMasterBanks] = useState([]);
   const [masterAgents, setMasterAgents] = useState([]);
+  const [masterCompanies, setMasterCompanies] = useState([]);
+  const [masterBranches, setMasterBranches] = useState([]);
+  const [masterLocations, setMasterLocations] = useState([]);
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -78,12 +81,18 @@ const MonthlyMIS = () => {
   
   const fetchMasterData = async () => {
     try {
-      const [banksRes, agentsRes] = await Promise.all([
+      const [banksRes, agentsRes, companiesRes, branchesRes, locationsRes] = await Promise.all([
         axios.get(`${API}/master/banks`),
-        axios.get(`${API}/master/agents`)
+        axios.get(`${API}/master/agents`),
+        axios.get(`${API}/master/companies`),
+        axios.get(`${API}/master/branches`),
+        axios.get(`${API}/master/locations`)
       ]);
       setMasterBanks(banksRes.data);
       setMasterAgents(agentsRes.data);
+      setMasterCompanies(companiesRes.data);
+      setMasterBranches(branchesRes.data);
+      setMasterLocations(locationsRes.data);
     } catch (error) { console.error('Failed to fetch master data'); }
   };
   
@@ -771,9 +780,7 @@ const MonthlyMIS = () => {
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               {[
                 { key: 'customer_name', label: 'Customer Name *', required: true },
-                { key: 'company_name', label: 'Company Name *', required: true },
                 { key: 'contact_no', label: 'Contact Number *', required: true },
-                { key: 'location', label: 'Location', placeholder: 'City, State' },
                 { key: 'executive_name', label: 'Executive Name' },
                 { key: 'team_manager', label: 'Team Manager' },
               ].map(f => (
@@ -788,6 +795,28 @@ const MonthlyMIS = () => {
                   />
                 </div>
               ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Company Name *</Label>
+                {masterCompanies.length > 0 ? (
+                  <Select value={newLoanData.company_name || ''} onValueChange={(value) => setNewLoanData({...newLoanData, company_name: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select company" /></SelectTrigger>
+                    <SelectContent>{masterCompanies.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input required value={newLoanData.company_name || ''} onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Location</Label>
+                {masterLocations.length > 0 ? (
+                  <Select value={newLoanData.location || ''} onValueChange={(value) => setNewLoanData({...newLoanData, location: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select location" /></SelectTrigger>
+                    <SelectContent>{masterLocations.map(l => <SelectItem key={l.id} value={l.name} className="text-[11px]">{l.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={newLoanData.location || ''} onChange={(e) => setNewLoanData({...newLoanData, location: e.target.value})} placeholder="City, State" className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Agent Name *</Label>
                 {masterAgents.length > 0 ? (
@@ -859,7 +888,6 @@ const MonthlyMIS = () => {
                 { key: 'subvention', label: 'Subvention' },
                 { key: 'brokerage_subvention', label: 'Brokerage' },
                 { key: 'case_from', label: 'Case From' },
-                { key: 'branch', label: 'Branch' },
                 { key: 'code', label: 'Code' },
               ].map(f => (
                 <div key={f.key}>
@@ -872,6 +900,17 @@ const MonthlyMIS = () => {
                   />
                 </div>
               ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Branch</Label>
+                {masterBranches.length > 0 ? (
+                  <Select value={newLoanData.branch || ''} onValueChange={(value) => setNewLoanData({...newLoanData, branch: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select branch" /></SelectTrigger>
+                    <SelectContent>{masterBranches.map(b => <SelectItem key={b.id} value={b.name} className="text-[11px]">{b.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={newLoanData.branch || ''} onChange={(e) => setNewLoanData({...newLoanData, branch: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
               <div className="col-span-2">
                 <Label className="text-[11px] text-slate-600">Remark</Label>
                 <Input value={newLoanData.remark || ''} onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})} placeholder="Notes" className="h-8 text-[11px] mt-0.5" />
@@ -899,9 +938,7 @@ const MonthlyMIS = () => {
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               {[
                 { key: 'customer_name', label: 'Customer Name *', required: true },
-                { key: 'company_name', label: 'Company Name *', required: true },
                 { key: 'contact_no', label: 'Contact Number *', required: true },
-                { key: 'location', label: 'Location' },
                 { key: 'executive_name', label: 'Executive Name' },
                 { key: 'team_manager', label: 'Team Manager' },
               ].map(f => (
@@ -915,6 +952,28 @@ const MonthlyMIS = () => {
                   />
                 </div>
               ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Company Name *</Label>
+                {masterCompanies.length > 0 ? (
+                  <Select value={editFormData.company_name || ''} onValueChange={(value) => setEditFormData({...editFormData, company_name: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select company" /></SelectTrigger>
+                    <SelectContent>{masterCompanies.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input required value={editFormData.company_name || ''} onChange={(e) => setEditFormData({...editFormData, company_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Location</Label>
+                {masterLocations.length > 0 ? (
+                  <Select value={editFormData.location || ''} onValueChange={(value) => setEditFormData({...editFormData, location: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select location" /></SelectTrigger>
+                    <SelectContent>{masterLocations.map(l => <SelectItem key={l.id} value={l.name} className="text-[11px]">{l.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={editFormData.location || ''} onChange={(e) => setEditFormData({...editFormData, location: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Agent Name *</Label>
                 {masterAgents.length > 0 ? (
@@ -986,7 +1045,6 @@ const MonthlyMIS = () => {
                 { key: 'subvention', label: 'Subvention' },
                 { key: 'brokerage_subvention', label: 'Brokerage' },
                 { key: 'case_from', label: 'Case From' },
-                { key: 'branch', label: 'Branch' },
                 { key: 'code', label: 'Code' },
               ].map(f => (
                 <div key={f.key}>
@@ -998,6 +1056,17 @@ const MonthlyMIS = () => {
                   />
                 </div>
               ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Branch</Label>
+                {masterBranches.length > 0 ? (
+                  <Select value={editFormData.branch || ''} onValueChange={(value) => setEditFormData({...editFormData, branch: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select branch" /></SelectTrigger>
+                    <SelectContent>{masterBranches.map(b => <SelectItem key={b.id} value={b.name} className="text-[11px]">{b.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={editFormData.branch || ''} onChange={(e) => setEditFormData({...editFormData, branch: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
               <div className="col-span-2">
                 <Label className="text-[11px] text-slate-600">Remark</Label>
                 <Input value={editFormData.remark || ''} onChange={(e) => setEditFormData({...editFormData, remark: e.target.value})} className="h-8 text-[11px] mt-0.5" />

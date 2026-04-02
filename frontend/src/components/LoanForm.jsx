@@ -29,6 +29,9 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
   const [uniqueValues, setUniqueValues] = useState({ banks: [], agents: [] });
   const [masterBanks, setMasterBanks] = useState([]);
   const [masterAgents, setMasterAgents] = useState([]);
+  const [masterCompanies, setMasterCompanies] = useState([]);
+  const [masterBranches, setMasterBranches] = useState([]);
+  const [masterLocations, setMasterLocations] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [formData, setFormData] = useState({
@@ -76,18 +79,24 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
 
   const fetchUniqueValues = async () => {
     try {
-      const [uniqueRes, banksRes, agentsRes, statusesRes, schemesRes] = await Promise.all([
+      const [uniqueRes, banksRes, agentsRes, statusesRes, schemesRes, companiesRes, branchesRes, locationsRes] = await Promise.all([
         axios.get(`${API}/analytics/unique-values`),
         axios.get(`${API}/master/banks`),
         axios.get(`${API}/master/agents`),
         axios.get(`${API}/statuses`),
-        axios.get(`${API}/schemes`)
+        axios.get(`${API}/schemes`),
+        axios.get(`${API}/master/companies`),
+        axios.get(`${API}/master/branches`),
+        axios.get(`${API}/master/locations`)
       ]);
       setUniqueValues(uniqueRes.data);
       setMasterBanks(banksRes.data);
       setMasterAgents(agentsRes.data);
       setStatuses(statusesRes.data);
       setSchemes(schemesRes.data);
+      setMasterCompanies(companiesRes.data);
+      setMasterBranches(branchesRes.data);
+      setMasterLocations(locationsRes.data);
     } catch (error) {
       console.error('Failed to fetch form data');
     }
@@ -160,13 +169,26 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
         {/* Company Name */}
         <div className="space-y-2">
           <Label htmlFor="company_name">Company Name *</Label>
-          <Input
-            id="company_name"
-            value={formData.company_name}
-            onChange={(e) => handleChange('company_name', e.target.value)}
-            required
-            data-testid="company-name-input"
-          />
+          {masterCompanies.length > 0 ? (
+            <Select value={formData.company_name} onValueChange={(value) => handleChange('company_name', value)} required>
+              <SelectTrigger data-testid="company-name-input">
+                <SelectValue placeholder="Select company" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterCompanies.map(c => (
+                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="company_name"
+              value={formData.company_name}
+              onChange={(e) => handleChange('company_name', e.target.value)}
+              required
+              data-testid="company-name-input"
+            />
+          )}
         </div>
 
         {/* Contact No */}
@@ -280,23 +302,49 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
         {/* From Location */}
         <div className="space-y-2">
           <Label htmlFor="from_location">From Location</Label>
-          <Input
-            id="from_location"
-            value={formData.from_location}
-            onChange={(e) => handleChange('from_location', e.target.value)}
-            data-testid="from-location-input"
-          />
+          {masterLocations.length > 0 ? (
+            <Select value={formData.from_location} onValueChange={(value) => handleChange('from_location', value)}>
+              <SelectTrigger data-testid="from-location-input">
+                <SelectValue placeholder="Select location" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterLocations.map(l => (
+                  <SelectItem key={l.id} value={l.name}>{l.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="from_location"
+              value={formData.from_location}
+              onChange={(e) => handleChange('from_location', e.target.value)}
+              data-testid="from-location-input"
+            />
+          )}
         </div>
 
         {/* Branch */}
         <div className="space-y-2">
           <Label htmlFor="branch">Branch</Label>
-          <Input
-            id="branch"
-            value={formData.branch}
-            onChange={(e) => handleChange('branch', e.target.value)}
-            data-testid="branch-input"
-          />
+          {masterBranches.length > 0 ? (
+            <Select value={formData.branch} onValueChange={(value) => handleChange('branch', value)}>
+              <SelectTrigger data-testid="branch-input">
+                <SelectValue placeholder="Select branch" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterBranches.map(b => (
+                  <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="branch"
+              value={formData.branch}
+              onChange={(e) => handleChange('branch', e.target.value)}
+              data-testid="branch-input"
+            />
+          )}
         </div>
 
         {/* Executive Name */}
