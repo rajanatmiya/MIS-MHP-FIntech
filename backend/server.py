@@ -48,6 +48,7 @@ class User(BaseModel):
     role: str = "agent"  # admin, manager, agent
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
+    assigned_banks: Optional[List[str]] = None
     active: bool = True  # Admin can enable/disable users
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -58,12 +59,14 @@ class UserCreate(BaseModel):
     role: Optional[str] = "agent"
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
+    assigned_banks: Optional[List[str]] = None
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = None
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
+    assigned_banks: Optional[List[str]] = None
     active: Optional[bool] = None
 
 class UserLogin(BaseModel):
@@ -308,7 +311,8 @@ async def register(user_data: UserCreate):
         name=user_data.name,
         role=user_data.role,
         team_code=user_data.team_code,
-        manager_id=user_data.manager_id
+        manager_id=user_data.manager_id,
+        assigned_banks=user_data.assigned_banks
     )
     
     user_dict = user.model_dump()
@@ -716,6 +720,10 @@ async def get_loans(
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
     
+    # Bank-level filtering: if user has assigned_banks, only show those banks
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
+    
     if status:
         query["status"] = status
     if bank:
@@ -965,6 +973,10 @@ async def get_overview(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
+    
+    # Bank-level filtering
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     

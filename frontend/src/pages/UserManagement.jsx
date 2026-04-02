@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
-import { Users, Edit, Trash2, Plus, Shield, Key, Power } from 'lucide-react';
+import { Users, Edit, Trash2, Plus, Shield, Key, Power, X } from 'lucide-react';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -24,15 +24,25 @@ const UserManagement = () => {
     password: '',
     role: 'agent',
     team_code: '',
-    manager_id: undefined
+    manager_id: undefined,
+    assigned_banks: []
   });
+  const [masterBanks, setMasterBanks] = useState([]);
   const { user: currentUser } = useContext(AuthContext);
 
   useEffect(() => {
     if (currentUser?.role === 'admin') {
       fetchUsers();
+      fetchMasterBanks();
     }
   }, [currentUser]);
+
+  const fetchMasterBanks = async () => {
+    try {
+      const res = await axios.get(`${API}/master/banks`);
+      setMasterBanks(res.data);
+    } catch (error) { console.error('Failed to fetch banks'); }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -55,7 +65,8 @@ const UserManagement = () => {
           name: formData.name,
           role: formData.role,
           team_code: formData.team_code || null,
-          manager_id: formData.manager_id || null
+          manager_id: formData.manager_id || null,
+          assigned_banks: formData.assigned_banks || []
         };
         await axios.put(`${API}/users/${editingUser.id}`, updateData);
         toast.success('User updated successfully');
@@ -63,7 +74,8 @@ const UserManagement = () => {
         const createData = {
           ...formData,
           team_code: formData.team_code || null,
-          manager_id: formData.manager_id || null
+          manager_id: formData.manager_id || null,
+          assigned_banks: formData.assigned_banks || []
         };
         await axios.post(`${API}/auth/register`, createData);
         toast.success('User created successfully');
@@ -132,7 +144,8 @@ const UserManagement = () => {
       password: '',
       role: user.role,
       team_code: user.team_code || '',
-      manager_id: user.manager_id || undefined
+      manager_id: user.manager_id || undefined,
+      assigned_banks: user.assigned_banks || []
     });
     setShowForm(true);
   };
@@ -144,7 +157,8 @@ const UserManagement = () => {
       password: '',
       role: 'agent',
       team_code: '',
-      manager_id: undefined
+      manager_id: undefined,
+      assigned_banks: []
     });
   };
 
@@ -240,6 +254,48 @@ const UserManagement = () => {
                   </Select>
                 </div>
               )}
+              {(formData.role === 'agent' || formData.role === 'manager') && masterBanks.length > 0 && (
+                <div>
+                  <Label className="text-[11px]">Assigned Banks</Label>
+                  <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected banks</p>
+                  <div className="border border-slate-200 rounded-md p-2 max-h-[140px] overflow-y-auto space-y-1" data-testid="assigned-banks-container">
+                    {masterBanks.map(bank => {
+                      const selected = (formData.assigned_banks || []).includes(bank.name);
+                      return (
+                        <label key={bank.id} className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-blue-50/40 transition-colors ${selected ? 'bg-blue-50' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => {
+                              const banks = formData.assigned_banks || [];
+                              const updated = selected ? banks.filter(b => b !== bank.name) : [...banks, bank.name];
+                              setFormData({...formData, assigned_banks: updated});
+                            }}
+                            className="w-3 h-3 rounded border-slate-300 text-[#2c587a] focus:ring-[#2c587a]"
+                            data-testid={`bank-checkbox-${bank.id}`}
+                          />
+                          <span className="text-[11px] text-slate-700">{bank.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {(formData.assigned_banks || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {formData.assigned_banks.map(b => (
+                        <span key={b} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-[#2c587a]/10 text-[10px] text-[#2c587a] font-medium">
+                          {b}
+                          <button type="button" onClick={() => setFormData({...formData, assigned_banks: formData.assigned_banks.filter(x => x !== b)})} className="hover:text-red-500">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(formData.assigned_banks || []).length === 0 && (
+                    <p className="text-[10px] text-amber-500 mt-1">No banks selected — user will see all banks</p>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2 pt-1">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="flex-1 h-7 text-[11px]">Cancel</Button>
                 <Button type="submit" disabled={loading} size="sm" className="flex-1 h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">{loading ? '...' : editingUser ? 'Update' : 'Create'}</Button>
@@ -259,7 +315,7 @@ const UserManagement = () => {
           <table className="w-full text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-[#2c587a]/5">
-                {['Name', 'Email', 'Role', 'Team', 'Status', ''].map(h => (
+                {['Name', 'Email', 'Role', 'Team', 'Assigned Banks', 'Status', ''].map(h => (
                   <th key={h} className="px-3 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -273,6 +329,17 @@ const UserManagement = () => {
                     <span className={getRoleBadgeClass(u.role)}>{u.role}</span>
                   </td>
                   <td className="px-3 py-1.5 text-slate-500">{u.team_code || '—'}</td>
+                  <td className="px-3 py-1.5">
+                    {u.assigned_banks && u.assigned_banks.length > 0 ? (
+                      <div className="flex flex-wrap gap-0.5">
+                        {u.assigned_banks.map(b => (
+                          <span key={b} className="px-1.5 py-0.5 rounded-full bg-[#2c587a]/10 text-[9px] text-[#2c587a] font-medium">{b}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">All</span>
+                    )}
+                  </td>
                   <td className="px-3 py-1.5">
                     <div className="flex items-center gap-1.5">
                       <Switch checked={u.active !== false} onCheckedChange={() => handleToggleStatus(u.id, u.active)} disabled={u.id === currentUser.id} className="scale-75" />
