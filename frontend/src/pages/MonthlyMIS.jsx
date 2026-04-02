@@ -35,6 +35,13 @@ const MonthlyMIS = () => {
   const [masterCompanies, setMasterCompanies] = useState([]);
   const [masterBranches, setMasterBranches] = useState([]);
   const [masterLocations, setMasterLocations] = useState([]);
+  const [masterCategories, setMasterCategories] = useState([]);
+  const [masterProducts, setMasterProducts] = useState([]);
+  
+  // Top-level filter states
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterProduct, setFilterProduct] = useState('');
+  const [filterBank, setFilterBank] = useState('');
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -81,18 +88,22 @@ const MonthlyMIS = () => {
   
   const fetchMasterData = async () => {
     try {
-      const [banksRes, agentsRes, companiesRes, branchesRes, locationsRes] = await Promise.all([
+      const [banksRes, agentsRes, companiesRes, branchesRes, locationsRes, categoriesRes, productsRes] = await Promise.all([
         axios.get(`${API}/master/banks`),
         axios.get(`${API}/master/agents`),
         axios.get(`${API}/master/companies`),
         axios.get(`${API}/master/branches`),
-        axios.get(`${API}/master/locations`)
+        axios.get(`${API}/master/locations`),
+        axios.get(`${API}/master/categories`),
+        axios.get(`${API}/master/products`)
       ]);
       setMasterBanks(banksRes.data);
       setMasterAgents(agentsRes.data);
       setMasterCompanies(companiesRes.data);
       setMasterBranches(branchesRes.data);
       setMasterLocations(locationsRes.data);
+      setMasterCategories(categoriesRes.data);
+      setMasterProducts(productsRes.data);
     } catch (error) { console.error('Failed to fetch master data'); }
   };
   
@@ -382,6 +393,11 @@ const MonthlyMIS = () => {
   };
 
   const filteredLoans = loans.filter(loan => {
+    // Top-level filters
+    if (filterCategory && loan.category !== filterCategory) return false;
+    if (filterProduct && loan.product !== filterProduct) return false;
+    if (filterBank && loan.bank !== filterBank) return false;
+    
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
       loan.customer_name?.toLowerCase().includes(searchLower) ||
@@ -394,6 +410,8 @@ const MonthlyMIS = () => {
       loan.status?.toLowerCase().includes(searchLower) ||
       loan.bank?.toLowerCase().includes(searchLower) ||
       loan.scheme?.toLowerCase().includes(searchLower) ||
+      loan.category?.toLowerCase().includes(searchLower) ||
+      loan.product?.toLowerCase().includes(searchLower) ||
       loan.decline_reason?.toLowerCase().includes(searchLower) ||
       loan.remark?.toLowerCase().includes(searchLower)
     );
@@ -490,6 +508,42 @@ const MonthlyMIS = () => {
             <option value="">Select</option>
             {statuses.map(status => (
               <option key={status.id} value={status.name}>{status.name}</option>
+            ))}
+          </select>
+        );
+      }
+
+      if (field === 'category') {
+        return (
+          <select
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => handleCellSave(loan.id, field)}
+            onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
+            className="w-full px-1.5 py-0.5 text-[11px] border border-[#2c587a] rounded focus:outline-none focus:ring-1 focus:ring-[#2c587a]"
+            autoFocus
+          >
+            <option value="">Select</option>
+            {masterCategories.map(c => (
+              <option key={c.id} value={c.name}>{c.name}</option>
+            ))}
+          </select>
+        );
+      }
+
+      if (field === 'product') {
+        return (
+          <select
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onBlur={() => handleCellSave(loan.id, field)}
+            onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
+            className="w-full px-1.5 py-0.5 text-[11px] border border-[#2c587a] rounded focus:outline-none focus:ring-1 focus:ring-[#2c587a]"
+            autoFocus
+          >
+            <option value="">Select</option>
+            {masterProducts.map(p => (
+              <option key={p.id} value={p.name}>{p.name}</option>
             ))}
           </select>
         );
@@ -603,6 +657,43 @@ const MonthlyMIS = () => {
         </Button>
       </div>
 
+      {/* Category / Product / Bank Quick Filters */}
+      <div className="flex flex-wrap items-center gap-2" data-testid="quick-filters">
+        <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="h-7 text-[11px] w-[140px] border-slate-200" data-testid="filter-category">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__" className="text-[11px]">All Categories</SelectItem>
+            {masterCategories.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterProduct} onValueChange={(v) => setFilterProduct(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="h-7 text-[11px] w-[140px] border-slate-200" data-testid="filter-product">
+            <SelectValue placeholder="All Products" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__" className="text-[11px]">All Products</SelectItem>
+            {masterProducts.map(p => <SelectItem key={p.id} value={p.name} className="text-[11px]">{p.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterBank} onValueChange={(v) => setFilterBank(v === '__all__' ? '' : v)}>
+          <SelectTrigger className="h-7 text-[11px] w-[140px] border-slate-200" data-testid="filter-bank">
+            <SelectValue placeholder="All Banks" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__all__" className="text-[11px]">All Banks</SelectItem>
+            {masterBanks.map(b => <SelectItem key={b.id} value={b.name} className="text-[11px]">{b.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        {(filterCategory || filterProduct || filterBank) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterCategory(''); setFilterProduct(''); setFilterBank(''); }}
+            className="h-7 text-[10px] px-2 text-slate-500 hover:text-red-500" data-testid="clear-quick-filters">
+            <X className="w-3 h-3 mr-0.5" /> Clear
+          </Button>
+        )}
+      </div>
+
       {/* Filter Panel */}
       {showFilters && (
         <Card className="border-slate-200 shadow-sm">
@@ -699,7 +790,7 @@ const MonthlyMIS = () => {
                   <table className="w-full text-[11px]">
                     <thead>
                       <tr className="border-b border-slate-200 bg-[#2c587a]/5">
-                        {['Date','Customer','Company','Contact','Bank','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent',''].map(h => (
+                        {['Date','Customer','Company','Contact','Bank','Category','Product','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent',''].map(h => (
                           <th key={h} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
                       </tr>
@@ -707,7 +798,7 @@ const MonthlyMIS = () => {
                     <tbody className="divide-y divide-slate-100">
                       {monthLoans.map(loan => (
                         <tr key={loan.id} className="hover:bg-slate-50/50 transition-colors">
-                          {['month','customer_name','company_name','contact_no','bank','status','sanction','disbursed','remark','decline_reason','scheme','case_from','location','branch','executive_name','team_manager','code','rate','pf','insurance','tenure','subvention','brokerage_subvention','agent_name'].map(field => (
+                          {['month','customer_name','company_name','contact_no','bank','category','product','status','sanction','disbursed','remark','decline_reason','scheme','case_from','location','branch','executive_name','team_manager','code','rate','pf','insurance','tenure','subvention','brokerage_subvention','agent_name'].map(field => (
                             <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''}`}>
                               {renderCell(loan, field, field)}
                             </td>
@@ -739,7 +830,7 @@ const MonthlyMIS = () => {
                       
                       {/* Totals Row */}
                       <tr className="bg-[#2c587a]/5 border-t border-[#2c587a]/20">
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a]" colSpan="6">
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a]" colSpan="8">
                           TOTAL ({monthLoans.length})
                         </td>
                         <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.sanction)}</td>
@@ -844,6 +935,28 @@ const MonthlyMIS = () => {
                   </Select>
                 ) : (
                   <Input required value={newLoanData.bank || ''} onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Category</Label>
+                {masterCategories.length > 0 ? (
+                  <Select value={newLoanData.category || ''} onValueChange={(value) => setNewLoanData({...newLoanData, category: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="add-category-select"><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>{masterCategories.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={newLoanData.category || ''} onChange={(e) => setNewLoanData({...newLoanData, category: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Product</Label>
+                {masterProducts.length > 0 ? (
+                  <Select value={newLoanData.product || ''} onValueChange={(value) => setNewLoanData({...newLoanData, product: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="add-product-select"><SelectValue placeholder="Select product" /></SelectTrigger>
+                    <SelectContent>{masterProducts.map(p => <SelectItem key={p.id} value={p.name} className="text-[11px]">{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={newLoanData.product || ''} onChange={(e) => setNewLoanData({...newLoanData, product: e.target.value})} className="h-8 text-[11px] mt-0.5" />
                 )}
               </div>
               <div>
@@ -1001,6 +1114,28 @@ const MonthlyMIS = () => {
                   </Select>
                 ) : (
                   <Input required value={editFormData.bank || ''} onChange={(e) => setEditFormData({...editFormData, bank: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Category</Label>
+                {masterCategories.length > 0 ? (
+                  <Select value={editFormData.category || ''} onValueChange={(value) => setEditFormData({...editFormData, category: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="edit-category-select"><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>{masterCategories.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={editFormData.category || ''} onChange={(e) => setEditFormData({...editFormData, category: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Product</Label>
+                {masterProducts.length > 0 ? (
+                  <Select value={editFormData.product || ''} onValueChange={(value) => setEditFormData({...editFormData, product: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="edit-product-select"><SelectValue placeholder="Select product" /></SelectTrigger>
+                    <SelectContent>{masterProducts.map(p => <SelectItem key={p.id} value={p.name} className="text-[11px]">{p.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={editFormData.product || ''} onChange={(e) => setEditFormData({...editFormData, product: e.target.value})} className="h-8 text-[11px] mt-0.5" />
                 )}
               </div>
               <div>

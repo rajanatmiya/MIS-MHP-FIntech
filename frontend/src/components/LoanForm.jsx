@@ -32,6 +32,8 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
   const [masterCompanies, setMasterCompanies] = useState([]);
   const [masterBranches, setMasterBranches] = useState([]);
   const [masterLocations, setMasterLocations] = useState([]);
+  const [masterCategories, setMasterCategories] = useState([]);
+  const [masterProducts, setMasterProducts] = useState([]);
   const [statuses, setStatuses] = useState([]);
   const [schemes, setSchemes] = useState([]);
   const [formData, setFormData] = useState({
@@ -50,6 +52,8 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
     branch: '',
     executive_name: '',
     team_manager_code: '',
+    category: '',
+    product: '',
     month: ''
   });
 
@@ -72,6 +76,8 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
         branch: loan.branch || '',
         executive_name: loan.executive_name || '',
         team_manager_code: loan.team_manager_code || '',
+        category: loan.category || '',
+        product: loan.product || '',
         month: loan.month || ''
       });
     }
@@ -79,7 +85,7 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
 
   const fetchUniqueValues = async () => {
     try {
-      const [uniqueRes, banksRes, agentsRes, statusesRes, schemesRes, companiesRes, branchesRes, locationsRes] = await Promise.all([
+      const [uniqueRes, banksRes, agentsRes, statusesRes, schemesRes, companiesRes, branchesRes, locationsRes, categoriesRes, productsRes] = await Promise.all([
         axios.get(`${API}/analytics/unique-values`),
         axios.get(`${API}/master/banks`),
         axios.get(`${API}/master/agents`),
@@ -87,7 +93,9 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
         axios.get(`${API}/schemes`),
         axios.get(`${API}/master/companies`),
         axios.get(`${API}/master/branches`),
-        axios.get(`${API}/master/locations`)
+        axios.get(`${API}/master/locations`),
+        axios.get(`${API}/master/categories`),
+        axios.get(`${API}/master/products`)
       ]);
       setUniqueValues(uniqueRes.data);
       setMasterBanks(banksRes.data);
@@ -97,6 +105,8 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
       setMasterCompanies(companiesRes.data);
       setMasterBranches(branchesRes.data);
       setMasterLocations(locationsRes.data);
+      setMasterCategories(categoriesRes.data);
+      setMasterProducts(productsRes.data);
     } catch (error) {
       console.error('Failed to fetch form data');
     }
@@ -241,6 +251,54 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
               onChange={(e) => handleChange('bank', e.target.value)}
               required
               data-testid="bank-input"
+            />
+          )}
+        </div>
+
+        {/* Category */}
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          {masterCategories.length > 0 ? (
+            <Select value={formData.category} onValueChange={(value) => handleChange('category', value)}>
+              <SelectTrigger data-testid="category-select">
+                <SelectValue placeholder="Select category" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterCategories.map(c => (
+                  <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="category"
+              value={formData.category}
+              onChange={(e) => handleChange('category', e.target.value)}
+              data-testid="category-select"
+            />
+          )}
+        </div>
+
+        {/* Product */}
+        <div className="space-y-2">
+          <Label htmlFor="product">Product</Label>
+          {masterProducts.length > 0 ? (
+            <Select value={formData.product} onValueChange={(value) => handleChange('product', value)}>
+              <SelectTrigger data-testid="product-select">
+                <SelectValue placeholder="Select product" />
+              </SelectTrigger>
+              <SelectContent>
+                {masterProducts.map(p => (
+                  <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              id="product"
+              value={formData.product}
+              onChange={(e) => handleChange('product', e.target.value)}
+              data-testid="product-select"
             />
           )}
         </div>

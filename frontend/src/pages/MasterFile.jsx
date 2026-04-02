@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin } from 'lucide-react';
+import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin, Tag, Package } from 'lucide-react';
 import { toast } from 'sonner';
 
 const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAdmin }) => {
@@ -71,11 +71,13 @@ const CATEGORIES = [
   { key: 'companies', endpoint: 'companies', title: 'Company Names', icon: Briefcase, placeholder: 'e.g., Tata Consultancy' },
   { key: 'branches', endpoint: 'branches', title: 'Branches', icon: GitBranch, placeholder: 'e.g., Andheri West' },
   { key: 'locations', endpoint: 'locations', title: 'Locations', icon: MapPin, placeholder: 'e.g., Mumbai, Maharashtra' },
+  { key: 'categories', endpoint: 'categories', title: 'Categories', icon: Tag, placeholder: 'e.g., UNSECURED, SECURED, Salaried' },
+  { key: 'products', endpoint: 'products', title: 'Products', icon: Package, placeholder: 'e.g., Home Loan, LAP, Working Capital' },
 ];
 
 const MasterFile = () => {
   const { user } = useContext(AuthContext);
-  const [data, setData] = useState({ banks: [], agents: [], companies: [], branches: [], locations: [] });
+  const [data, setData] = useState({ banks: [], agents: [], companies: [], branches: [], locations: [], categories: [], products: [] });
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);

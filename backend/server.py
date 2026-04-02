@@ -186,6 +186,8 @@ class LoanApplication(BaseModel):
     tenure: Optional[str] = ""
     subvention: Optional[str] = ""
     brokerage_subvention: Optional[str] = ""
+    category: Optional[str] = ""
+    product: Optional[str] = ""
     month: str
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
     file_count: Optional[int] = 0
@@ -218,6 +220,8 @@ class LoanApplicationCreate(BaseModel):
     tenure: Optional[str] = ""
     subvention: Optional[str] = ""
     brokerage_subvention: Optional[str] = ""
+    category: Optional[str] = ""
+    product: Optional[str] = ""
     month: str
     custom_fields: Optional[Dict[str, Any]] = None
 
@@ -245,6 +249,8 @@ class LoanApplicationUpdate(BaseModel):
     tenure: Optional[str] = None
     subvention: Optional[str] = None
     brokerage_subvention: Optional[str] = None
+    category: Optional[str] = None
+    product: Optional[str] = None
     month: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
 
@@ -1833,6 +1839,92 @@ async def delete_master_location(item_id: str, current_user: User = Depends(get_
         raise HTTPException(status_code=404, detail="Location not found")
     return {"message": "Location deleted"}
 
+# --- Master Categories ---
+@api_router.get("/master/categories")
+async def get_master_categories(current_user: User = Depends(get_current_user)):
+    return await db.master_categories.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/categories")
+async def add_master_category(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Category name is required")
+    existing = await db.master_categories.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Category already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_categories.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/categories/{item_id}")
+async def update_master_category(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Category name is required")
+    existing = await db.master_categories.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Category already exists")
+    result = await db.master_categories.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/categories/{item_id}")
+async def delete_master_category(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_categories.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return {"message": "Category deleted"}
+
+# --- Master Products ---
+@api_router.get("/master/products")
+async def get_master_products(current_user: User = Depends(get_current_user)):
+    return await db.master_products.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/products")
+async def add_master_product(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Product name is required")
+    existing = await db.master_products.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Product already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_products.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/products/{item_id}")
+async def update_master_product(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Product name is required")
+    existing = await db.master_products.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Product already exists")
+    result = await db.master_products.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/products/{item_id}")
+async def delete_master_product(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_products.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return {"message": "Product deleted"}
+
 # ==================== DB Backup Endpoints ====================
 
 @api_router.get("/backup/download")
@@ -1840,7 +1932,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
     import json as json_lib
     backup = {}
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products"]
     for col_name in collections:
         docs = await db[col_name].find({}, {"_id": 0}).to_list(100000)
         backup[col_name] = docs
@@ -1860,7 +1952,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
 @api_router.get("/backup/stats")
 async def get_backup_stats(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products"]
     stats = {}
     total = 0
     for col_name in collections:
@@ -2061,6 +2153,8 @@ async def create_default_admin():
         await db.master_companies.create_index("name", unique=True)
         await db.master_branches.create_index("name", unique=True)
         await db.master_locations.create_index("name", unique=True)
+        await db.master_categories.create_index("name", unique=True)
+        await db.master_products.create_index("name", unique=True)
         logger.info("Database indexes created")
         
     except Exception as e:

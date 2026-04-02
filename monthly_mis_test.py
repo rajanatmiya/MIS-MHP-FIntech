@@ -5,7 +5,7 @@ from datetime import datetime
 import io
 
 class MonthlyMISBackendTester:
-    def __init__(self, base_url="https://dsa-loan-hub-1.preview.emergentagent.com"):
+    def __init__(self, base_url="https://dsa-agent-portal.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.admin_token = None
