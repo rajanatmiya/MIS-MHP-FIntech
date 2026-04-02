@@ -1,39 +1,34 @@
 # MHP Fintech MIS Dashboard - PRD
 
 ## Problem Statement
-A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan applications, agents, schemes, statuses, and analytics with role-based access control (Admin, Manager, Agent).
+A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan applications, agents, schemes, statuses, and analytics with strict role-based access control.
 
 ## Tech Stack
 - **Backend:** FastAPI (Python), MongoDB (Motor async)
 - **Frontend:** React 19, Tailwind CSS, Shadcn/UI
-- **Auth:** JWT with RBAC (Admin/Manager/Agent)
+- **Auth:** JWT with RBAC (Admin/Manager/Agent) + Bank-level access control
 - **PWA:** Service Worker, Web App Manifest, Offline fallback
 
-## What's Been Implemented
-- Role-Based Access Control (Admin/Manager/Agent) — fully verified
-- **Bank-level access control**: Agents/Managers assigned specific banks only see loans from those banks in MIS and Dashboard
-- Manager role seeded with TEAM-A, Agent assigned to Manager
-- MIS Board with inline editing, filters, dynamic columns, Edit/Delete actions
-- Scheme & Status management (Admin CRUD)
-- User management with manager assignment + bank assignment (checkbox multi-select)
-- Dashboard analytics (rate rings, stat tiles, status bars, bank table)
-- **Master File page** — 5 categories: Bank Names, Agent Names, Company Names, Branches, Locations
-- **DB Backup page** — Collection stats for 9 collections, full JSON backup download
-- **Form dropdowns** — Bank, Agent, Company, Branch, Location fields use master data
-- Excel export (readable headers) / import (duplicate detection)
-- LoanForm date picker (dd-mm-yyyy format)
-- PWA: manifest, service worker, install prompt, offline page
-- Delete loan (admin-only) on both MIS and Loans pages
-- Paginated /api/loans endpoint with DB indexing
+## Role-Based Access (Verified)
+- **Agent**: MIS + Loans only. Sees only loans from assigned banks. No Dashboard, Analytics, Settings.
+- **Manager**: Dashboard + MIS + Loans + Analytics. Sees only their team's (assigned agents') data.
+- **Admin**: Full access to all pages and all data.
 
-## Key DB Collections
-- `users` (now includes `assigned_banks: List[str]`)
-- `loan_applications`, `schemes`, `statuses`
-- `master_banks`, `master_agents`, `master_companies`, `master_branches`, `master_locations`
+## What's Been Implemented
+- Strict page access with RoleGuard (redirects unauthorized routes)
+- Bank-level filtering on ALL data endpoints (loans, analytics/overview, by-bank, by-agent, by-month, unique-values)
+- Manager sees only assigned agents' data across all pages
+- Master File page — 5 categories: Banks, Agents, Companies, Branches, Locations
+- DB Backup page — JSON backup download with 9 collection stats
+- Form dropdowns from master data (Bank, Agent, Company, Branch, Location)
+- MIS Board with inline editing, Edit/Delete actions
+- Excel export/import with duplicate detection
+- LoanForm date picker (dd-mm-yyyy)
+- PWA support
 
 ## Pending / Backlog
 - **P2:** Refactor `backend/server.py` into modular routers
-- **P2:** Refactor `MonthlyMIS.jsx` into smaller reusable components
+- **P2:** Refactor `MonthlyMIS.jsx` into smaller components
 
 ## Credentials
 - Admin: admin@mhpfintech.com / Admin@123
