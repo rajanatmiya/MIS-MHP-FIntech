@@ -178,125 +178,71 @@ const UserManagement = () => {
   const managers = users.filter(u => u.role === 'manager');
 
   return (
-    <div className="space-y-6 fade-in" data-testid="user-management-page">
+    <div className="space-y-3 fade-in" data-testid="user-management-page">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-sm font-bold text-slate-800 mb-0.5">
-            User Management
-          </h1>
-          <p className="text-[11px] text-slate-500">Manage users, roles, and permissions</p>
+          <h1 className="text-sm font-bold text-slate-800">User Management</h1>
+          <p className="text-[10px] text-slate-400 mt-0.5">Manage users, roles, and permissions</p>
         </div>
         <Dialog open={showForm} onOpenChange={setShowForm}>
           <DialogTrigger asChild>
-            <Button
-              onClick={() => {
-                setEditingUser(null);
-                resetForm();
-              }}
-              className="w-full sm:w-auto bg-[#2c587a] hover:bg-[#234a68] text-white text-xs h-8"
-              data-testid="add-user-button"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add User
+            <Button onClick={() => { setEditingUser(null); resetForm(); }} size="sm" className="h-7 text-[11px] px-3 bg-[#2c587a] hover:bg-[#234a68]" data-testid="add-user-button">
+              <Plus className="w-3 h-3 mr-1" /> Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-sm">
             <DialogHeader>
-              <DialogTitle>{editingUser ? 'Edit User' : 'Add New User'}</DialogTitle>
+              <DialogTitle className="text-sm">{editingUser ? 'Edit User' : 'Add User'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  required
-                  data-testid="user-name-input"
-                />
+            <form onSubmit={handleSubmit} className="space-y-2.5">
+              <div>
+                <Label className="text-[11px]">Full Name *</Label>
+                <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="h-8 text-[11px] mt-0.5" data-testid="user-name-input" />
               </div>
-
               {!editingUser && (
                 <>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email *</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      required
-                      data-testid="user-email-input"
-                    />
+                  <div>
+                    <Label className="text-[11px]">Email *</Label>
+                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required className="h-8 text-[11px] mt-0.5" data-testid="user-email-input" />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password *</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={formData.password}
-                      onChange={(e) => setFormData({...formData, password: e.target.value})}
-                      required
-                      data-testid="user-password-input"
-                    />
+                  <div>
+                    <Label className="text-[11px]">Password *</Label>
+                    <Input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required className="h-8 text-[11px] mt-0.5" data-testid="user-password-input" />
                   </div>
                 </>
               )}
-
-              <div className="space-y-2">
-                <Label htmlFor="role">Role *</Label>
-                <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
-                  <SelectTrigger data-testid="user-role-select">
-                    <SelectValue />
-                  </SelectTrigger>
+              <div>
+                <Label className="text-[11px]">Role *</Label>
+                <Select value={formData.role} onValueChange={(v) => setFormData({...formData, role: v})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="user-role-select"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin - Full Access</SelectItem>
-                    <SelectItem value="manager">Manager - Team Access</SelectItem>
-                    <SelectItem value="agent">Agent - Personal Access</SelectItem>
+                    <SelectItem value="admin" className="text-[11px]">Admin</SelectItem>
+                    <SelectItem value="manager" className="text-[11px]">Manager</SelectItem>
+                    <SelectItem value="agent" className="text-[11px]">Agent</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
               {(formData.role === 'manager' || formData.role === 'agent') && (
-                <div className="space-y-2">
-                  <Label htmlFor="team_code">Team Code</Label>
-                  <Input
-                    id="team_code"
-                    value={formData.team_code}
-                    onChange={(e) => setFormData({...formData, team_code: e.target.value})}
-                    placeholder="e.g., TEAM-A, TEAM-B"
-                    data-testid="user-team-code-input"
-                  />
+                <div>
+                  <Label className="text-[11px]">Team Code</Label>
+                  <Input value={formData.team_code} onChange={(e) => setFormData({...formData, team_code: e.target.value})} placeholder="e.g., TEAM-A" className="h-8 text-[11px] mt-0.5" data-testid="user-team-code-input" />
                 </div>
               )}
-
               {formData.role === 'agent' && managers.length > 0 && (
-                <div className="space-y-2">
-                  <Label htmlFor="manager">Assign Manager</Label>
-                  <Select value={formData.manager_id || undefined} onValueChange={(value) => setFormData({...formData, manager_id: value})}>
-                    <SelectTrigger data-testid="user-manager-select">
-                      <SelectValue placeholder="Select manager (optional)" />
-                    </SelectTrigger>
+                <div>
+                  <Label className="text-[11px]">Assign Manager</Label>
+                  <Select value={formData.manager_id || undefined} onValueChange={(v) => setFormData({...formData, manager_id: v})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="user-manager-select"><SelectValue placeholder="Optional" /></SelectTrigger>
                     <SelectContent>
-                      {managers.map(manager => (
-                        <SelectItem key={manager.id} value={manager.id}>
-                          {manager.name} ({manager.team_code || 'No team'})
-                        </SelectItem>
-                      ))}
+                      {managers.map(m => <SelectItem key={m.id} value={m.id} className="text-[11px]">{m.name} ({m.team_code || 'No team'})</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-
-              <div className="flex gap-3 pt-4">
-                <Button type="button" variant="outline" onClick={() => setShowForm(false)} className="flex-1">
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={loading} className="flex-1 bg-gradient-to-r from-blue-600 to-cyan-500">
-                  {loading ? 'Saving...' : editingUser ? 'Update' : 'Create'}
-                </Button>
+              <div className="flex gap-2 pt-1">
+                <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="flex-1 h-7 text-[11px]">Cancel</Button>
+                <Button type="submit" disabled={loading} size="sm" className="flex-1 h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">{loading ? '...' : editingUser ? 'Update' : 'Create'}</Button>
               </div>
             </form>
           </DialogContent>
@@ -304,210 +250,99 @@ const UserManagement = () => {
       </div>
 
       {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            All Users ({users.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Desktop Table */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Email</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Role</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase">Team</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-slate-600 uppercase">Status</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-slate-600 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {users.map(user => (
-                  <tr key={user.id} className={`hover:bg-slate-50 ${!user.active ? 'opacity-50' : ''}`}>
-                    <td className="px-4 py-3 text-sm font-medium text-slate-800">{user.name}</td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{user.email}</td>
-                    <td className="px-4 py-3">
-                      <span className={getRoleBadgeClass(user.role)}>
-                        {user.role.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-600">{user.team_code || '-'}</td>
-                    <td className="px-4 py-3 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Switch
-                          checked={user.active !== false}
-                          onCheckedChange={() => handleToggleStatus(user.id, user.active)}
-                          disabled={user.id === currentUser.id}
-                        />
-                        <span className={`text-xs font-medium ${user.active !== false ? 'text-green-600' : 'text-red-600'}`}>
-                          {user.active !== false ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(user)} title="Edit User">
-                        <Edit className="w-4 h-4 text-blue-600" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => setResetPasswordUser(user)}
-                        title="Reset Password"
-                      >
-                        <Key className="w-4 h-4 text-green-600" />
-                      </Button>
-                      {user.id !== currentUser.id && (
-                        <Button variant="ghost" size="sm" onClick={() => handleDelete(user.id)} title="Delete User">
-                          <Trash2 className="w-4 h-4 text-red-600" />
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
+      <div className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">All Users ({users.length})</p>
+        </div>
+        {/* Desktop */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-[11px]">
+            <thead>
+              <tr className="border-b border-slate-200 bg-[#2c587a]/5">
+                {['Name', 'Email', 'Role', 'Team', 'Status', ''].map(h => (
+                  <th key={h} className="px-3 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Cards */}
-          <div className="md:hidden space-y-3">
-            {users.map(user => (
-              <Card key={user.id}>
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">{user.name}</h3>
-                        <p className="text-sm text-slate-600">{user.email}</p>
-                      </div>
-                      <span className={getRoleBadgeClass(user.role)}>
-                        {user.role.toUpperCase()}
-                      </span>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.map(u => (
+                <tr key={u.id} className={`hover:bg-slate-50/50 transition-colors ${!u.active ? 'opacity-40' : ''}`}>
+                  <td className="px-3 py-1.5 font-medium text-slate-800">{u.name}</td>
+                  <td className="px-3 py-1.5 text-slate-500">{u.email}</td>
+                  <td className="px-3 py-1.5">
+                    <span className={getRoleBadgeClass(u.role)}>{u.role}</span>
+                  </td>
+                  <td className="px-3 py-1.5 text-slate-500">{u.team_code || '—'}</td>
+                  <td className="px-3 py-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Switch checked={u.active !== false} onCheckedChange={() => handleToggleStatus(u.id, u.active)} disabled={u.id === currentUser.id} className="scale-75" />
+                      <span className={`text-[10px] font-medium ${u.active !== false ? 'text-emerald-600' : 'text-red-500'}`}>{u.active !== false ? 'Active' : 'Off'}</span>
                     </div>
-                    
-                    {user.team_code && (
-                      <div className="text-sm">
-                        <span className="text-slate-500">Team:</span>
-                        <span className="ml-2 font-medium text-slate-800">{user.team_code}</span>
-                      </div>
-                    )}
-                    
-                    <div className="flex gap-2 pt-2 border-t">
-                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEdit(user)}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="flex-1 text-green-600" 
-                        onClick={() => setResetPasswordUser(user)}
-                      >
-                        <Key className="w-4 h-4 mr-2" />
-                        Reset
-                      </Button>
-                      {user.id !== currentUser.id && (
-                        <Button variant="outline" size="sm" className="flex-1 text-red-600" onClick={() => handleDelete(user.id)}>
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                      )}
+                  </td>
+                  <td className="px-3 py-1.5 text-right">
+                    <div className="flex items-center justify-end gap-0.5">
+                      <button onClick={() => handleEdit(u)} className="p-1 rounded hover:bg-blue-50" title="Edit"><Edit className="w-3.5 h-3.5 text-[#2c587a]" /></button>
+                      <button onClick={() => setResetPasswordUser(u)} className="p-1 rounded hover:bg-emerald-50" title="Reset Password"><Key className="w-3.5 h-3.5 text-emerald-600" /></button>
+                      {u.id !== currentUser.id && <button onClick={() => handleDelete(u.id)} className="p-1 rounded hover:bg-red-50" title="Delete"><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {/* Mobile */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {users.map(u => (
+            <div key={u.id} className={`p-3 ${!u.active ? 'opacity-40' : ''}`}>
+              <div className="flex items-start justify-between mb-1.5">
+                <div className="min-w-0">
+                  <h3 className="text-xs font-semibold text-slate-800 truncate">{u.name}</h3>
+                  <p className="text-[10px] text-slate-500">{u.email}</p>
+                </div>
+                <span className={getRoleBadgeClass(u.role)}>{u.role}</span>
+              </div>
+              <div className="flex items-center gap-2 mt-2">
+                <button onClick={() => handleEdit(u)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded border border-slate-200 text-[10px] font-medium text-[#2c587a] hover:bg-slate-50"><Edit className="w-3 h-3" /> Edit</button>
+                <button onClick={() => setResetPasswordUser(u)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded border border-slate-200 text-[10px] font-medium text-emerald-600 hover:bg-emerald-50"><Key className="w-3 h-3" /> Reset</button>
+                {u.id !== currentUser.id && <button onClick={() => handleDelete(u.id)} className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded border border-red-200 text-[10px] font-medium text-red-500 hover:bg-red-50"><Trash2 className="w-3 h-3" /> Delete</button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Role Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Role Permissions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <h3 className="font-semibold text-purple-900 mb-2">Admin</h3>
-              <ul className="text-sm text-purple-800 space-y-1">
-                <li>• View all MIS data</li>
-                <li>• Edit all loan applications</li>
-                <li>• Manage users & permissions</li>
-                <li>• Full system access</li>
-              </ul>
-            </div>
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h3 className="font-semibold text-blue-900 mb-2">Manager</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• View team's data</li>
-                <li>• Edit team applications</li>
-                <li>• View team analytics</li>
-                <li>• Team-level access</li>
-              </ul>
-            </div>
-            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-              <h3 className="font-semibold text-green-900 mb-2">Agent</h3>
-              <ul className="text-sm text-green-800 space-y-1">
-                <li>• View own data only</li>
-                <li>• Edit own applications</li>
-                <li>• Personal analytics</li>
-                <li>• Individual access</li>
-              </ul>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+        {[
+          { role: 'Admin', color: 'purple', items: ['View all MIS data', 'Manage users', 'Full system access'] },
+          { role: 'Manager', color: 'blue', items: ['View team data', 'Edit team apps', 'Team analytics'] },
+          { role: 'Agent', color: 'green', items: ['View own data', 'Edit own apps', 'Personal analytics'] },
+        ].map(r => (
+          <div key={r.role} className={`p-3 bg-${r.color}-50 rounded-lg border border-${r.color}-200`}>
+            <h3 className={`text-xs font-semibold text-${r.color}-900 mb-1.5`}>{r.role}</h3>
+            <ul className={`text-[10px] text-${r.color}-800 space-y-0.5`}>
+              {r.items.map(i => <li key={i}>• {i}</li>)}
+            </ul>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
 
       {/* Reset Password Dialog */}
-      <Dialog open={!!resetPasswordUser} onOpenChange={(open) => {
-        if (!open) {
-          setResetPasswordUser(null);
-          setNewPassword('');
-        }
-      }}>
-        <DialogContent className="max-w-md">
+      <Dialog open={!!resetPasswordUser} onOpenChange={(open) => { if (!open) { setResetPasswordUser(null); setNewPassword(''); } }}>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Reset Password for {resetPasswordUser?.name}</DialogTitle>
+            <DialogTitle className="text-sm">Reset Password</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleResetPassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password *</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password (min 6 characters)"
-                required
-                minLength={6}
-              />
-              <p className="text-xs text-slate-500">
-                User: {resetPasswordUser?.email}
-              </p>
+          <form onSubmit={handleResetPassword} className="space-y-2.5">
+            <div>
+              <Label className="text-[11px]">New Password *</Label>
+              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Min 6 characters" required minLength={6} className="h-8 text-[11px] mt-0.5" />
+              <p className="text-[10px] text-slate-400 mt-0.5">User: {resetPasswordUser?.email}</p>
             </div>
-
             <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setResetPasswordUser(null);
-                  setNewPassword('');
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600"
-              >
-                Reset Password
-              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setResetPasswordUser(null); setNewPassword(''); }} className="flex-1 h-7 text-[11px]">Cancel</Button>
+              <Button type="submit" size="sm" className="flex-1 h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">Reset</Button>
             </div>
           </form>
         </DialogContent>
