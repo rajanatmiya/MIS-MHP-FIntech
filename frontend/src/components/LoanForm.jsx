@@ -277,14 +277,29 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
           />
         </div>
 
-        {/* Month */}
+        {/* Date */}
         <div className="space-y-2">
-          <Label htmlFor="month">Month *</Label>
+          <Label htmlFor="month">Date *</Label>
           <Input
             id="month"
-            value={formData.month}
-            onChange={(e) => handleChange('month', e.target.value)}
-            placeholder="e.g., Jan'25"
+            type="date"
+            value={(() => {
+              // Convert dd-mm-yyyy to yyyy-mm-dd for native date input
+              const v = formData.month;
+              if (!v) return '';
+              const parts = v.split('-');
+              if (parts.length === 3 && parts[0].length === 2) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
+              }
+              return v;
+            })()}
+            onChange={(e) => {
+              // Convert yyyy-mm-dd from input to dd-mm-yyyy for storage
+              const val = e.target.value;
+              if (!val) { handleChange('month', ''); return; }
+              const [y, m, d] = val.split('-');
+              handleChange('month', `${d}-${m}-${y}`);
+            }}
             required
             data-testid="month-input"
           />

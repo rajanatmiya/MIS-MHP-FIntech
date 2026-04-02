@@ -36,6 +36,9 @@ A comprehensive MIS (Management Information System) dashboard for a loan agency 
 - Agent: Sees only own data, no delete button, no user management access
 - Analytics/overview endpoint RBAC re-enabled
 
+## Recent Changes
+- LoanForm: Month field changed from text input to native date picker, stores as `dd-mm-yyyy`
+
 ## Pending / Backlog
 - **P2:** Refactor `backend/server.py` into modular routers (routes/auth.py, routes/loans.py, etc.)
 - **P2:** Refactor `MonthlyMIS.jsx` into smaller reusable components
