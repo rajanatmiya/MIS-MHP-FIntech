@@ -583,7 +583,7 @@ const MonthlyMIS = () => {
           const totals = calculateMonthTotals(monthLoans);
           
           return (
-            <div key={month} className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
+            <div key={month} className="border border-slate-200 rounded-lg bg-white shadow-sm">
               {/* Month Header */}
               <div
                 onClick={() => toggleMonth(month)}
