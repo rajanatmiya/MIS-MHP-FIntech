@@ -346,9 +346,8 @@ const MonthlyMIS = () => {
     const value = loan[field] || '';
 
     if (isEditing) {
-      // Special handling for month field - show date picker
+      // Date picker for month field
       if (field === 'month') {
-        // Convert dd-mm-yyyy to yyyy-mm-dd for the date input
         let dateInputVal = editValue;
         if (editValue && /^\d{2}-\d{2}-\d{4}$/.test(editValue)) {
           const [d, m, y] = editValue.split('-');
@@ -368,13 +367,12 @@ const MonthlyMIS = () => {
             }}
             onBlur={() => handleCellSave(loan.id, field)}
             onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
-            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-1.5 py-0.5 text-[11px] border border-[#2c587a] rounded focus:outline-none focus:ring-1 focus:ring-[#2c587a]"
             autoFocus
           />
         );
       }
 
-      // Special handling for scheme field - show dropdown
       if (field === 'scheme') {
         return (
           <select
@@ -382,10 +380,10 @@ const MonthlyMIS = () => {
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={() => handleCellSave(loan.id, field)}
             onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
-            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-1.5 py-0.5 text-[11px] border border-[#2c587a] rounded focus:outline-none focus:ring-1 focus:ring-[#2c587a]"
             autoFocus
           >
-            <option value="">Select scheme</option>
+            <option value="">Select</option>
             {schemes.map(scheme => (
               <option key={scheme.id} value={scheme.name}>{scheme.name}</option>
             ))}
@@ -393,7 +391,6 @@ const MonthlyMIS = () => {
         );
       }
       
-      // Special handling for status field - show dropdown
       if (field === 'status') {
         return (
           <select
@@ -401,10 +398,10 @@ const MonthlyMIS = () => {
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={() => handleCellSave(loan.id, field)}
             onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
-            className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-1.5 py-0.5 text-[11px] border border-[#2c587a] rounded focus:outline-none focus:ring-1 focus:ring-[#2c587a]"
             autoFocus
           >
-            <option value="">Select status</option>
+            <option value="">Select</option>
             {statuses.map(status => (
               <option key={status.id} value={status.name}>{status.name}</option>
             ))}
@@ -419,7 +416,7 @@ const MonthlyMIS = () => {
           onChange={(e) => setEditValue(e.target.value)}
           onBlur={() => handleCellSave(loan.id, field)}
           onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
-          className="w-full px-2 py-1 border border-blue-500 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-1.5 py-0.5 text-[11px] border border-[#2c587a] rounded focus:outline-none focus:ring-1 focus:ring-[#2c587a]"
           autoFocus
         />
       );
@@ -428,330 +425,139 @@ const MonthlyMIS = () => {
     return (
       <div
         onClick={() => handleCellClick(loan.id, field, value)}
-        className="cursor-pointer hover:bg-blue-50 px-2 py-1 rounded transition-colors min-h-[32px] flex items-center"
+        className="cursor-pointer hover:bg-blue-50/60 px-1.5 py-0.5 rounded transition-colors min-h-[24px] flex items-center text-[11px]"
         title="Click to edit"
       >
-        {value || <span className="text-slate-400">-</span>}
+        {value || <span className="text-slate-300 italic">—</span>}
       </div>
     );
   };
 
+  const activeFilterCount = Object.values(filters).filter(v => v).length;
+
   return (
-    <div className="space-y-4 fade-in pb-20">
+    <div className="space-y-3 fade-in pb-16" data-testid="mis-board-page">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-sm font-bold text-slate-800 mb-0.5">
-            MIS Board
-          </h1>
-          <p className="text-[11px] text-slate-500">Month-wise loan management • Click any cell to edit</p>
+          <h1 className="text-sm font-bold text-slate-800" data-testid="mis-board-title">MIS Board</h1>
+          <p className="text-[10px] text-slate-400 mt-0.5">Click any cell to edit inline</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1.5">
           {user?.role === 'admin' && (
             <>
               <Button
                 onClick={() => window.open(`${API}/export/loans`, '_blank')}
                 variant="outline"
-                className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                size="sm"
+                className="h-7 text-[11px] px-2.5 border-slate-200 text-slate-600 hover:bg-slate-50"
+                data-testid="export-excel-btn"
               >
-                <Download className="w-4 h-4 mr-2" />
-                Export Excel
+                <Download className="w-3 h-3 mr-1" />
+                Export
               </Button>
               <Button
                 onClick={() => setShowImportDialog(true)}
                 variant="outline"
-                className="border-green-600 text-green-600 hover:bg-green-50"
+                size="sm"
+                className="h-7 text-[11px] px-2.5 border-slate-200 text-slate-600 hover:bg-slate-50"
+                data-testid="import-excel-btn"
               >
-                <Upload className="w-4 h-4 mr-2" />
-                Import Excel
+                <Upload className="w-3 h-3 mr-1" />
+                Import
               </Button>
             </>
           )}
           <Button
             onClick={() => setShowAddForm(true)}
-            className="bg-blue-600 hover:bg-blue-700"
+            size="sm"
+            className="h-7 text-[11px] px-3 bg-[#2c587a] hover:bg-[#234a68]"
+            data-testid="add-entry-btn"
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="w-3 h-3 mr-1" />
             Add Entry
           </Button>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
-        <Input
-          placeholder="Quick find... (customer, company, contact, location, executive, status, bank, product)"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10"
-        />
-      </div>
-
-      {/* AI Natural Language Search */}
-      <Card className="bg-gradient-to-r from-purple-50 to-blue-50 border-purple-200">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5 text-purple-600" />
-            <h3 className="font-semibold text-purple-900">AI Search</h3>
-          </div>
-          <div className="flex gap-2">
-            <Input
-              placeholder='Try: "Show me all HDFC loans from Mumbai" or "Find approved loans this month"'
-              value={aiQuery}
-              onChange={(e) => setAiQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAISearch()}
-              className="flex-1"
-            />
-            <Button
-              onClick={handleAISearch}
-              disabled={aiLoading}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              {aiLoading ? 'Thinking...' : 'Search'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Filters and AI Analysis */}
-      <div className="flex flex-wrap gap-2">
+      {/* Search + Quick Actions Row */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <Input
+            placeholder="Search customer, company, contact, bank, agent..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 h-8 text-[11px] bg-white"
+            data-testid="search-input"
+          />
+        </div>
         <Button
           variant="outline"
+          size="sm"
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2"
+          className={`h-8 text-[11px] px-2.5 shrink-0 ${showFilters ? 'bg-[#2c587a] text-white border-[#2c587a]' : 'border-slate-200'}`}
+          data-testid="filters-toggle"
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="w-3 h-3 mr-1" />
           Filters
-          {(filters.status || filters.bank || filters.month || filters.agent_name) && (
-            <span className="ml-1 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
-              Active
-            </span>
+          {activeFilterCount > 0 && (
+            <span className="ml-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center">{activeFilterCount}</span>
           )}
         </Button>
-
         <Button
           variant="outline"
+          size="sm"
           onClick={() => setShowAIAnalysis(true)}
-          className="flex items-center gap-2 text-purple-600"
+          className="h-8 text-[11px] px-2.5 shrink-0 border-slate-200 text-[#2c587a]"
+          data-testid="ai-analysis-btn"
         >
-          <TrendingUp className="w-4 h-4" />
-          AI Analysis
+          <Sparkles className="w-3 h-3 mr-1" />
+          AI
         </Button>
-
-        {(filters.status || filters.bank || filters.month || filters.agent_name) && (
-          <Button
-            variant="ghost"
-            onClick={clearFilters}
-            className="text-slate-600"
-          >
-            <X className="w-4 h-4 mr-1" />
-            Clear Filters
-          </Button>
-        )}
       </div>
 
       {/* Filter Panel */}
       {showFilters && (
-        <Card>
-          <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label>Customer Name</Label>
-                <Input
-                  placeholder="Filter by customer"
-                  value={filters.customer_name}
-                  onChange={(e) => setFilters({...filters, customer_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Company Name</Label>
-                <Input
-                  placeholder="Filter by company"
-                  value={filters.company_name}
-                  onChange={(e) => setFilters({...filters, company_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Contact Number</Label>
-                <Input
-                  placeholder="Filter by contact"
-                  value={filters.contact_no}
-                  onChange={(e) => setFilters({...filters, contact_no: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Bank</Label>
-                <Input
-                  placeholder="e.g., HDFC, ICICI"
-                  value={filters.bank}
-                  onChange={(e) => setFilters({...filters, bank: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Status</Label>
-                <Input
-                  placeholder="e.g., Pending, Approved"
-                  value={filters.status}
-                  onChange={(e) => setFilters({...filters, status: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Sanctioned Amount</Label>
-                <Input
-                  placeholder="Filter by sanction"
-                  value={filters.sanction}
-                  onChange={(e) => setFilters({...filters, sanction: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Disbursed Amount</Label>
-                <Input
-                  placeholder="Filter by disbursed"
-                  value={filters.disbursed}
-                  onChange={(e) => setFilters({...filters, disbursed: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Remark</Label>
-                <Input
-                  placeholder="Filter by remark"
-                  value={filters.remark}
-                  onChange={(e) => setFilters({...filters, remark: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Decline Reason</Label>
-                <Input
-                  placeholder="Filter by decline reason"
-                  value={filters.decline_reason}
-                  onChange={(e) => setFilters({...filters, decline_reason: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Scheme</Label>
-                <Input
-                  placeholder="Filter by scheme"
-                  value={filters.scheme}
-                  onChange={(e) => setFilters({...filters, scheme: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Case From</Label>
-                <Input
-                  placeholder="Filter by case from"
-                  value={filters.case_from}
-                  onChange={(e) => setFilters({...filters, case_from: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Location</Label>
-                <Input
-                  placeholder="Filter by location"
-                  value={filters.location}
-                  onChange={(e) => setFilters({...filters, location: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Branch</Label>
-                <Input
-                  placeholder="Filter by branch"
-                  value={filters.branch}
-                  onChange={(e) => setFilters({...filters, branch: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Executive Name</Label>
-                <Input
-                  placeholder="Filter by executive"
-                  value={filters.executive_name}
-                  onChange={(e) => setFilters({...filters, executive_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Team Manager</Label>
-                <Input
-                  placeholder="Filter by manager"
-                  value={filters.team_manager}
-                  onChange={(e) => setFilters({...filters, team_manager: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Code</Label>
-                <Input
-                  placeholder="Filter by code"
-                  value={filters.code}
-                  onChange={(e) => setFilters({...filters, code: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Rate</Label>
-                <Input
-                  placeholder="Filter by rate"
-                  value={filters.rate}
-                  onChange={(e) => setFilters({...filters, rate: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>PF</Label>
-                <Input
-                  placeholder="Filter by PF"
-                  value={filters.pf}
-                  onChange={(e) => setFilters({...filters, pf: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Insurance</Label>
-                <Input
-                  placeholder="Filter by insurance"
-                  value={filters.insurance}
-                  onChange={(e) => setFilters({...filters, insurance: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Tenure</Label>
-                <Input
-                  placeholder="Filter by tenure"
-                  value={filters.tenure}
-                  onChange={(e) => setFilters({...filters, tenure: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Subvention</Label>
-                <Input
-                  placeholder="Filter by subvention"
-                  value={filters.subvention}
-                  onChange={(e) => setFilters({...filters, subvention: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Brokerage Subvention</Label>
-                <Input
-                  placeholder="Filter by brokerage"
-                  value={filters.brokerage_subvention}
-                  onChange={(e) => setFilters({...filters, brokerage_subvention: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Agent Name</Label>
-                <Input
-                  placeholder="Filter by agent"
-                  value={filters.agent_name}
-                  onChange={(e) => setFilters({...filters, agent_name: e.target.value})}
-                />
-              </div>
-              <div>
-                <Label>Month</Label>
-                <Input
-                  placeholder="e.g., Jan'25"
-                  value={filters.month}
-                  onChange={(e) => setFilters({...filters, month: e.target.value})}
-                />
-              </div>
+        <Card className="border-slate-200 shadow-sm">
+          <CardContent className="p-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+              {[
+                { key: 'customer_name', label: 'Customer' },
+                { key: 'company_name', label: 'Company' },
+                { key: 'contact_no', label: 'Contact' },
+                { key: 'bank', label: 'Bank' },
+                { key: 'status', label: 'Status' },
+                { key: 'scheme', label: 'Scheme' },
+                { key: 'agent_name', label: 'Agent' },
+                { key: 'month', label: 'Date' },
+                { key: 'location', label: 'Location' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'executive_name', label: 'Executive' },
+                { key: 'team_manager', label: 'Manager' },
+                { key: 'sanction', label: 'Sanction' },
+                { key: 'disbursed', label: 'Disbursed' },
+                { key: 'case_from', label: 'Case From' },
+                { key: 'code', label: 'Code' },
+                { key: 'rate', label: 'Rate' },
+                { key: 'decline_reason', label: 'Decline' },
+              ].map(f => (
+                <div key={f.key}>
+                  <label className="text-[10px] text-slate-500 mb-0.5 block">{f.label}</label>
+                  <Input
+                    placeholder={f.label}
+                    value={filters[f.key] || ''}
+                    onChange={(e) => setFilters({...filters, [f.key]: e.target.value})}
+                    className="h-7 text-[11px]"
+                  />
+                </div>
+              ))}
             </div>
-            <div className="mt-4 flex justify-end">
+            <div className="mt-2 flex justify-end">
               <Button 
-                variant="outline" 
+                variant="ghost"
+                size="sm"
+                className="h-6 text-[10px] text-slate-500 hover:text-red-600"
                 onClick={() => setFilters({
                   customer_name: '', company_name: '', contact_no: '', bank: '', status: '',
                   sanction: '', disbursed: '', remark: '', decline_reason: '', scheme: '',
@@ -759,8 +565,10 @@ const MonthlyMIS = () => {
                   code: '', rate: '', pf: '', insurance: '', tenure: '', subvention: '',
                   brokerage_subvention: '', agent_name: '', month: ''
                 })}
+                data-testid="clear-filters-btn"
               >
-                Clear All Filters
+                <X className="w-3 h-3 mr-0.5" />
+                Clear all
               </Button>
             </div>
           </CardContent>
@@ -772,421 +580,193 @@ const MonthlyMIS = () => {
         {months.map(month => {
           const monthLoans = groupedLoans[month];
           const isExpanded = expandedMonths.has(month);
+          const totals = calculateMonthTotals(monthLoans);
           
           return (
-            <Card key={month} className="overflow-hidden">
+            <div key={month} className="border border-slate-200 rounded-lg bg-white overflow-hidden shadow-sm">
               {/* Month Header */}
               <div
                 onClick={() => toggleMonth(month)}
-                className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 cursor-pointer hover:from-purple-100 hover:to-blue-100 transition-colors border-b"
+                className="flex items-center justify-between px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
+                data-testid={`month-header-${month}`}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {isExpanded ? (
-                    <ChevronDown className="w-5 h-5 text-purple-600" />
+                    <ChevronDown className="w-3.5 h-3.5 text-[#2c587a]" />
                   ) : (
-                    <ChevronRight className="w-5 h-5 text-purple-600" />
+                    <ChevronRight className="w-3.5 h-3.5 text-[#2c587a]" />
                   )}
-                  <div>
-                    <h3 className="font-bold text-lg text-purple-900">{month}</h3>
-                    <p className="text-sm text-purple-600">{monthLoans.length} entries</p>
-                  </div>
+                  <span className="font-semibold text-xs text-slate-800">{month}</span>
+                  <span className="text-[10px] text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded-full">{monthLoans.length} entries</span>
                 </div>
+                {!isExpanded && (
+                  <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                    <span>Sanctioned: <strong className="text-slate-700">₹{formatNumber(totals.sanction)}</strong></span>
+                    <span>Disbursed: <strong className="text-emerald-700">₹{formatNumber(totals.disbursed)}</strong></span>
+                  </div>
+                )}
               </div>
 
-              {/* Month Content */}
+              {/* Table */}
               {isExpanded && (
-                <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-slate-50 border-b sticky top-0">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Month</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Customer Name</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Company Name</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Contact No</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Bank/NBFC</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Status</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Sanctioned</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Disbursed</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Remark</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-red-600 uppercase whitespace-nowrap">Decline Reason</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Scheme</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Case From</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Location</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Branch</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Executive Name</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Team Manager</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Code</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Rate</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">PF</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Insurance</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Tenure</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Subvention</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Brokerage Subvention</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-slate-600 uppercase whitespace-nowrap">Agent Name</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-200">
-                        {monthLoans.map(loan => (
-                          <tr key={loan.id} className="hover:bg-slate-50">
-                            <td className="px-4 py-2 text-sm text-slate-700 whitespace-nowrap">
-                              {renderCell(loan, 'month', 'Month')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'customer_name', 'Customer Name')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'company_name', 'Company Name')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'contact_no', 'Contact Number')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'bank', 'Bank/NBFC')}
-                            </td>
-                            <td className="px-4 py-2 text-sm">
-                              {renderCell(loan, 'status', 'Status')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'sanction', 'Sanctioned')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'disbursed', 'Disbursed')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'remark', 'Remark')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-red-50 bg-red-50">
-                              {renderCell(loan, 'decline_reason', 'Decline Reason')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'scheme', 'Scheme')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'case_from', 'Case From')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'location', 'Location')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'branch', 'Branch')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'executive_name', 'Executive Name')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'team_manager', 'Team Manager')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'code', 'Code')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'rate', 'Rate')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'pf', 'PF')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'insurance', 'Insurance')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'tenure', 'Tenure')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'subvention', 'Subvention')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'brokerage_subvention', 'Brokerage Subvention')}
-                            </td>
-                            <td className="px-4 py-2 text-sm text-slate-800">
-                              {renderCell(loan, 'agent_name', 'Agent Name')}
-                            </td>
-                          </tr>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px]">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-[#2c587a]/5">
+                        {['Date','Customer','Company','Contact','Bank','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent'].map(h => (
+                          <th key={h} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
-                        
-                        {/* Totals Row */}
-                        <tr className="bg-blue-50 font-semibold border-t-2 border-blue-300">
-                          <td className="px-4 py-3 text-sm text-blue-900" colSpan="6">
-                            TOTAL ({monthLoans.length} entries)
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).sanction)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).disbursed)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-500" colSpan="8">
-                            {/* Empty cells for non-numeric columns */}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).pf)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).insurance)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-slate-500">
-                            {/* Tenure - no total */}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).subvention)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).brokerage)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-blue-900 text-right">
-                            ₹{formatNumber(calculateMonthTotals(monthLoans).subvention_0)}
-                          </td>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {monthLoans.map(loan => (
+                        <tr key={loan.id} className="hover:bg-slate-50/50 transition-colors">
+                          {['month','customer_name','company_name','contact_no','bank','status','sanction','disbursed','remark','decline_reason','scheme','case_from','location','branch','executive_name','team_manager','code','rate','pf','insurance','tenure','subvention','brokerage_subvention','agent_name'].map(field => (
+                            <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''}`}>
+                              {renderCell(loan, field, field)}
+                            </td>
+                          ))}
                         </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </CardContent>
+                      ))}
+                      
+                      {/* Totals Row */}
+                      <tr className="bg-[#2c587a]/5 border-t border-[#2c587a]/20">
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a]" colSpan="6">
+                          TOTAL ({monthLoans.length})
+                        </td>
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.sanction)}</td>
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-emerald-700 text-right">₹{formatNumber(totals.disbursed)}</td>
+                        <td colSpan="10" className="px-2 py-1.5"></td>
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.pf)}</td>
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.insurance)}</td>
+                        <td className="px-2 py-1.5"></td>
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.subvention)}</td>
+                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.brokerage)}</td>
+                        <td className="px-2 py-1.5"></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>
 
       {months.length === 0 && (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <p className="text-slate-600">No entries found. Click "Add Entry" to create your first loan application.</p>
-          </CardContent>
-        </Card>
+        <div className="text-center py-16 text-slate-400" data-testid="empty-state">
+          <FileSpreadsheet className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+          <p className="text-xs font-medium">No entries found</p>
+          <p className="text-[10px] mt-0.5">Click "Add Entry" to create your first loan application</p>
+        </div>
       )}
 
       {/* Add Form Dialog */}
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Add New Entry</DialogTitle>
+            <DialogTitle className="text-sm">Add New Entry</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleAddLoan} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Customer Name *</Label>
+          <form onSubmit={handleAddLoan} className="space-y-3">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+              {[
+                { key: 'customer_name', label: 'Customer Name *', required: true },
+                { key: 'company_name', label: 'Company Name *', required: true },
+                { key: 'contact_no', label: 'Contact Number *', required: true },
+                { key: 'location', label: 'Location', placeholder: 'City, State' },
+                { key: 'agent_name', label: 'Agent Name *', required: true },
+                { key: 'executive_name', label: 'Executive Name' },
+                { key: 'team_manager', label: 'Team Manager' },
+              ].map(f => (
+                <div key={f.key}>
+                  <Label className="text-[11px] text-slate-600">{f.label}</Label>
                   <Input
-                    required
-                    value={newLoanData.customer_name || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})}
+                    required={f.required}
+                    value={newLoanData[f.key] || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, [f.key]: e.target.value})}
+                    placeholder={f.placeholder || ''}
+                    className="h-8 text-[11px] mt-0.5"
                   />
                 </div>
-                <div>
-                  <Label>Company Name *</Label>
-                  <Input
-                    required
-                    value={newLoanData.company_name || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Contact Number *</Label>
-                  <Input
-                    required
-                    value={newLoanData.contact_no || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, contact_no: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Location</Label>
-                  <Input
-                    value={newLoanData.location || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, location: e.target.value})}
-                    placeholder="City, State"
-                  />
-                </div>
-                <div>
-                  <Label>Agent Name *</Label>
-                  <Input
-                    required
-                    value={newLoanData.agent_name || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, agent_name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Executive Name</Label>
-                  <Input
-                    value={newLoanData.executive_name || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, executive_name: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Team Manager</Label>
-                  <Input
-                    value={newLoanData.team_manager || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, team_manager: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Status *</Label>
-                  <Select
-                    required
-                    value={newLoanData.status || ''}
-                    onValueChange={(value) => setNewLoanData({...newLoanData, status: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statuses.map(status => (
-                        <SelectItem key={status.id} value={status.name}>{status.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Bank *</Label>
-                  <Input
-                    required
-                    value={newLoanData.bank || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Date *</Label>
-                  <Input
-                    required
-                    type="date"
-                    value={monthInputValue}
-                    onChange={(e) => {
-                      setMonthInputValue(e.target.value);
-                      if (e.target.value) {
-                        const [year, month, day] = e.target.value.split('-');
-                        const formatted = `${day}-${month}-${year}`;
-                        setNewLoanData({...newLoanData, month: formatted});
-                      } else {
-                        setNewLoanData({...newLoanData, month: ''});
-                      }
-                    }}
-                    className="cursor-pointer"
-                  />
-                  {newLoanData.month && (
-                    <p className="text-xs text-slate-500 mt-1">Selected: {newLoanData.month}</p>
-                  )}
-                </div>
-                <div>
-                  <Label>Sanction Amount</Label>
-                  <Input
-                    value={newLoanData.sanction || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})}
-                    placeholder="e.g., 500000"
-                  />
-                </div>
-                <div>
-                  <Label>Disbursed Amount</Label>
-                  <Input
-                    value={newLoanData.disbursed || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})}
-                    placeholder="e.g., 500000"
-                  />
-                </div>
-                <div>
-                  <Label>Scheme</Label>
-                  <Select
-                    value={newLoanData.scheme || ''}
-                    onValueChange={(value) => setNewLoanData({...newLoanData, scheme: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select scheme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schemes.map(scheme => (
-                        <SelectItem key={scheme.id} value={scheme.name}>{scheme.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Rate of Interest (%)</Label>
-                  <Input
-                    value={newLoanData.rate || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, rate: e.target.value})}
-                    placeholder="e.g., 10.5"
-                  />
-                </div>
-                <div>
-                  <Label>PF</Label>
-                  <Input
-                    value={newLoanData.pf || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, pf: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Insurance</Label>
-                  <Input
-                    value={newLoanData.insurance || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, insurance: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Tenure (Months)</Label>
-                  <Input
-                    value={newLoanData.tenure || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, tenure: e.target.value})}
-                    placeholder="e.g., 24, 36, 60"
-                  />
-                </div>
-                <div>
-                  <Label>Subvention</Label>
-                  <Input
-                    value={newLoanData.subvention || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, subvention: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Brokerage Subvention</Label>
-                  <Input
-                    value={newLoanData.brokerage_subvention || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, brokerage_subvention: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Case From</Label>
-                  <Input
-                    value={newLoanData.case_from || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, case_from: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Branch</Label>
-                  <Input
-                    value={newLoanData.branch || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, branch: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label>Code</Label>
-                  <Input
-                    value={newLoanData.code || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, code: e.target.value})}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>Remark</Label>
-                  <Input
-                    value={newLoanData.remark || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})}
-                    placeholder="Additional notes"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label className="text-red-600">Decline Reason (if rejected)</Label>
-                  <Input
-                    value={newLoanData.decline_reason || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, decline_reason: e.target.value})}
-                    placeholder="Reason for decline/rejection"
-                    className="border-red-300 focus:border-red-500"
-                  />
-                </div>
+              ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Status *</Label>
+                <Select value={newLoanData.status || ''} onValueChange={(value) => setNewLoanData({...newLoanData, status: value})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{statuses.map(s => <SelectItem key={s.id} value={s.name} className="text-[11px]">{s.name}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
-            
-            <div className="flex gap-2 justify-end mt-4">
-              <Button type="button" variant="outline" onClick={() => setShowAddForm(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                Add Entry
-              </Button>
+              <div>
+                <Label className="text-[11px] text-slate-600">Bank *</Label>
+                <Input required value={newLoanData.bank || ''} onChange={(e) => setNewLoanData({...newLoanData, bank: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Date *</Label>
+                <Input
+                  required
+                  type="date"
+                  value={monthInputValue}
+                  onChange={(e) => {
+                    setMonthInputValue(e.target.value);
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      setNewLoanData({...newLoanData, month: `${day}-${month}-${year}`});
+                    } else {
+                      setNewLoanData({...newLoanData, month: ''});
+                    }
+                  }}
+                  className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                />
+                {newLoanData.month && <p className="text-[10px] text-slate-400 mt-0.5">{newLoanData.month}</p>}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Sanction Amt</Label>
+                <Input value={newLoanData.sanction || ''} onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})} placeholder="e.g., 500000" className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Disbursed Amt</Label>
+                <Input value={newLoanData.disbursed || ''} onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})} placeholder="e.g., 500000" className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Scheme</Label>
+                <Select value={newLoanData.scheme || ''} onValueChange={(value) => setNewLoanData({...newLoanData, scheme: value})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>{schemes.map(s => <SelectItem key={s.id} value={s.name} className="text-[11px]">{s.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              {[
+                { key: 'rate', label: 'Rate (%)', placeholder: '10.5' },
+                { key: 'pf', label: 'PF' },
+                { key: 'insurance', label: 'Insurance' },
+                { key: 'tenure', label: 'Tenure (Months)', placeholder: '24, 36, 60' },
+                { key: 'subvention', label: 'Subvention' },
+                { key: 'brokerage_subvention', label: 'Brokerage' },
+                { key: 'case_from', label: 'Case From' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'code', label: 'Code' },
+              ].map(f => (
+                <div key={f.key}>
+                  <Label className="text-[11px] text-slate-600">{f.label}</Label>
+                  <Input
+                    value={newLoanData[f.key] || ''}
+                    onChange={(e) => setNewLoanData({...newLoanData, [f.key]: e.target.value})}
+                    placeholder={f.placeholder || ''}
+                    className="h-8 text-[11px] mt-0.5"
+                  />
+                </div>
+              ))}
+              <div className="col-span-2">
+                <Label className="text-[11px] text-slate-600">Remark</Label>
+                <Input value={newLoanData.remark || ''} onChange={(e) => setNewLoanData({...newLoanData, remark: e.target.value})} placeholder="Notes" className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div className="col-span-2">
+                <Label className="text-[11px] text-red-500">Decline Reason</Label>
+                <Input value={newLoanData.decline_reason || ''} onChange={(e) => setNewLoanData({...newLoanData, decline_reason: e.target.value})} placeholder="If rejected" className="h-8 text-[11px] mt-0.5 border-red-200 focus:border-red-400" />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(false)} className="h-7 text-[11px]">Cancel</Button>
+              <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">Add Entry</Button>
             </div>
           </form>
         </DialogContent>
@@ -1194,118 +774,67 @@ const MonthlyMIS = () => {
 
       {/* AI Analysis Dialog */}
       <Dialog open={showAIAnalysis} onOpenChange={setShowAIAnalysis}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-purple-600" />
+            <DialogTitle className="text-sm flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#2c587a]" />
               AI Data Analysis
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Ask a question about your data</Label>
-              <div className="flex gap-2 mt-2">
-                <Input
-                  placeholder='e.g., "What are the trends this month?" or "Which executive performed best?"'
-                  value={aiQuestion}
-                  onChange={(e) => setAiQuestion(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAIAnalysis()}
-                />
-                <Button
-                  onClick={handleAIAnalysis}
-                  disabled={aiLoading}
-                  className="bg-purple-600 hover:bg-purple-700"
-                >
-                  {aiLoading ? 'Analyzing...' : 'Analyze'}
-                </Button>
-              </div>
+          <div className="space-y-3">
+            <div className="flex gap-1.5">
+              <Input
+                placeholder='e.g., "What are the trends?" or "Top performing banks?"'
+                value={aiQuestion}
+                onChange={(e) => setAiQuestion(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleAIAnalysis()}
+                className="h-8 text-[11px]"
+              />
+              <Button onClick={handleAIAnalysis} disabled={aiLoading} size="sm" className="h-8 text-[11px] bg-[#2c587a] hover:bg-[#234a68] shrink-0">
+                {aiLoading ? '...' : 'Ask'}
+              </Button>
             </div>
-
             {aiAnalysis && (
-              <Card className="bg-purple-50 border-purple-200">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-600 mt-1 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h4 className="font-semibold text-purple-900 mb-2">AI Insights:</h4>
-                      <div className="text-slate-700 whitespace-pre-wrap">{aiAnalysis}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                <div className="text-[11px] text-slate-700 whitespace-pre-wrap">{aiAnalysis}</div>
+              </div>
             )}
-
-            <div className="text-xs text-slate-500">
-              <p className="font-semibold mb-1">Try asking:</p>
-              <ul className="space-y-1 ml-4 list-disc">
-                <li>"What are the top performing banks this month?"</li>
-                <li>"Show me conversion rate trends"</li>
-                <li>"Which executive has the most disbursals?"</li>
-                <li>"What's the average sanction amount?"</li>
+            <div className="text-[10px] text-slate-400">
+              <p className="font-medium mb-1">Try asking:</p>
+              <ul className="space-y-0.5 ml-3 list-disc">
+                <li>Top performing banks this month?</li>
+                <li>Conversion rate trends</li>
+                <li>Average sanction amount?</li>
               </ul>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Import Excel Dialog */}
+      {/* Import Dialog */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="w-5 h-5 text-green-600" />
-              Import Loans from Excel
+            <DialogTitle className="text-sm flex items-center gap-1.5">
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              Import from Excel
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-900 mb-2">📋 Excel Format Requirements:</h4>
-              <div className="text-sm text-blue-800 space-y-1">
-                <p><strong>Required columns:</strong> Customer Name, Status, Bank, Month</p>
-                <p><strong>Optional columns:</strong> Company Name, Contact, Location, Executive Name, Sanction, Disbursed, ROI, Tenure, Product Type, Login Date, Remark</p>
-                <p className="mt-2 text-xs">💡 Column names are case-insensitive and flexible (e.g., "Customer Name", "customer", "customername" all work)</p>
-              </div>
+          <div className="space-y-3">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] text-slate-600">
+              <p><strong>Required:</strong> Customer Name, Status, Bank, Month</p>
+              <p className="mt-0.5"><strong>Optional:</strong> Company, Contact, Location, Executive, Sanction, Disbursed, etc.</p>
             </div>
-
-            <div className="space-y-2">
-              <Label>Select Excel File (.xlsx or .xls)</Label>
-              <Input
-                type="file"
-                accept=".xlsx,.xls"
-                onChange={(e) => setImportFile(e.target.files[0])}
-                className="cursor-pointer"
-              />
-              {importFile && (
-                <p className="text-sm text-green-600">
-                  ✓ Selected: {importFile.name}
-                </p>
-              )}
+            <div>
+              <Label className="text-[11px]">Excel File (.xlsx/.xls)</Label>
+              <Input type="file" accept=".xlsx,.xls" onChange={(e) => setImportFile(e.target.files[0])} className="h-8 text-[11px] mt-0.5 cursor-pointer" />
+              {importFile && <p className="text-[10px] text-emerald-600 mt-0.5">Selected: {importFile.name}</p>}
             </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-xs text-yellow-800">
-                <strong>⚠️ Note:</strong> Existing data will not be affected. Only new entries will be added. Empty rows will be skipped.
-              </p>
-            </div>
-
             <div className="flex gap-2 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowImportDialog(false);
-                  setImportFile(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleImportExcel}
-                disabled={importing || !importFile}
-                className="bg-green-600 hover:bg-green-700"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                {importing ? 'Importing...' : 'Import Data'}
+              <Button variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); }} className="h-7 text-[11px]">Cancel</Button>
+              <Button onClick={handleImportExcel} disabled={importing || !importFile} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">
+                <Upload className="w-3 h-3 mr-1" />
+                {importing ? 'Importing...' : 'Import'}
               </Button>
             </div>
           </div>
