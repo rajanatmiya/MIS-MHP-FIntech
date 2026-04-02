@@ -1367,9 +1367,10 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
         # Auto-generate month if not present (use current month)
         current_month = datetime.now().strftime("%b'%y")  # e.g., "Jan'25"
         
-        # Import loans
+        # Import loans with duplicate detection
         imported_count = 0
         skipped_count = 0
+        duplicate_count = 0
         errors = []
         
         for index, row in df.iterrows():
@@ -1377,6 +1378,22 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                 # Skip empty rows
                 if pd.isna(row.get('customer_name')) or not str(row.get('customer_name')).strip():
                     skipped_count += 1
+                    continue
+                
+                customer_name = str(row.get('customer_name', '')).strip()
+                contact_no = str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else ''
+                bank = str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else ''
+                
+                # Duplicate detection: check if same customer_name + contact_no + bank exists
+                dup_query = {"customer_name": customer_name}
+                if contact_no:
+                    dup_query["contact_no"] = contact_no
+                if bank:
+                    dup_query["bank"] = bank
+                
+                existing = await db.loan_applications.find_one(dup_query, {"_id": 0, "id": 1})
+                if existing:
+                    duplicate_count += 1
                     continue
                 
                 # Prepare loan data
@@ -1423,8 +1440,9 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             "message": "Import completed",
             "imported": imported_count,
             "skipped": skipped_count,
+            "duplicates": duplicate_count,
             "total_rows": len(df),
-            "errors": errors[:10] if errors else []  # Return first 10 errors
+            "errors": errors[:10] if errors else []
         }
         
     except Exception as e:
@@ -1625,6 +1643,69 @@ async def create_default_admin():
             else:
                 logger.info(f"✅ Admin user already exists: {admin_email}")
         
+        # Create default manager user
+        manager_email = "manager@mhpfintech.com"
+        manager_password = "Admin@123"
+        existing_manager = await db.users.find_one({"email": manager_email})
+        
+        if not existing_manager:
+            manager_user = {
+                "id": str(uuid.uuid4()),
+                "email": manager_email,
+                "name": "Manager User",
+                "role": "manager",
+                "team_code": "TEAM-A",
+                "manager_id": None,
+                "active": True,
+                "password": hash_password(manager_password),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(manager_user)
+            logger.info(f"✅ Created default manager user: {manager_email}")
+            existing_manager = manager_user
+        else:
+            # Ensure existing manager has correct role
+            if existing_manager.get('role') != 'manager':
+                await db.users.update_one({"email": manager_email}, {"$set": {"role": "manager", "team_code": "TEAM-A"}})
+            logger.info(f"✅ Manager user already exists: {manager_email}")
+        
+        # Create default agent user and assign to manager
+        agent_email = "agent@mhpfintech.com"
+        agent_password = "Admin@123"
+        manager_id = existing_manager.get('id')
+        existing_agent = await db.users.find_one({"email": agent_email})
+        
+        if not existing_agent:
+            agent_user = {
+                "id": str(uuid.uuid4()),
+                "email": agent_email,
+                "name": "Agent User",
+                "role": "agent",
+                "team_code": "TEAM-A",
+                "manager_id": manager_id,
+                "active": True,
+                "password": hash_password(agent_password),
+                "created_at": datetime.now(timezone.utc).isoformat()
+            }
+            await db.users.insert_one(agent_user)
+            logger.info(f"✅ Created default agent user: {agent_email} (assigned to manager)")
+        else:
+            # Ensure agent is assigned to manager and has valid id
+            updates = {}
+            if not existing_agent.get('id'):
+                updates["id"] = str(uuid.uuid4())
+            if existing_agent.get('manager_id') != manager_id:
+                updates["manager_id"] = manager_id
+            if existing_agent.get('team_code') != "TEAM-A":
+                updates["team_code"] = "TEAM-A"
+            if existing_agent.get('role') != 'agent':
+                updates["role"] = "agent"
+            if updates:
+                await db.users.update_one({"email": agent_email}, {"$set": updates})
+                logger.info(f"✅ Updated agent {agent_email}: {list(updates.keys())}")
+            else:
+                logger.info(f"✅ Agent user already exists and assigned: {agent_email}")
+        
         # Initialize default schemes
         default_schemes = [
             {"name": "GST", "description": "GST Loan Scheme"},
@@ -1693,6 +1774,7 @@ async def create_default_admin():
         await db.loan_applications.create_index("status")
         await db.loan_applications.create_index("bank")
         await db.loan_applications.create_index("created_at")
+        await db.loan_applications.create_index([("customer_name", 1), ("contact_no", 1), ("bank", 1)])
         await db.users.create_index("email", unique=True)
         logger.info("Database indexes created")
         

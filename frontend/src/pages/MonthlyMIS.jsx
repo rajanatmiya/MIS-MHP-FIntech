@@ -296,7 +296,11 @@ const MonthlyMIS = () => {
         }
       });
 
-      toast.success(`Import complete! Imported: ${response.data.imported}, Skipped: ${response.data.skipped}`);
+      toast.success(`Import complete! Imported: ${response.data.imported}, Skipped: ${response.data.skipped}${response.data.duplicates ? `, Duplicates: ${response.data.duplicates}` : ''}`);
+      
+      if (response.data.duplicates > 0) {
+        toast.info(`${response.data.duplicates} duplicate(s) detected and skipped`);
+      }
       
       if (response.data.errors && response.data.errors.length > 0) {
         console.log('Import errors:', response.data.errors);
