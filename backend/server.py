@@ -1183,19 +1183,51 @@ async def export_loans(
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
     df = pd.DataFrame(loans)
+    
+    # Define columns with proper readable headers
+    column_config = [
+        ('month', 'Date'),
+        ('customer_name', 'Customer Name'),
+        ('company_name', 'Company Name'),
+        ('contact_no', 'Contact No'),
+        ('bank', 'Bank'),
+        ('status', 'Status'),
+        ('sanction', 'Sanction Amount'),
+        ('disbursed', 'Disbursed Amount'),
+        ('remark', 'Remark'),
+        ('decline_reason', 'Decline Reason'),
+        ('scheme', 'Scheme'),
+        ('case_from', 'Case From'),
+        ('location', 'Location'),
+        ('branch', 'Branch'),
+        ('executive_name', 'Executive Name'),
+        ('team_manager', 'Team Manager'),
+        ('code', 'Code'),
+        ('rate', 'Rate'),
+        ('pf', 'PF'),
+        ('insurance', 'Insurance'),
+        ('tenure', 'Tenure (Months)'),
+        ('subvention', 'Subvention'),
+        ('brokerage_subvention', 'Brokerage'),
+        ('agent_name', 'Agent Name'),
+    ]
+    
     if not df.empty:
-        columns_order = [
-            'month', 'customer_name', 'company_name', 'contact_no', 'bank', 'status',
-            'sanction', 'disbursed', 'remark', 'decline_reason', 'scheme', 'case_from', 
-            'location', 'branch', 'executive_name', 'team_manager', 'code', 'rate', 'pf',
-            'insurance', 'tenure', 'subvention', 'brokerage_subvention', 'agent_name'
-        ]
-        existing_cols = [col for col in columns_order if col in df.columns]
+        existing_cols = [c[0] for c in column_config if c[0] in df.columns]
         df = df[existing_cols]
+        rename_map = {c[0]: c[1] for c in column_config if c[0] in df.columns}
+        df.rename(columns=rename_map, inplace=True)
     
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name='Loans')
+        
+        # Auto-fit column widths
+        worksheet = writer.sheets['Loans']
+        from openpyxl.utils import get_column_letter
+        for col_idx, col in enumerate(df.columns, 1):
+            max_len = max(len(str(col)), df[col].astype(str).str.len().max() if not df.empty else 0)
+            worksheet.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 3, 40)
     
     output.seek(0)
     
@@ -1261,39 +1293,42 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
         contents = await file.read()
         df = pd.read_excel(BytesIO(contents))
         
-        # Column mapping (case-insensitive)
+        # Column mapping (case-insensitive, maps readable headers and common variations)
         column_mapping = {
             'name': 'name',
-            'date': 'date',
-            'entry date': 'date',
-            'created date': 'date',
+            'date': 'month',
+            'entry date': 'month',
+            'created date': 'month',
+            'month': 'month',
             'customer name': 'customer_name',
             'customername': 'customer_name',
             'customer': 'customer_name',
             'company name': 'company_name',
             'companyname': 'company_name',
             'company': 'company_name',
-            'contact': 'contact_no',
             'contact no': 'contact_no',
+            'contact': 'contact_no',
             'contact number': 'contact_no',
             'mobile': 'contact_no',
             'phone': 'contact_no',
             'status': 'status',
             'bank': 'bank',
-            'bank sanctioned': 'sanction',
-            'sanction': 'sanction',
             'sanction amount': 'sanction',
-            'disbursed': 'disbursed',
+            'sanction': 'sanction',
+            'bank sanctioned': 'sanction',
             'disbursed amount': 'disbursed',
+            'disbursed': 'disbursed',
             'remark': 'remark',
             'remarks': 'remark',
+            'decline reason': 'decline_reason',
+            'decline': 'decline_reason',
             'scheme': 'scheme',
             'case from': 'case_from',
             'location': 'location',
             'city': 'location',
             'branch': 'branch',
-            'executive name': 'agent_name',
-            'executive': 'agent_name',
+            'executive name': 'executive_name',
+            'executive': 'executive_name',
             'agent name': 'agent_name',
             'agent': 'agent_name',
             'team manager': 'team_manager',
@@ -1304,12 +1339,11 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             'interest rate': 'rate',
             'pf': 'pf',
             'insurance': 'insurance',
-            'tenure': 'tenure',
             'tenure (months)': 'tenure',
+            'tenure': 'tenure',
             'subvention': 'subvention',
-            'brokerage': 'brokerage',
-            'subvention 0': 'subvention_0',
-            'month': 'month'
+            'brokerage': 'brokerage_subvention',
+            'brokerage subvention': 'brokerage_subvention',
         }
         
         # Normalize column names
@@ -1345,36 +1379,24 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     skipped_count += 1
                     continue
                 
-                # Handle date from Excel or use current date
-                import_date = None
-                if pd.notna(row.get('date')):
-                    try:
-                        # Try to parse date from Excel
-                        import_date = pd.to_datetime(row.get('date'))
-                        if pd.notna(import_date):
-                            import_date = import_date.isoformat()
-                    except:
-                        import_date = None
-                
-                if not import_date:
-                    import_date = datetime.now(timezone.utc).isoformat()
-                
                 # Prepare loan data
                 loan_data = {
                     "id": str(uuid.uuid4()),
-                    "name": str(row.get('name', '')).strip() if pd.notna(row.get('name')) else '',
                     "customer_name": str(row.get('customer_name', '')).strip(),
                     "company_name": str(row.get('company_name', '')).strip() if pd.notna(row.get('company_name')) else '',
                     "contact_no": str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else '',
                     "status": str(row.get('status', 'Pending')).strip(),
+                    "bank": str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else '',
                     "sanction": str(row.get('sanction', '')).strip() if pd.notna(row.get('sanction')) else '',
                     "disbursed": str(row.get('disbursed', '')).strip() if pd.notna(row.get('disbursed')) else '',
                     "remark": str(row.get('remark', '')).strip() if pd.notna(row.get('remark')) else '',
+                    "decline_reason": str(row.get('decline_reason', '')).strip() if pd.notna(row.get('decline_reason')) else '',
                     "scheme": str(row.get('scheme', '')).strip() if pd.notna(row.get('scheme')) else '',
                     "case_from": str(row.get('case_from', '')).strip() if pd.notna(row.get('case_from')) else '',
                     "location": str(row.get('location', '')).strip() if pd.notna(row.get('location')) else '',
                     "branch": str(row.get('branch', '')).strip() if pd.notna(row.get('branch')) else '',
-                    "agent_name": str(row.get('agent_name', current_user.name)).strip(),
+                    "executive_name": str(row.get('executive_name', '')).strip() if pd.notna(row.get('executive_name')) else '',
+                    "agent_name": str(row.get('agent_name', current_user.name)).strip() if pd.notna(row.get('agent_name')) else current_user.name,
                     "team_manager": str(row.get('team_manager', '')).strip() if pd.notna(row.get('team_manager')) else '',
                     "code": str(row.get('code', '')).strip() if pd.notna(row.get('code')) else '',
                     "rate": str(row.get('rate', '')).strip() if pd.notna(row.get('rate')) else '',
@@ -1382,12 +1404,10 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     "insurance": str(row.get('insurance', '')).strip() if pd.notna(row.get('insurance')) else '',
                     "tenure": str(row.get('tenure', '')).strip() if pd.notna(row.get('tenure')) else '',
                     "subvention": str(row.get('subvention', '')).strip() if pd.notna(row.get('subvention')) else '',
-                    "brokerage": str(row.get('brokerage', '')).strip() if pd.notna(row.get('brokerage')) else '',
-                    "subvention_0": str(row.get('subvention_0', '')).strip() if pd.notna(row.get('subvention_0')) else '',
+                    "brokerage_subvention": str(row.get('brokerage_subvention', '')).strip() if pd.notna(row.get('brokerage_subvention')) else '',
                     "month": str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month,
-                    "bank": str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else '',
                     "created_by": current_user.id,
-                    "created_at": import_date,  # Use date from Excel
+                    "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
                 }
                 

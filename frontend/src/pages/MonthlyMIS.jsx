@@ -262,6 +262,23 @@ const MonthlyMIS = () => {
     }
   };
 
+  const handleExportExcel = async () => {
+    try {
+      const response = await axios.get(`${API}/export/loans`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `loans_export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Excel exported successfully');
+    } catch (error) {
+      toast.error('Failed to export. Please try again.');
+    }
+  };
+
   const handleImportExcel = async () => {
     if (!importFile) {
       toast.error('Please select an Excel file');
@@ -447,7 +464,7 @@ const MonthlyMIS = () => {
           {user?.role === 'admin' && (
             <>
               <Button
-                onClick={() => window.open(`${API}/export/loans`, '_blank')}
+                onClick={handleExportExcel}
                 variant="outline"
                 size="sm"
                 className="h-7 text-[11px] px-2.5 border-slate-200 text-slate-600 hover:bg-slate-50"

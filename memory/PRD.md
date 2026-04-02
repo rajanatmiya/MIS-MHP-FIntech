@@ -38,6 +38,8 @@ A comprehensive MIS (Management Information System) dashboard for a loan agency 
 
 ## Recent Changes
 - LoanForm: Month field changed from text input to native date picker, stores as `dd-mm-yyyy`
+- Export: Fixed auth (uses axios with JWT instead of window.open), proper readable column headers (Date, Customer Name, etc.), auto-fit column widths
+- Import: Updated column mapping to recognize exported headers for round-trip compatibility, cleaned up field mapping
 
 ## Pending / Backlog
 - **P2:** Refactor `backend/server.py` into modular routers (routes/auth.py, routes/loans.py, etc.)
