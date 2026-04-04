@@ -11,7 +11,7 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 
 ## Role-Based Access (Verified)
 - **Agent**: MIS + Loans only. Sees only loans matching assigned banks, categories, and products.
-- **Manager**: Dashboard + MIS + Loans + Analytics + Onboarding. Sees only their team's data.
+- **Manager**: Dashboard + MIS + Loans + Analytics. Sees only their team's data.
 - **Admin**: Full access to all pages and all data.
 
 ## What's Been Implemented
@@ -25,8 +25,8 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - Excel export/import with duplicate detection
 - LoanForm with Category and Product dropdown selects
 - User Management: Assigned Banks, Categories, Products + 2-column responsive form
-- **Agent Onboarding Wizard** — 5-step guided flow: Basic Info > Team > Banks > Category/Product > Review (DONE)
-- **Team Performance Leaderboard** — Dashboard section with agent rankings by disbursement, medal icons, conversion rates (DONE)
+- Team Performance Leaderboard on Dashboard with medals, conversion rates
+- **Monthly Target Tracking** — Set disbursement targets per agent, progress bars (green/amber/red), Set Targets dialog (DONE)
 - PWA support
 
 ## Pending / Backlog
