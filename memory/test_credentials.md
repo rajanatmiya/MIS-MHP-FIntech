@@ -11,3 +11,6 @@
 ## Agent
 - Email: agent@mhpfintech.com
 - Password: Admin@123
+- Assigned Banks: SBI, HDFC Bank
+- Assigned Categories: SECURED, UNSECURED
+- Assigned Products: Home Loan, LAP

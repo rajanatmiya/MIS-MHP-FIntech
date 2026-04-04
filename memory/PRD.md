@@ -6,33 +6,28 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 ## Tech Stack
 - **Backend:** FastAPI (Python), MongoDB (Motor async)
 - **Frontend:** React 19, Tailwind CSS, Shadcn/UI
-- **Auth:** JWT with RBAC (Admin/Manager/Agent) + Bank-level access control
+- **Auth:** JWT with RBAC (Admin/Manager/Agent) + Bank/Category/Product-level access control
 - **PWA:** Service Worker, Web App Manifest, Offline fallback
 
 ## Role-Based Access (Verified)
-- **Agent**: MIS + Loans only. Sees only loans from assigned banks. No Dashboard, Analytics, Settings.
-- **Manager**: Dashboard + MIS + Loans + Analytics. Sees only their team's (assigned agents') data.
+- **Agent**: MIS + Loans only. Sees only loans matching assigned banks, categories, and products.
+- **Manager**: Dashboard + MIS + Loans + Analytics. Sees only their team's data, filtered by assigned banks/categories/products.
 - **Admin**: Full access to all pages and all data.
 
 ## What's Been Implemented
 - Strict page access with RoleGuard (redirects unauthorized routes)
-- Bank-level filtering on ALL data endpoints (loans, analytics/overview, by-bank, by-agent, by-month, unique-values)
+- Bank/Category/Product-level filtering on ALL data endpoints
 - Manager sees only assigned agents' data across all pages
-- Master File page — 7 categories: Banks (97 entries), Agents, Companies, Branches, Locations, Categories (6), Products (6)
-- DB Backup page — JSON backup download with 11 collection stats
+- Master File page — 7 sections: Banks (97), Agents, Companies, Branches, Locations, Categories (6), Products (6)
+- DB Backup page — JSON backup download
 - Form dropdowns from master data (Bank, Agent, Company, Branch, Location, Category, Product)
-- MIS Board with inline editing, Edit/Delete actions
+- MIS Board with inline editing, Edit/Delete actions, Category/Product columns
 - MIS Board quick filters: Category, Product, Bank (top-level)
-- MIS Board table includes Category and Product columns with inline dropdown editing
 - Excel export/import with duplicate detection
-- LoanForm date picker (dd-mm-yyyy)
-- LoanForm Category and Product dropdown selects
-- Category & Product fields in loan creation (Add Entry) and editing (Edit Entry) dialogs
-- User Management: Assigned Banks as scrollable checkbox list from master data (97 banks)
+- LoanForm with Category and Product dropdown selects
+- User Management: Assigned Banks, Assigned Categories, Assigned Products as scrollable checkbox lists
+- Data visibility enforced: users only see loans matching their assigned banks + categories + products
 - PWA support
-
-## Master Data - Banks (97 entries)
-Full list seeded per user request including: BAJAJ, ADITYA BIRLA, AXIS FINANCE, HDFC, ICICI, KOTAK, IDFC, L&T, PIRAMAL, TATA CAPITAL, YES BANK, FEDERAL BANK, BANK OF BARODA, SBI, etc.
 
 ## Pending / Backlog
 - **P1:** Agent onboarding wizard with bank assignment flow
@@ -45,4 +40,4 @@ Full list seeded per user request including: BAJAJ, ADITYA BIRLA, AXIS FINANCE, 
 ## Credentials
 - Admin: admin@mhpfintech.com / Admin@123
 - Manager: manager@mhpfintech.com / Admin@123 (TEAM-A)
-- Agent: agent@mhpfintech.com / Admin@123 (TEAM-A, assigned banks: SBI, HDFC Bank)
+- Agent: agent@mhpfintech.com / Admin@123 (TEAM-A, banks: SBI/HDFC Bank, categories: SECURED/UNSECURED, products: Home Loan/LAP)
