@@ -49,6 +49,8 @@ class User(BaseModel):
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
     assigned_banks: Optional[List[str]] = None
+    assigned_categories: Optional[List[str]] = None
+    assigned_products: Optional[List[str]] = None
     active: bool = True  # Admin can enable/disable users
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
@@ -60,6 +62,8 @@ class UserCreate(BaseModel):
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
     assigned_banks: Optional[List[str]] = None
+    assigned_categories: Optional[List[str]] = None
+    assigned_products: Optional[List[str]] = None
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
@@ -67,6 +71,8 @@ class UserUpdate(BaseModel):
     team_code: Optional[str] = None
     manager_id: Optional[str] = None
     assigned_banks: Optional[List[str]] = None
+    assigned_categories: Optional[List[str]] = None
+    assigned_products: Optional[List[str]] = None
     active: Optional[bool] = None
 
 class UserLogin(BaseModel):
@@ -318,7 +324,9 @@ async def register(user_data: UserCreate):
         role=user_data.role,
         team_code=user_data.team_code,
         manager_id=user_data.manager_id,
-        assigned_banks=user_data.assigned_banks
+        assigned_banks=user_data.assigned_banks,
+        assigned_categories=user_data.assigned_categories,
+        assigned_products=user_data.assigned_products
     )
     
     user_dict = user.model_dump()
@@ -729,6 +737,10 @@ async def get_loans(
     # Bank-level filtering: if user has assigned_banks, only show those banks
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     if status:
         query["status"] = status
@@ -983,6 +995,10 @@ async def get_overview(current_user: User = Depends(get_current_user)):
     # Bank-level filtering
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1039,6 +1055,10 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
         query["created_by"] = {"$in": accessible_ids}
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1078,6 +1098,10 @@ async def get_by_bank(current_user: User = Depends(get_current_user)):
         query["created_by"] = {"$in": accessible_ids}
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1103,6 +1127,10 @@ async def get_by_agent(current_user: User = Depends(get_current_user)):
         query["created_by"] = {"$in": accessible_ids}
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1130,6 +1158,10 @@ async def get_by_month(current_user: User = Depends(get_current_user)):
         query["created_by"] = {"$in": accessible_ids}
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1155,6 +1187,10 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
         query["created_by"] = {"$in": accessible_ids}
     if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
         query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     

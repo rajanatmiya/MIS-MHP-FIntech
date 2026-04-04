@@ -25,9 +25,13 @@ const UserManagement = () => {
     role: 'agent',
     team_code: '',
     manager_id: undefined,
-    assigned_banks: []
+    assigned_banks: [],
+    assigned_categories: [],
+    assigned_products: []
   });
   const [masterBanks, setMasterBanks] = useState([]);
+  const [masterCategories, setMasterCategories] = useState([]);
+  const [masterProducts, setMasterProducts] = useState([]);
   const { user: currentUser } = useContext(AuthContext);
 
   useEffect(() => {
@@ -39,9 +43,15 @@ const UserManagement = () => {
 
   const fetchMasterBanks = async () => {
     try {
-      const res = await axios.get(`${API}/master/banks`);
-      setMasterBanks(res.data);
-    } catch (error) { console.error('Failed to fetch banks'); }
+      const [banksRes, categoriesRes, productsRes] = await Promise.all([
+        axios.get(`${API}/master/banks`),
+        axios.get(`${API}/master/categories`),
+        axios.get(`${API}/master/products`)
+      ]);
+      setMasterBanks(banksRes.data);
+      setMasterCategories(categoriesRes.data);
+      setMasterProducts(productsRes.data);
+    } catch (error) { console.error('Failed to fetch master data'); }
   };
 
   const fetchUsers = async () => {
@@ -66,7 +76,9 @@ const UserManagement = () => {
           role: formData.role,
           team_code: formData.team_code || null,
           manager_id: formData.manager_id || null,
-          assigned_banks: formData.assigned_banks || []
+          assigned_banks: formData.assigned_banks || [],
+          assigned_categories: formData.assigned_categories || [],
+          assigned_products: formData.assigned_products || []
         };
         await axios.put(`${API}/users/${editingUser.id}`, updateData);
         toast.success('User updated successfully');
@@ -75,7 +87,9 @@ const UserManagement = () => {
           ...formData,
           team_code: formData.team_code || null,
           manager_id: formData.manager_id || null,
-          assigned_banks: formData.assigned_banks || []
+          assigned_banks: formData.assigned_banks || [],
+          assigned_categories: formData.assigned_categories || [],
+          assigned_products: formData.assigned_products || []
         };
         await axios.post(`${API}/auth/register`, createData);
         toast.success('User created successfully');
@@ -145,7 +159,9 @@ const UserManagement = () => {
       role: user.role,
       team_code: user.team_code || '',
       manager_id: user.manager_id || undefined,
-      assigned_banks: user.assigned_banks || []
+      assigned_banks: user.assigned_banks || [],
+      assigned_categories: user.assigned_categories || [],
+      assigned_products: user.assigned_products || []
     });
     setShowForm(true);
   };
@@ -158,7 +174,9 @@ const UserManagement = () => {
       role: 'agent',
       team_code: '',
       manager_id: undefined,
-      assigned_banks: []
+      assigned_banks: [],
+      assigned_categories: [],
+      assigned_products: []
     });
   };
 
@@ -296,6 +314,90 @@ const UserManagement = () => {
                   )}
                 </div>
               )}
+              {(formData.role === 'agent' || formData.role === 'manager') && masterCategories.length > 0 && (
+                <div>
+                  <Label className="text-[11px]">Assigned Categories</Label>
+                  <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected categories</p>
+                  <div className="border border-slate-200 rounded-md p-2 max-h-[120px] overflow-y-auto space-y-1" data-testid="assigned-categories-container">
+                    {masterCategories.map(cat => {
+                      const selected = (formData.assigned_categories || []).some(c => c.toLowerCase() === cat.name.toLowerCase());
+                      return (
+                        <label key={cat.id} className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-emerald-50/40 transition-colors ${selected ? 'bg-emerald-50' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => {
+                              const cats = formData.assigned_categories || [];
+                              const updated = selected ? cats.filter(c => c !== cat.name) : [...cats, cat.name];
+                              setFormData({...formData, assigned_categories: updated});
+                            }}
+                            className="w-3 h-3 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                            data-testid={`category-checkbox-${cat.id}`}
+                          />
+                          <span className="text-[11px] text-slate-700">{cat.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {(formData.assigned_categories || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {formData.assigned_categories.map(c => (
+                        <span key={c} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-emerald-100 text-[10px] text-emerald-700 font-medium">
+                          {c}
+                          <button type="button" onClick={() => setFormData({...formData, assigned_categories: formData.assigned_categories.filter(x => x !== c)})} className="hover:text-red-500">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(formData.assigned_categories || []).length === 0 && (
+                    <p className="text-[10px] text-amber-500 mt-1">No categories selected — user will see all categories</p>
+                  )}
+                </div>
+              )}
+              {(formData.role === 'agent' || formData.role === 'manager') && masterProducts.length > 0 && (
+                <div>
+                  <Label className="text-[11px]">Assigned Products</Label>
+                  <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected products</p>
+                  <div className="border border-slate-200 rounded-md p-2 max-h-[120px] overflow-y-auto space-y-1" data-testid="assigned-products-container">
+                    {masterProducts.map(prod => {
+                      const selected = (formData.assigned_products || []).some(p => p.toLowerCase() === prod.name.toLowerCase());
+                      return (
+                        <label key={prod.id} className={`flex items-center gap-2 px-2 py-1 rounded cursor-pointer hover:bg-violet-50/40 transition-colors ${selected ? 'bg-violet-50' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={selected}
+                            onChange={() => {
+                              const prods = formData.assigned_products || [];
+                              const updated = selected ? prods.filter(p => p !== prod.name) : [...prods, prod.name];
+                              setFormData({...formData, assigned_products: updated});
+                            }}
+                            className="w-3 h-3 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                            data-testid={`product-checkbox-${prod.id}`}
+                          />
+                          <span className="text-[11px] text-slate-700">{prod.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {(formData.assigned_products || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5">
+                      {formData.assigned_products.map(p => (
+                        <span key={p} className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-violet-100 text-[10px] text-violet-700 font-medium">
+                          {p}
+                          <button type="button" onClick={() => setFormData({...formData, assigned_products: formData.assigned_products.filter(x => x !== p)})} className="hover:text-red-500">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {(formData.assigned_products || []).length === 0 && (
+                    <p className="text-[10px] text-amber-500 mt-1">No products selected — user will see all products</p>
+                  )}
+                </div>
+              )}
               <div className="flex gap-2 pt-1">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="flex-1 h-7 text-[11px]">Cancel</Button>
                 <Button type="submit" disabled={loading} size="sm" className="flex-1 h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">{loading ? '...' : editingUser ? 'Update' : 'Create'}</Button>
@@ -315,7 +417,7 @@ const UserManagement = () => {
           <table className="w-full text-[11px]">
             <thead>
               <tr className="border-b border-slate-200 bg-[#2c587a]/5">
-                {['Name', 'Email', 'Role', 'Team', 'Assigned Banks', 'Status', ''].map(h => (
+                {['Name', 'Email', 'Role', 'Team', 'Assigned Banks', 'Categories', 'Products', 'Status', ''].map(h => (
                   <th key={h} className="px-3 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
@@ -334,6 +436,28 @@ const UserManagement = () => {
                       <div className="flex flex-wrap gap-0.5">
                         {u.assigned_banks.map(b => (
                           <span key={b} className="px-1.5 py-0.5 rounded-full bg-[#2c587a]/10 text-[9px] text-[#2c587a] font-medium">{b}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">All</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    {u.assigned_categories && u.assigned_categories.length > 0 ? (
+                      <div className="flex flex-wrap gap-0.5">
+                        {u.assigned_categories.map(c => (
+                          <span key={c} className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-[9px] text-emerald-700 font-medium">{c}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400">All</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5">
+                    {u.assigned_products && u.assigned_products.length > 0 ? (
+                      <div className="flex flex-wrap gap-0.5">
+                        {u.assigned_products.map(p => (
+                          <span key={p} className="px-1.5 py-0.5 rounded-full bg-violet-100 text-[9px] text-violet-700 font-medium">{p}</span>
                         ))}
                       </div>
                     ) : (
