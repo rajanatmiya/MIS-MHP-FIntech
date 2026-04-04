@@ -14,7 +14,6 @@ import StatusManagement from '@/pages/StatusManagement';
 import Settings from '@/pages/Settings';
 import MasterFile from '@/pages/MasterFile';
 import DBBackup from '@/pages/DBBackup';
-import AgentOnboarding from '@/pages/AgentOnboarding';
 import Layout from '@/components/Layout';
 
 const RoleGuard = ({ children, allowed, user }) => {
@@ -206,9 +205,6 @@ function App() {
                     } />
                     <Route path="/db-backup" element={
                       <RoleGuard allowed={['admin']} user={user}><DBBackup /></RoleGuard>
-                    } />
-                    <Route path="/onboarding" element={
-                      <RoleGuard allowed={['admin', 'manager']} user={user}><AgentOnboarding /></RoleGuard>
                     } />
                     <Route path="*" element={
                       <Navigate to={user?.role === 'agent' ? '/monthly-mis' : '/'} replace />

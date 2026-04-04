@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { AuthContext } from '@/App';
 import { Button } from '@/components/ui/button';
-import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X, Shield, Settings as SettingsIcon, Calendar, Sliders, Flag, FolderOpen, Database, UserPlus } from 'lucide-react';
+import { LayoutDashboard, FileText, BarChart3, LogOut, User, Menu, X, Shield, Settings as SettingsIcon, Calendar, Sliders, Flag, FolderOpen, Database } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const { user, logout } = useContext(AuthContext);
@@ -19,7 +19,6 @@ const Layout = ({ children }) => {
     navigation.push({ name: 'Schemes', href: '/scheme-management', icon: FileText, testId: 'nav-scheme-management' });
     navigation.push({ name: 'Master File', href: '/master-file', icon: FolderOpen, testId: 'nav-master-file' });
     navigation.push({ name: 'Users', href: '/users', icon: Shield, testId: 'nav-users' });
-    navigation.push({ name: 'Onboarding', href: '/onboarding', icon: UserPlus, testId: 'nav-onboarding' });
     navigation.push({ name: 'Statuses', href: '/status-management', icon: Flag, testId: 'nav-status-management' });
     navigation.push({ name: 'Field Config', href: '/field-management', icon: Sliders, testId: 'nav-field-management' });
     navigation.push({ name: 'DB Backup', href: '/db-backup', icon: Database, testId: 'nav-db-backup' });
@@ -29,7 +28,6 @@ const Layout = ({ children }) => {
     navigation.push({ name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' });
     navigation.push({ name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' });
     navigation.push({ name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' });
-    navigation.push({ name: 'Onboarding', href: '/onboarding', icon: UserPlus, testId: 'nav-onboarding' });
   } else {
     // Agent: only MIS and Loans
     navigation.push({ name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' });
