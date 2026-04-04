@@ -9,11 +9,6 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - **Auth:** JWT with RBAC (Admin/Manager/Agent) + Bank/Category/Product-level access control
 - **PWA:** Service Worker, Web App Manifest, Offline fallback
 
-## Role-Based Access (Verified)
-- **Agent**: MIS + Loans only. Sees only loans matching assigned banks, categories, and products.
-- **Manager**: Dashboard + MIS + Loans + Analytics. Sees only their team's data.
-- **Admin**: Full access to all pages and all data.
-
 ## What's Been Implemented
 - Strict page access with RoleGuard
 - Bank/Category/Product-level filtering on ALL data endpoints
@@ -21,18 +16,18 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - Master File page — 7 sections: Banks (97), Agents, Companies, Branches, Locations, Categories (6), Products (6)
 - DB Backup page
 - Form dropdowns from master data (Bank, Agent, Company, Branch, Location, Category, Product)
-- MIS Board with inline editing, Edit/Delete, Category/Product columns, quick filters
+- MIS Board with inline editing, Edit/Delete actions, Category/Product columns
+- **Multi-checkbox filters** (Category, Product, Bank) — select multiple values with chip tags (DONE)
+- **Bulk operations** — Row checkboxes, Select All, floating action bar with Update Status dropdown + Delete button (DONE)
 - Excel export/import with duplicate detection
-- LoanForm with Category and Product dropdown selects
 - User Management: Assigned Banks, Categories, Products + 2-column responsive form
 - Team Performance Leaderboard on Dashboard with medals, conversion rates
-- **Monthly Target Tracking** — Set disbursement targets per agent, progress bars (green/amber/red), Set Targets dialog (DONE)
+- Monthly Target Tracking — Set disbursement targets per agent, progress bars
 - PWA support
 
 ## Pending / Backlog
-- **P2:** Bulk delete / bulk status update feature in MIS table
-- **P2:** Refactor `backend/server.py` into modular routers
-- **P2:** Refactor `MonthlyMIS.jsx` into smaller components
+- **P2:** Refactor `backend/server.py` into modular routers (~2300 lines)
+- **P2:** Refactor `MonthlyMIS.jsx` into smaller components (~1350 lines)
 - **P2:** Bulk import master data directly from Excel
 
 ## Credentials
