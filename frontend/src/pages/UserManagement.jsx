@@ -223,7 +223,7 @@ const UserManagement = () => {
               <Plus className="w-3 h-3 mr-1" /> Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-sm">{editingUser ? 'Edit User' : 'Add User'}</DialogTitle>
             </DialogHeader>
@@ -276,7 +276,7 @@ const UserManagement = () => {
                 <div>
                   <Label className="text-[11px]">Assigned Banks</Label>
                   <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected banks</p>
-                  <div className="border border-slate-200 rounded-md p-2 max-h-[140px] overflow-y-auto space-y-1" data-testid="assigned-banks-container">
+                  <div className="border border-slate-200 rounded-md p-2 max-h-[100px] sm:max-h-[140px] overflow-y-auto space-y-1" data-testid="assigned-banks-container">
                     {masterBanks.map(bank => {
                       const selected = (formData.assigned_banks || []).some(b => b.toLowerCase() === bank.name.toLowerCase());
                       return (
@@ -318,7 +318,7 @@ const UserManagement = () => {
                 <div>
                   <Label className="text-[11px]">Assigned Categories</Label>
                   <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected categories</p>
-                  <div className="border border-slate-200 rounded-md p-2 max-h-[120px] overflow-y-auto space-y-1" data-testid="assigned-categories-container">
+                  <div className="border border-slate-200 rounded-md p-2 max-h-[80px] sm:max-h-[120px] overflow-y-auto space-y-1" data-testid="assigned-categories-container">
                     {masterCategories.map(cat => {
                       const selected = (formData.assigned_categories || []).some(c => c.toLowerCase() === cat.name.toLowerCase());
                       return (
@@ -398,7 +398,7 @@ const UserManagement = () => {
                   )}
                 </div>
               )}
-              <div className="flex gap-2 pt-1">
+              <div className="flex gap-2 pt-2 sticky bottom-0 bg-white pb-1">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="flex-1 h-7 text-[11px]">Cancel</Button>
                 <Button type="submit" disabled={loading} size="sm" className="flex-1 h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">{loading ? '...' : editingUser ? 'Update' : 'Create'}</Button>
               </div>
