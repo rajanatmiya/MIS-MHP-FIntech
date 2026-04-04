@@ -11,27 +11,25 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 
 ## Role-Based Access (Verified)
 - **Agent**: MIS + Loans only. Sees only loans matching assigned banks, categories, and products.
-- **Manager**: Dashboard + MIS + Loans + Analytics. Sees only their team's data, filtered by assigned banks/categories/products.
+- **Manager**: Dashboard + MIS + Loans + Analytics + Onboarding. Sees only their team's data.
 - **Admin**: Full access to all pages and all data.
 
 ## What's Been Implemented
-- Strict page access with RoleGuard (redirects unauthorized routes)
+- Strict page access with RoleGuard
 - Bank/Category/Product-level filtering on ALL data endpoints
-- Manager sees only assigned agents' data across all pages
+- Manager sees only assigned agents' data
 - Master File page — 7 sections: Banks (97), Agents, Companies, Branches, Locations, Categories (6), Products (6)
-- DB Backup page — JSON backup download
+- DB Backup page
 - Form dropdowns from master data (Bank, Agent, Company, Branch, Location, Category, Product)
-- MIS Board with inline editing, Edit/Delete actions, Category/Product columns
-- MIS Board quick filters: Category, Product, Bank (top-level)
+- MIS Board with inline editing, Edit/Delete, Category/Product columns, quick filters
 - Excel export/import with duplicate detection
 - LoanForm with Category and Product dropdown selects
-- User Management: Assigned Banks, Assigned Categories, Assigned Products as scrollable checkbox lists
-- Data visibility enforced: users only see loans matching their assigned banks + categories + products
+- User Management: Assigned Banks, Categories, Products + 2-column responsive form
+- **Agent Onboarding Wizard** — 5-step guided flow: Basic Info > Team > Banks > Category/Product > Review (DONE)
+- **Team Performance Leaderboard** — Dashboard section with agent rankings by disbursement, medal icons, conversion rates (DONE)
 - PWA support
 
 ## Pending / Backlog
-- **P1:** Agent onboarding wizard with bank assignment flow
-- **P1:** Team performance leaderboard for Managers (Dashboard enhancement)
 - **P2:** Bulk delete / bulk status update feature in MIS table
 - **P2:** Refactor `backend/server.py` into modular routers
 - **P2:** Refactor `MonthlyMIS.jsx` into smaller components
