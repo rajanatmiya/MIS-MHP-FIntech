@@ -223,11 +223,11 @@ const UserManagement = () => {
               <Plus className="w-3 h-3 mr-1" /> Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-[92vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-sm">{editingUser ? 'Edit User' : 'Add User'}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-2.5">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5">
               <div>
                 <Label className="text-[11px]">Full Name *</Label>
                 <Input id="name" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required className="h-8 text-[11px] mt-0.5" data-testid="user-name-input" />
@@ -273,10 +273,10 @@ const UserManagement = () => {
                 </div>
               )}
               {(formData.role === 'agent' || formData.role === 'manager') && masterBanks.length > 0 && (
-                <div>
+                <div className="sm:col-span-2">
                   <Label className="text-[11px]">Assigned Banks</Label>
                   <p className="text-[10px] text-slate-400 mb-1">User will only see MIS data for selected banks</p>
-                  <div className="border border-slate-200 rounded-md p-2 max-h-[100px] sm:max-h-[140px] overflow-y-auto space-y-1" data-testid="assigned-banks-container">
+                  <div className="border border-slate-200 rounded-md p-2 max-h-[100px] sm:max-h-[140px] overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-x-2" data-testid="assigned-banks-container">
                     {masterBanks.map(bank => {
                       const selected = (formData.assigned_banks || []).some(b => b.toLowerCase() === bank.name.toLowerCase());
                       return (
@@ -398,7 +398,7 @@ const UserManagement = () => {
                   )}
                 </div>
               )}
-              <div className="flex gap-2 pt-2 sticky bottom-0 bg-white pb-1">
+              <div className="flex gap-2 pt-2 sticky bottom-0 bg-white pb-1 sm:col-span-2">
                 <Button type="button" variant="outline" size="sm" onClick={() => setShowForm(false)} className="flex-1 h-7 text-[11px]">Cancel</Button>
                 <Button type="submit" disabled={loading} size="sm" className="flex-1 h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">{loading ? '...' : editingUser ? 'Update' : 'Create'}</Button>
               </div>
