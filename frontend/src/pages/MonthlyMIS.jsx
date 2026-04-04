@@ -8,7 +8,53 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2 } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square } from 'lucide-react';
+
+// Multi-checkbox filter dropdown component
+const MultiCheckFilter = ({ label, options, selected, onChange, testId }) => {
+  const [open, setOpen] = useState(false);
+  const count = selected.length;
+  return (
+    <div className="relative" data-testid={testId}>
+      <button
+        onClick={() => setOpen(!open)}
+        className={`flex items-center gap-1 h-7 px-2.5 text-[11px] border rounded-md transition-colors ${
+          count > 0 ? 'border-[#2c587a] bg-[#2c587a]/5 text-[#2c587a] font-medium' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+        }`}
+      >
+        {label}{count > 0 && <span className="ml-0.5 w-4 h-4 rounded-full bg-[#2c587a] text-white text-[9px] flex items-center justify-center">{count}</span>}
+        <ChevronDown className="w-3 h-3 ml-0.5" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
+          <div className="absolute top-8 left-0 z-40 w-52 bg-white border border-slate-200 rounded-lg shadow-lg py-1 max-h-[240px] overflow-y-auto">
+            <button
+              onClick={() => { onChange([]); }}
+              className="w-full text-left px-3 py-1 text-[10px] text-slate-400 hover:text-red-500 hover:bg-red-50/50 transition-colors"
+            >
+              Clear all
+            </button>
+            {options.map(opt => {
+              const checked = selected.includes(opt.name);
+              return (
+                <label key={opt.id} className={`flex items-center gap-2 px-3 py-1 cursor-pointer hover:bg-slate-50 transition-colors ${checked ? 'bg-blue-50/50' : ''}`}>
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => onChange(checked ? selected.filter(s => s !== opt.name) : [...selected, opt.name])}
+                    className="w-3 h-3 rounded border-slate-300 text-[#2c587a] focus:ring-[#2c587a]"
+                  />
+                  <span className="text-[11px] text-slate-700 truncate">{opt.name}</span>
+                </label>
+              );
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
 
 const MonthlyMIS = () => {
   const { user } = useContext(AuthContext);
@@ -38,10 +84,14 @@ const MonthlyMIS = () => {
   const [masterCategories, setMasterCategories] = useState([]);
   const [masterProducts, setMasterProducts] = useState([]);
   
-  // Top-level filter states
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterProduct, setFilterProduct] = useState('');
-  const [filterBank, setFilterBank] = useState('');
+  // Top-level multi-select filter states
+  const [filterCategories, setFilterCategories] = useState([]);
+  const [filterProducts, setFilterProducts] = useState([]);
+  const [filterBanks, setFilterBanks] = useState([]);
+  
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [showBulkStatus, setShowBulkStatus] = useState(false);
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -393,10 +443,10 @@ const MonthlyMIS = () => {
   };
 
   const filteredLoans = loans.filter(loan => {
-    // Top-level filters
-    if (filterCategory && loan.category !== filterCategory) return false;
-    if (filterProduct && loan.product !== filterProduct) return false;
-    if (filterBank && loan.bank !== filterBank) return false;
+    // Top-level multi-select filters
+    if (filterCategories.length > 0 && !filterCategories.includes(loan.category)) return false;
+    if (filterProducts.length > 0 && !filterProducts.includes(loan.product)) return false;
+    if (filterBanks.length > 0 && !filterBanks.includes(loan.bank)) return false;
     
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
@@ -657,42 +707,78 @@ const MonthlyMIS = () => {
         </Button>
       </div>
 
-      {/* Category / Product / Bank Quick Filters */}
+      {/* Category / Product / Bank Multi-Checkbox Filters */}
       <div className="flex flex-wrap items-center gap-2" data-testid="quick-filters">
-        <Select value={filterCategory} onValueChange={(v) => setFilterCategory(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="h-7 text-[11px] w-[140px] border-slate-200" data-testid="filter-category">
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__" className="text-[11px]">All Categories</SelectItem>
-            {masterCategories.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterProduct} onValueChange={(v) => setFilterProduct(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="h-7 text-[11px] w-[140px] border-slate-200" data-testid="filter-product">
-            <SelectValue placeholder="All Products" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__" className="text-[11px]">All Products</SelectItem>
-            {masterProducts.map(p => <SelectItem key={p.id} value={p.name} className="text-[11px]">{p.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <Select value={filterBank} onValueChange={(v) => setFilterBank(v === '__all__' ? '' : v)}>
-          <SelectTrigger className="h-7 text-[11px] w-[140px] border-slate-200" data-testid="filter-bank">
-            <SelectValue placeholder="All Banks" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__" className="text-[11px]">All Banks</SelectItem>
-            {masterBanks.map(b => <SelectItem key={b.id} value={b.name} className="text-[11px]">{b.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        {(filterCategory || filterProduct || filterBank) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterCategory(''); setFilterProduct(''); setFilterBank(''); }}
+        <MultiCheckFilter label="Category" options={masterCategories} selected={filterCategories} onChange={setFilterCategories} testId="filter-category" />
+        <MultiCheckFilter label="Product" options={masterProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
+        <MultiCheckFilter label="Bank" options={masterBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
+        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterCategories([]); setFilterProducts([]); setFilterBanks([]); }}
             className="h-7 text-[10px] px-2 text-slate-500 hover:text-red-500" data-testid="clear-quick-filters">
-            <X className="w-3 h-3 mr-0.5" /> Clear
+            <X className="w-3 h-3 mr-0.5" /> Clear all
           </Button>
         )}
+        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0) && (
+          <div className="flex flex-wrap gap-1 ml-1">
+            {filterCategories.map(c => <span key={c} className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-[9px] text-emerald-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterCategories(filterCategories.filter(x => x !== c))}>{c} &times;</span>)}
+            {filterProducts.map(p => <span key={p} className="px-1.5 py-0.5 rounded-full bg-violet-100 text-[9px] text-violet-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterProducts(filterProducts.filter(x => x !== p))}>{p} &times;</span>)}
+            {filterBanks.map(b => <span key={b} className="px-1.5 py-0.5 rounded-full bg-[#2c587a]/10 text-[9px] text-[#2c587a] font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterBanks(filterBanks.filter(x => x !== b))}>{b} &times;</span>)}
+          </div>
+        )}
       </div>
+
+      {/* Bulk Action Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-3 py-2 bg-[#2c587a] rounded-lg text-white" data-testid="bulk-action-bar">
+          <div className="flex items-center gap-1.5">
+            <CheckSquare className="w-3.5 h-3.5" />
+            <span className="text-[11px] font-medium">{selectedIds.size} selected</span>
+          </div>
+          <div className="flex items-center gap-2 ml-auto">
+            <div className="relative">
+              <Button variant="secondary" size="sm" onClick={() => setShowBulkStatus(!showBulkStatus)} className="h-6 text-[10px] px-2 gap-1 bg-white/20 hover:bg-white/30 text-white border-0" data-testid="bulk-status-btn">
+                Update Status <ChevronDown className="w-3 h-3" />
+              </Button>
+              {showBulkStatus && (
+                <>
+                  <div className="fixed inset-0 z-30" onClick={() => setShowBulkStatus(false)} />
+                  <div className="absolute top-7 right-0 z-40 w-44 bg-white border border-slate-200 rounded-lg shadow-lg py-1 max-h-[200px] overflow-y-auto">
+                    {statuses.map(s => (
+                      <button key={s.id} onClick={async () => {
+                        try {
+                          await axios.post(`${API}/loans/bulk-status`, { ids: [...selectedIds], status: s.name });
+                          toast.success(`${selectedIds.size} loans updated to "${s.name}"`);
+                          setSelectedIds(new Set());
+                          setShowBulkStatus(false);
+                          fetchLoans();
+                        } catch { toast.error('Bulk status update failed'); }
+                      }} className="w-full text-left px-3 py-1.5 text-[11px] text-slate-700 hover:bg-blue-50 transition-colors">
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            {user?.role === 'admin' && (
+              <Button variant="secondary" size="sm" onClick={async () => {
+                if (!window.confirm(`Delete ${selectedIds.size} selected loans?`)) return;
+                try {
+                  await axios.post(`${API}/loans/bulk-delete`, { ids: [...selectedIds] });
+                  toast.success(`${selectedIds.size} loans deleted`);
+                  setSelectedIds(new Set());
+                  fetchLoans();
+                } catch { toast.error('Bulk delete failed'); }
+              }} className="h-6 text-[10px] px-2 gap-1 bg-red-500/80 hover:bg-red-600 text-white border-0" data-testid="bulk-delete-btn">
+                <Trash2 className="w-3 h-3" /> Delete
+              </Button>
+            )}
+            <Button variant="secondary" size="sm" onClick={() => setSelectedIds(new Set())} className="h-6 text-[10px] px-2 bg-white/20 hover:bg-white/30 text-white border-0" data-testid="bulk-deselect-btn">
+              <X className="w-3 h-3" /> Deselect
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Panel */}
       {showFilters && (
@@ -790,6 +876,19 @@ const MonthlyMIS = () => {
                   <table className="w-full text-[11px]">
                     <thead>
                       <tr className="border-b border-slate-200 bg-[#2c587a]/5">
+                        <th className="px-2 py-1.5 w-8">
+                          <input
+                            type="checkbox"
+                            checked={monthLoans.length > 0 && monthLoans.every(l => selectedIds.has(l.id))}
+                            onChange={(e) => {
+                              const newSet = new Set(selectedIds);
+                              monthLoans.forEach(l => { e.target.checked ? newSet.add(l.id) : newSet.delete(l.id); });
+                              setSelectedIds(newSet);
+                            }}
+                            className="w-3 h-3 rounded border-slate-300 text-[#2c587a] focus:ring-[#2c587a]"
+                            data-testid={`select-all-${month}`}
+                          />
+                        </th>
                         {['Date','Customer','Company','Contact','Bank','Category','Product','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent',''].map(h => (
                           <th key={h} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
                         ))}
@@ -797,7 +896,20 @@ const MonthlyMIS = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {monthLoans.map(loan => (
-                        <tr key={loan.id} className="hover:bg-slate-50/50 transition-colors">
+                        <tr key={loan.id} className={`hover:bg-slate-50/50 transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : ''}`}>
+                          <td className="px-2 py-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(loan.id)}
+                              onChange={() => {
+                                const newSet = new Set(selectedIds);
+                                newSet.has(loan.id) ? newSet.delete(loan.id) : newSet.add(loan.id);
+                                setSelectedIds(newSet);
+                              }}
+                              className="w-3 h-3 rounded border-slate-300 text-[#2c587a] focus:ring-[#2c587a]"
+                              data-testid={`select-row-${loan.id}`}
+                            />
+                          </td>
                           {['month','customer_name','company_name','contact_no','bank','category','product','status','sanction','disbursed','remark','decline_reason','scheme','case_from','location','branch','executive_name','team_manager','code','rate','pf','insurance','tenure','subvention','brokerage_subvention','agent_name'].map(field => (
                             <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''}`}>
                               {renderCell(loan, field, field)}
@@ -830,6 +942,7 @@ const MonthlyMIS = () => {
                       
                       {/* Totals Row */}
                       <tr className="bg-[#2c587a]/5 border-t border-[#2c587a]/20">
+                        <td className="px-2 py-1.5"></td>
                         <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a]" colSpan="8">
                           TOTAL ({monthLoans.length})
                         </td>

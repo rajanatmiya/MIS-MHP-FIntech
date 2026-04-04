@@ -842,6 +842,29 @@ async def delete_loan(loan_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "Loan application deleted successfully"}
 
+@api_router.post("/loans/bulk-delete")
+async def bulk_delete_loans(data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    ids = data.get("ids", [])
+    if not ids:
+        raise HTTPException(status_code=400, detail="No loan IDs provided")
+    result = await db.loan_applications.delete_many({"id": {"$in": ids}})
+    return {"message": f"{result.deleted_count} loans deleted", "deleted_count": result.deleted_count}
+
+@api_router.post("/loans/bulk-status")
+async def bulk_update_status(data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    ids = data.get("ids", [])
+    new_status = data.get("status", "")
+    if not ids or not new_status:
+        raise HTTPException(status_code=400, detail="ids and status are required")
+    result = await db.loan_applications.update_many(
+        {"id": {"$in": ids}},
+        {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": f"{result.modified_count} loans updated to '{new_status}'", "modified_count": result.modified_count}
+
+
+
 @api_router.post("/loans/delete-by-date")
 async def delete_loans_by_date(date_str: str, current_user: User = Depends(get_current_user)):
     """Delete all loans from a specific date - Admin only"""
