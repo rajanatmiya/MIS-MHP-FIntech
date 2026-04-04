@@ -2,9 +2,13 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { API, AuthContext } from '@/App';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle, FileText, 
-  ArrowUpRight, ArrowDownRight, Building2, Filter, Activity, Trophy, Medal
+  ArrowUpRight, ArrowDownRight, Building2, Filter, Activity, Trophy, Medal, Target, Pencil
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -62,6 +66,12 @@ const Dashboard = () => {
   const [selectedBank, setSelectedBank] = useState('');
   const [loading, setLoading] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [showTargetDialog, setShowTargetDialog] = useState(false);
+  const [targetMonth, setTargetMonth] = useState(() => {
+    const now = new Date();
+    return `${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+  });
+  const [targetInputs, setTargetInputs] = useState({});
 
   useEffect(() => { fetchOverview(); fetchLoans(); fetchLeaderboard(); }, []);
 
@@ -88,6 +98,25 @@ const Dashboard = () => {
       const response = await axios.get(`${API}/analytics/team-leaderboard`);
       setLeaderboard(response.data.leaderboard || []);
     } catch (error) { console.error('Failed to fetch leaderboard'); }
+  };
+
+  const openTargetDialog = () => {
+    const inputs = {};
+    leaderboard.forEach(a => { inputs[a.agent_name] = a.target_amount || ''; });
+    setTargetInputs(inputs);
+    setShowTargetDialog(true);
+  };
+
+  const saveTargets = async () => {
+    try {
+      const promises = Object.entries(targetInputs).map(([agent_name, target_amount]) =>
+        axios.post(`${API}/targets`, { agent_name, month: targetMonth, target_amount: parseFloat(target_amount) || 0 })
+      );
+      await Promise.all(promises);
+      toast.success('Targets saved!');
+      setShowTargetDialog(false);
+      fetchLeaderboard();
+    } catch { toast.error('Failed to save targets'); }
   };
 
   if (loading) {
@@ -268,7 +297,12 @@ const Dashboard = () => {
                 <Trophy className="w-3.5 h-3.5 text-amber-500" />
                 <p className="text-xs font-semibold text-slate-700">Team Performance Leaderboard</p>
               </div>
-              <span className="text-[10px] text-slate-400">{leaderboard.length} agents</span>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-slate-400">{leaderboard.length} agents</span>
+                <Button variant="outline" size="sm" onClick={openTargetDialog} className="h-6 text-[10px] gap-1 px-2" data-testid="set-targets-btn">
+                  <Target className="w-3 h-3" /> Set Targets
+                </Button>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-[11px]" data-testid="leaderboard-table">
@@ -277,43 +311,113 @@ const Dashboard = () => {
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-500 w-8">#</th>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-500">Agent</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Loans</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Sanctioned</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Disbursed</th>
-                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500 hidden sm:table-cell">Disbursed #</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-500 min-w-[160px]">Target Progress</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-500 hidden sm:table-cell">Conversion</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {leaderboard.map((agent, idx) => (
-                    <tr key={agent.agent_name} className={`border-b border-slate-50 ${idx % 2 === 0 ? 'bg-slate-50/50' : ''} hover:bg-amber-50/30 transition-colors`} data-testid={`leaderboard-row-${idx}`}>
-                      <td className="py-1.5 px-2">
-                        {idx === 0 ? <Medal className="w-3.5 h-3.5 text-amber-500" /> :
-                         idx === 1 ? <Medal className="w-3.5 h-3.5 text-slate-400" /> :
-                         idx === 2 ? <Medal className="w-3.5 h-3.5 text-amber-700" /> :
-                         <span className="text-slate-400 text-[10px] pl-0.5">{agent.rank}</span>}
-                      </td>
-                      <td className="py-1.5 px-2 font-medium text-slate-700 truncate max-w-[140px]">{agent.agent_name}</td>
-                      <td className="py-1.5 px-2 text-right text-slate-600">{agent.total_loans}</td>
-                      <td className="py-1.5 px-2 text-right text-slate-600">{fmt(agent.sanction_amount)}</td>
-                      <td className="py-1.5 px-2 text-right font-medium text-emerald-700">{fmt(agent.disbursed_amount)}</td>
-                      <td className="py-1.5 px-2 text-right text-slate-600 hidden sm:table-cell">{agent.disbursed_count}</td>
-                      <td className="py-1.5 px-2 text-right hidden sm:table-cell">
-                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
-                          agent.conversion_rate >= 50 ? 'bg-emerald-50 text-emerald-700' :
-                          agent.conversion_rate >= 25 ? 'bg-amber-50 text-amber-700' :
-                          'bg-red-50 text-red-600'
-                        }`}>
-                          {agent.conversion_rate}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {leaderboard.map((agent, idx) => {
+                    const progress = Math.min(agent.target_progress || 0, 100);
+                    const overTarget = (agent.target_progress || 0) > 100;
+                    return (
+                      <tr key={agent.agent_name} className={`border-b border-slate-50 ${idx % 2 === 0 ? 'bg-slate-50/50' : ''} hover:bg-amber-50/30 transition-colors`} data-testid={`leaderboard-row-${idx}`}>
+                        <td className="py-1.5 px-2">
+                          {idx === 0 ? <Medal className="w-3.5 h-3.5 text-amber-500" /> :
+                           idx === 1 ? <Medal className="w-3.5 h-3.5 text-slate-400" /> :
+                           idx === 2 ? <Medal className="w-3.5 h-3.5 text-amber-700" /> :
+                           <span className="text-slate-400 text-[10px] pl-0.5">{agent.rank}</span>}
+                        </td>
+                        <td className="py-1.5 px-2 font-medium text-slate-700 truncate max-w-[140px]">{agent.agent_name}</td>
+                        <td className="py-1.5 px-2 text-right text-slate-600">{agent.total_loans}</td>
+                        <td className="py-1.5 px-2 text-right font-medium text-emerald-700">{fmt(agent.disbursed_amount)}</td>
+                        <td className="py-2 px-2">
+                          {agent.target_amount > 0 ? (
+                            <div className="space-y-0.5">
+                              <div className="flex items-center justify-between text-[9px]">
+                                <span className={overTarget ? 'text-emerald-600 font-bold' : 'text-slate-500'}>
+                                  {fmt(agent.disbursed_amount)} / {fmt(agent.target_amount)}
+                                </span>
+                                <span className={`font-bold ${
+                                  agent.target_progress >= 100 ? 'text-emerald-600' :
+                                  agent.target_progress >= 60 ? 'text-amber-600' : 'text-red-500'
+                                }`}>{agent.target_progress}%</span>
+                              </div>
+                              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden" data-testid={`progress-bar-${idx}`}>
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    agent.target_progress >= 100 ? 'bg-emerald-500' :
+                                    agent.target_progress >= 60 ? 'bg-amber-400' : 'bg-red-400'
+                                  }`}
+                                  style={{ width: `${progress}%` }}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="text-[9px] text-slate-300 italic">No target set</span>
+                          )}
+                        </td>
+                        <td className="py-1.5 px-2 text-right hidden sm:table-cell">
+                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
+                            agent.conversion_rate >= 50 ? 'bg-emerald-50 text-emerald-700' :
+                            agent.conversion_rate >= 25 ? 'bg-amber-50 text-amber-700' :
+                            'bg-red-50 text-red-600'
+                          }`}>
+                            {agent.conversion_rate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Set Targets Dialog */}
+      <Dialog open={showTargetDialog} onOpenChange={setShowTargetDialog}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-1.5">
+              <Target className="w-4 h-4 text-[#2c587a]" /> Set Monthly Disbursement Targets
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-[11px]">Target Month</Label>
+              <Input value={targetMonth} onChange={e => setTargetMonth(e.target.value)} placeholder="MM-YYYY" className="h-8 text-[11px] mt-0.5 w-40" data-testid="target-month-input" />
+              <p className="text-[10px] text-slate-400 mt-0.5">Format: MM-YYYY (e.g., 04-2026)</p>
+            </div>
+            <div className="space-y-2">
+              {leaderboard.map((agent, idx) => (
+                <div key={agent.agent_name} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50" data-testid={`target-input-row-${idx}`}>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-slate-700 truncate">{agent.agent_name}</p>
+                    <p className="text-[9px] text-slate-400">Current: {fmt(agent.disbursed_amount)} disbursed</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[10px] text-slate-400">&#8377;</span>
+                    <Input
+                      type="number"
+                      value={targetInputs[agent.agent_name] || ''}
+                      onChange={e => setTargetInputs({ ...targetInputs, [agent.agent_name]: e.target.value })}
+                      placeholder="Target"
+                      className="h-7 text-[11px] w-28"
+                      data-testid={`target-amount-${idx}`}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" size="sm" onClick={() => setShowTargetDialog(false)} className="flex-1 h-7 text-[11px]">Cancel</Button>
+              <Button size="sm" onClick={saveTargets} className="flex-1 h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="save-targets-btn">Save Targets</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

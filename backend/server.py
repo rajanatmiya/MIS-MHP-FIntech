@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Response, Request
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status, UploadFile, File, Form, Response, Request, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
@@ -1222,7 +1222,7 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
 
 
 @api_router.get("/analytics/team-leaderboard")
-async def get_team_leaderboard(current_user: User = Depends(get_current_user)):
+async def get_team_leaderboard(month: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Returns agent performance leaderboard for managers/admins"""
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
@@ -1236,6 +1236,20 @@ async def get_team_leaderboard(current_user: User = Depends(get_current_user)):
         query["product"] = {"$in": current_user.assigned_products}
 
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
+
+    # Load targets for the selected month
+    target_query = {}
+    if month:
+        target_query["month"] = month
+    targets_list = await db.agent_targets.find(target_query, {"_id": 0}).to_list(5000)
+    targets_map = {}
+    for t in targets_list:
+        key = t.get("agent_name", "")
+        if month:
+            targets_map[key] = t.get("target_amount", 0)
+        else:
+            targets_map.setdefault(key, 0)
+            targets_map[key] += t.get("target_amount", 0)
 
     agent_stats = {}
     for loan in loans:
@@ -1260,8 +1274,52 @@ async def get_team_leaderboard(current_user: User = Depends(get_current_user)):
     for i, entry in enumerate(leaderboard):
         entry["rank"] = i + 1
         entry["conversion_rate"] = round((entry["disbursed_count"] / entry["total_loans"] * 100), 1) if entry["total_loans"] > 0 else 0
+        target = targets_map.get(entry["agent_name"], 0)
+        entry["target_amount"] = target
+        entry["target_progress"] = round((entry["disbursed_amount"] / target * 100), 1) if target > 0 else 0
 
     return {"leaderboard": leaderboard, "total_agents": len(leaderboard), "total_loans": len(loans)}
+
+
+# Agent Monthly Targets
+@api_router.get("/targets")
+async def get_targets(month: Optional[str] = None, current_user: User = Depends(get_current_user)):
+    query = {}
+    if month:
+        query["month"] = month
+    targets = await db.agent_targets.find(query, {"_id": 0}).to_list(5000)
+    return targets
+
+@api_router.post("/targets")
+async def set_target(data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ['admin', 'manager']:
+        raise HTTPException(status_code=403, detail="Only admin/manager can set targets")
+    agent_name = data.get("agent_name")
+    month = data.get("month")
+    target_amount = data.get("target_amount", 0)
+    if not agent_name or not month:
+        raise HTTPException(status_code=400, detail="agent_name and month are required")
+    existing = await db.agent_targets.find_one({"agent_name": agent_name, "month": month})
+    if existing:
+        await db.agent_targets.update_one(
+            {"agent_name": agent_name, "month": month},
+            {"$set": {"target_amount": float(target_amount), "updated_by": current_user.id, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+    else:
+        await db.agent_targets.insert_one({
+            "id": str(uuid.uuid4()), "agent_name": agent_name, "month": month,
+            "target_amount": float(target_amount),
+            "created_by": current_user.id, "created_at": datetime.now(timezone.utc).isoformat()
+        })
+    return {"status": "ok", "agent_name": agent_name, "month": month, "target_amount": float(target_amount)}
+
+@api_router.delete("/targets/{agent_name}/{month}")
+async def delete_target(agent_name: str, month: str, current_user: User = Depends(get_current_user)):
+    if current_user.role not in ['admin', 'manager']:
+        raise HTTPException(status_code=403, detail="Only admin/manager can delete targets")
+    await db.agent_targets.delete_one({"agent_name": agent_name, "month": month})
+    return {"status": "deleted"}
+
 
 
 # Excel Export (Admin only)
