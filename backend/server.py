@@ -2093,7 +2093,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
     import json as json_lib
     backup = {}
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "agent_targets"]
     for col_name in collections:
         docs = await db[col_name].find({}, {"_id": 0}).to_list(100000)
         backup[col_name] = docs
@@ -2113,7 +2113,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
 @api_router.get("/backup/stats")
 async def get_backup_stats(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "agent_targets"]
     stats = {}
     total = 0
     for col_name in collections:
@@ -2122,6 +2122,62 @@ async def get_backup_stats(current_user: User = Depends(get_current_user)):
         total += count
     stats["total_records"] = total
     return stats
+
+@api_router.post("/backup/import")
+async def import_backup(file: UploadFile = File(...), mode: str = Form("merge"), current_user: User = Depends(get_current_user)):
+    """Import a JSON backup file. mode='merge' adds new records, mode='replace' wipes and replaces."""
+    check_admin(current_user)
+    import json as json_lib
+    try:
+        content = await file.read()
+        data = json_lib.loads(content)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON file")
+
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "agent_targets"]
+    results = {}
+    total_imported = 0
+
+    for col_name in collections:
+        if col_name not in data:
+            continue
+        records = data[col_name]
+        if not isinstance(records, list) or len(records) == 0:
+            continue
+
+        if mode == "replace":
+            await db[col_name].delete_many({})
+            if records:
+                for rec in records:
+                    rec.pop("_id", None)
+                await db[col_name].insert_many(records)
+            results[col_name] = {"action": "replaced", "count": len(records)}
+            total_imported += len(records)
+        else:
+            inserted = 0
+            skipped = 0
+            for rec in records:
+                rec.pop("_id", None)
+                rec_id = rec.get("id")
+                rec_name = rec.get("name")
+                if rec_id:
+                    exists = await db[col_name].find_one({"id": rec_id})
+                    if exists:
+                        skipped += 1
+                        continue
+                elif rec_name and col_name.startswith("master_"):
+                    exists = await db[col_name].find_one({"name": rec_name})
+                    if exists:
+                        skipped += 1
+                        continue
+                await db[col_name].insert_one(rec)
+                inserted += 1
+            results[col_name] = {"action": "merged", "inserted": inserted, "skipped": skipped}
+            total_imported += inserted
+
+    return {"message": f"Import complete. {total_imported} records imported.", "details": results, "total_imported": total_imported}
+
+
 
 # Include the router
 app.include_router(api_router)
