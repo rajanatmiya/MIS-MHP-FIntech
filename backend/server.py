@@ -1220,6 +1220,50 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
         "schemes": sorted(list(schemes))
     }
 
+
+@api_router.get("/analytics/team-leaderboard")
+async def get_team_leaderboard(current_user: User = Depends(get_current_user)):
+    """Returns agent performance leaderboard for managers/admins"""
+    query = {}
+    accessible_ids = await get_accessible_user_ids(current_user)
+    if accessible_ids is not None:
+        query["created_by"] = {"$in": accessible_ids}
+    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
+        query["bank"] = {"$in": current_user.assigned_banks}
+    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
+        query["category"] = {"$in": current_user.assigned_categories}
+    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
+        query["product"] = {"$in": current_user.assigned_products}
+
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
+
+    agent_stats = {}
+    for loan in loans:
+        agent = loan.get("agent_name") or loan.get("created_by") or "Unknown"
+        if agent not in agent_stats:
+            agent_stats[agent] = {"agent_name": agent, "total_loans": 0, "sanction_amount": 0, "disbursed_amount": 0, "disbursed_count": 0, "pending_count": 0, "declined_count": 0}
+        stats = agent_stats[agent]
+        stats["total_loans"] += 1
+        s = float(str(loan.get("sanction", "0") or "0").replace(",", "") or 0)
+        d = float(str(loan.get("disbursed", "0") or "0").replace(",", "") or 0)
+        stats["sanction_amount"] += s if not __import__('math').isnan(s) else 0
+        stats["disbursed_amount"] += d if not __import__('math').isnan(d) else 0
+        status = (loan.get("status") or "").lower()
+        if "disburse" in status:
+            stats["disbursed_count"] += 1
+        elif "decline" in status or "reject" in status:
+            stats["declined_count"] += 1
+        elif "pending" in status or "login" in status or "process" in status:
+            stats["pending_count"] += 1
+
+    leaderboard = sorted(agent_stats.values(), key=lambda x: x["disbursed_amount"], reverse=True)
+    for i, entry in enumerate(leaderboard):
+        entry["rank"] = i + 1
+        entry["conversion_rate"] = round((entry["disbursed_count"] / entry["total_loans"] * 100), 1) if entry["total_loans"] > 0 else 0
+
+    return {"leaderboard": leaderboard, "total_agents": len(leaderboard), "total_loans": len(loans)}
+
+
 # Excel Export (Admin only)
 @api_router.get("/export/loans")
 async def export_loans(

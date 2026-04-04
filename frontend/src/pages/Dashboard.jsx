@@ -4,7 +4,7 @@ import { API, AuthContext } from '@/App';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   TrendingUp, TrendingDown, Clock, CheckCircle2, XCircle, FileText, 
-  ArrowUpRight, ArrowDownRight, Building2, Filter, Activity
+  ArrowUpRight, ArrowDownRight, Building2, Filter, Activity, Trophy, Medal
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -61,8 +61,9 @@ const Dashboard = () => {
   const [banks, setBanks] = useState([]);
   const [selectedBank, setSelectedBank] = useState('');
   const [loading, setLoading] = useState(true);
+  const [leaderboard, setLeaderboard] = useState([]);
 
-  useEffect(() => { fetchOverview(); fetchLoans(); }, []);
+  useEffect(() => { fetchOverview(); fetchLoans(); fetchLeaderboard(); }, []);
 
   const fetchOverview = async () => {
     try {
@@ -80,6 +81,13 @@ const Dashboard = () => {
       const uniqueBanks = [...new Set(data.map(loan => loan.bank).filter(Boolean))];
       setBanks(uniqueBanks.sort());
     } catch (error) { console.error('Failed to fetch loans'); }
+  };
+
+  const fetchLeaderboard = async () => {
+    try {
+      const response = await axios.get(`${API}/analytics/team-leaderboard`);
+      setLeaderboard(response.data.leaderboard || []);
+    } catch (error) { console.error('Failed to fetch leaderboard'); }
   };
 
   if (loading) {
@@ -250,6 +258,62 @@ const Dashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Team Performance Leaderboard */}
+      {(user?.role === 'admin' || user?.role === 'manager') && leaderboard.length > 0 && (
+        <Card className="shadow-sm" data-testid="team-leaderboard-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-1.5">
+                <Trophy className="w-3.5 h-3.5 text-amber-500" />
+                <p className="text-xs font-semibold text-slate-700">Team Performance Leaderboard</p>
+              </div>
+              <span className="text-[10px] text-slate-400">{leaderboard.length} agents</span>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px]" data-testid="leaderboard-table">
+                <thead>
+                  <tr className="border-b border-slate-100">
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-500 w-8">#</th>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-500">Agent</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Loans</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Sanctioned</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Disbursed</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500 hidden sm:table-cell">Disbursed #</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500 hidden sm:table-cell">Conversion</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaderboard.map((agent, idx) => (
+                    <tr key={agent.agent_name} className={`border-b border-slate-50 ${idx % 2 === 0 ? 'bg-slate-50/50' : ''} hover:bg-amber-50/30 transition-colors`} data-testid={`leaderboard-row-${idx}`}>
+                      <td className="py-1.5 px-2">
+                        {idx === 0 ? <Medal className="w-3.5 h-3.5 text-amber-500" /> :
+                         idx === 1 ? <Medal className="w-3.5 h-3.5 text-slate-400" /> :
+                         idx === 2 ? <Medal className="w-3.5 h-3.5 text-amber-700" /> :
+                         <span className="text-slate-400 text-[10px] pl-0.5">{agent.rank}</span>}
+                      </td>
+                      <td className="py-1.5 px-2 font-medium text-slate-700 truncate max-w-[140px]">{agent.agent_name}</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600">{agent.total_loans}</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600">{fmt(agent.sanction_amount)}</td>
+                      <td className="py-1.5 px-2 text-right font-medium text-emerald-700">{fmt(agent.disbursed_amount)}</td>
+                      <td className="py-1.5 px-2 text-right text-slate-600 hidden sm:table-cell">{agent.disbursed_count}</td>
+                      <td className="py-1.5 px-2 text-right hidden sm:table-cell">
+                        <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
+                          agent.conversion_rate >= 50 ? 'bg-emerald-50 text-emerald-700' :
+                          agent.conversion_rate >= 25 ? 'bg-amber-50 text-amber-700' :
+                          'bg-red-50 text-red-600'
+                        }`}>
+                          {agent.conversion_rate}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
