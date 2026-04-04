@@ -18,7 +18,7 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - Strict page access with RoleGuard (redirects unauthorized routes)
 - Bank-level filtering on ALL data endpoints (loans, analytics/overview, by-bank, by-agent, by-month, unique-values)
 - Manager sees only assigned agents' data across all pages
-- Master File page — 7 categories: Banks, Agents, Companies, Branches, Locations, Categories, Products
+- Master File page — 7 categories: Banks (97 entries), Agents, Companies, Branches, Locations, Categories (6), Products (6)
 - DB Backup page — JSON backup download with 11 collection stats
 - Form dropdowns from master data (Bank, Agent, Company, Branch, Location, Category, Product)
 - MIS Board with inline editing, Edit/Delete actions
@@ -28,7 +28,11 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - LoanForm date picker (dd-mm-yyyy)
 - LoanForm Category and Product dropdown selects
 - Category & Product fields in loan creation (Add Entry) and editing (Edit Entry) dialogs
+- User Management: Assigned Banks as scrollable checkbox list from master data (97 banks)
 - PWA support
+
+## Master Data - Banks (97 entries)
+Full list seeded per user request including: BAJAJ, ADITYA BIRLA, AXIS FINANCE, HDFC, ICICI, KOTAK, IDFC, L&T, PIRAMAL, TATA CAPITAL, YES BANK, FEDERAL BANK, BANK OF BARODA, SBI, etc.
 
 ## Pending / Backlog
 - **P1:** Agent onboarding wizard with bank assignment flow
