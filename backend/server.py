@@ -311,6 +311,20 @@ async def get_accessible_user_ids(user: User) -> List[str]:
     else:
         return [user.id]
 
+def build_rbac_filter(current_user: User, accessible_ids):
+    """Build RBAC query filter. Agents always see their own loans. Managers see all team loans."""
+    if current_user.role == 'admin' or accessible_ids is None:
+        return {}
+    
+    # Agent: only own loans, no bank/cat/prod filtering needed
+    # (agent always sees everything they created)
+    if current_user.role == 'agent':
+        return {"created_by": current_user.id}
+    
+    # Manager: see all team loans without bank/cat/prod restriction
+    # Team visibility is controlled by manager_id assignment, not bank names
+    return {"created_by": {"$in": accessible_ids}}
+
 # Auth routes
 @api_router.post("/auth/register", response_model=Token)
 async def register(user_data: UserCreate):
@@ -726,21 +740,10 @@ async def get_loans(
 ):
     query = {}
     
-    # Role-based access control
-    # Agent: sees only their own entries
-    # Manager: sees their team's entries
-    # Admin: sees all entries
+    # Role-based access control with own-loan bypass
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    
-    # Bank-level filtering: if user has assigned_banks, only show those banks
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    rbac_filter = build_rbac_filter(current_user, accessible_ids)
+    query.update(rbac_filter)
     
     if status:
         query["status"] = status
@@ -751,11 +754,17 @@ async def get_loans(
     if month:
         query["month"] = month
     if search:
-        query["$or"] = [
+        search_conditions = [
             {"customer_name": {"$regex": search, "$options": "i"}},
             {"company_name": {"$regex": search, "$options": "i"}},
             {"contact_no": {"$regex": search, "$options": "i"}}
         ]
+        if "$or" in query:
+            # RBAC already has $or, combine with $and
+            rbac_or = query.pop("$or")
+            query["$and"] = [{"$or": rbac_or}, {"$or": search_conditions}]
+        else:
+            query["$or"] = search_conditions
     
     # Cap limit to prevent abuse
     limit = min(limit, 2000)
@@ -1012,16 +1021,7 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
 async def get_overview(current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    
-    # Bank-level filtering
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1074,14 +1074,7 @@ async def get_overview(current_user: User = Depends(get_current_user)):
 async def get_monthly_trends(current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1117,14 +1110,7 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
 async def get_by_bank(current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1146,14 +1132,7 @@ async def get_by_bank(current_user: User = Depends(get_current_user)):
 async def get_by_agent(current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1177,14 +1156,7 @@ async def get_by_agent(current_user: User = Depends(get_current_user)):
 async def get_by_month(current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1206,14 +1178,7 @@ async def get_by_month(current_user: User = Depends(get_current_user)):
 async def get_unique_values(current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
@@ -1249,14 +1214,7 @@ async def get_team_leaderboard(month: Optional[str] = None, current_user: User =
     """Returns agent performance leaderboard for managers/admins"""
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
-    if accessible_ids is not None:
-        query["created_by"] = {"$in": accessible_ids}
-    if current_user.assigned_banks and len(current_user.assigned_banks) > 0 and current_user.role != 'admin':
-        query["bank"] = {"$in": current_user.assigned_banks}
-    if current_user.assigned_categories and len(current_user.assigned_categories) > 0 and current_user.role != 'admin':
-        query["category"] = {"$in": current_user.assigned_categories + ["", None]}
-    if current_user.assigned_products and len(current_user.assigned_products) > 0 and current_user.role != 'admin':
-        query["product"] = {"$in": current_user.assigned_products + ["", None]}
+    query.update(build_rbac_filter(current_user, accessible_ids))
 
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
 
