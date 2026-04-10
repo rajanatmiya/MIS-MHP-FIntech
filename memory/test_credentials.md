@@ -17,6 +17,7 @@
 ## Manager (Production)
 - Email: jyoti.tripathi@mhpfintech.com
 - Password: Jyoti@MHP
+- Assigned Banks: YES, HERO FINCORP, POONAWALLA, CLIX, MUTHOOTH, UNITY, CHOLA, GODREJ, IDFC, CREDIT SAISON, KARUR
 
 ## Agent
 - Email: agent@mhpfintech.com
@@ -29,3 +30,6 @@
 - Email: dhruvi.shah@mhpfintech.com
 - Password: Dhruvi@MHP
 - Manager: jyoti.tripathi@mhpfintech.com
+- Assigned Banks: HERO, YES, POONAWALLA, CLIX, MUTHOOTH, UNITY
+- Assigned Categories: UNSECURED
+- Assigned Products: Business Loan
