@@ -29,7 +29,8 @@ const Layout = ({ children }) => {
     navigation.push({ name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' });
     navigation.push({ name: 'Analytics', href: '/analytics', icon: BarChart3, testId: 'nav-analytics' });
   } else {
-    // Agent: only MIS and Loans
+    // Agent: Dashboard, MIS and Loans
+    navigation.push({ name: 'Dashboard', href: '/', icon: LayoutDashboard, testId: 'nav-dashboard' });
     navigation.push({ name: 'Month MIS', href: '/monthly-mis', icon: Calendar, testId: 'nav-monthly-mis' });
     navigation.push({ name: 'Loans', href: '/loans', icon: FileText, testId: 'nav-loans' });
   }

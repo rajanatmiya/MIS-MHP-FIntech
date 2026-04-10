@@ -177,9 +177,7 @@ function App() {
               user ? (
                 <Layout>
                   <Routes>
-                    <Route path="/" element={
-                      user?.role === 'agent' ? <Navigate to="/monthly-mis" replace /> : <Dashboard />
-                    } />
+                    <Route path="/" element={<Dashboard />} />
                     <Route path="/monthly-mis" element={<MonthlyMIS />} />
                     <Route path="/loans" element={<Loans />} />
                     <Route path="/analytics" element={

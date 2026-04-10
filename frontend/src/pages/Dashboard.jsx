@@ -289,7 +289,7 @@ const Dashboard = () => {
       </Card>
 
       {/* Team Performance Leaderboard */}
-      {(user?.role === 'admin' || user?.role === 'manager') && leaderboard.length > 0 && (
+      {leaderboard.length > 0 && (
         <Card className="shadow-sm" data-testid="team-leaderboard-card">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
@@ -299,9 +299,11 @@ const Dashboard = () => {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-slate-400">{leaderboard.length} agents</span>
-                <Button variant="outline" size="sm" onClick={openTargetDialog} className="h-6 text-[10px] gap-1 px-2" data-testid="set-targets-btn">
-                  <Target className="w-3 h-3" /> Set Targets
-                </Button>
+                {(user?.role === 'admin' || user?.role === 'manager') && (
+                  <Button variant="outline" size="sm" onClick={openTargetDialog} className="h-6 text-[10px] gap-1 px-2" data-testid="set-targets-btn">
+                    <Target className="w-3 h-3" /> Set Targets
+                  </Button>
+                )}
               </div>
             </div>
             <div className="overflow-x-auto">
