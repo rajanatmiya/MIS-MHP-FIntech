@@ -400,7 +400,13 @@ const MonthlyMIS = () => {
   const handleEditOpen = (loan) => {
     setEditingLoan(loan);
     setEditFormData({ ...loan });
-    setEditMonthInput(toInputMonth(loan.month || ''));
+    const m = loan.month || '';
+    const parts = m.split('-');
+    if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+      setEditMonthInput(`${parts[2]}-${parts[1]}-${parts[0]}`);
+    } else {
+      setEditMonthInput('');
+    }
     setShowEditForm(true);
   };
 
@@ -542,13 +548,22 @@ const MonthlyMIS = () => {
     if (isEditing) {
       // Date picker for month field
       if (field === 'month') {
-        let monthInputVal = toInputMonth(editValue);
+        let dateInputVal = editValue;
+        if (editValue && /^\d{2}-\d{2}-\d{4}$/.test(editValue)) {
+          const [d, m, y] = editValue.split('-');
+          dateInputVal = `${y}-${m}-${d}`;
+        }
         return (
           <input
-            type="month"
-            value={monthInputVal}
+            type="date"
+            value={dateInputVal}
             onChange={(e) => {
-              setEditValue(fromInputMonth(e.target.value));
+              if (e.target.value) {
+                const [year, month, day] = e.target.value.split('-');
+                setEditValue(`${day}-${month}-${year}`);
+              } else {
+                setEditValue('');
+              }
             }}
             onBlur={() => handleCellSave(loan.id, field)}
             onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
@@ -649,7 +664,7 @@ const MonthlyMIS = () => {
         className="cursor-pointer hover:bg-blue-50/60 px-1.5 py-0.5 rounded transition-colors min-h-[24px] flex items-center text-[11px]"
         title="Click to edit"
       >
-        {field === 'month' ? (toMonthKey(value) !== 'Unknown' ? toMonthKey(value) : value) : (value || <span className="text-slate-300 italic">—</span>)}
+        {value || <span className="text-slate-300 italic">—</span>}
       </div>
     );
   };
@@ -1104,14 +1119,19 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Month *</Label>
+                <Label className="text-[11px] text-slate-600">Date *</Label>
                 <Input
                   required
-                  type="month"
+                  type="date"
                   value={monthInputValue}
                   onChange={(e) => {
                     setMonthInputValue(e.target.value);
-                    setNewLoanData({...newLoanData, month: fromInputMonth(e.target.value)});
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      setNewLoanData({...newLoanData, month: `${day}-${month}-${year}`});
+                    } else {
+                      setNewLoanData({...newLoanData, month: ''});
+                    }
                   }}
                   className="h-8 text-[11px] mt-0.5 cursor-pointer"
                 />
@@ -1278,14 +1298,19 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Month *</Label>
+                <Label className="text-[11px] text-slate-600">Date *</Label>
                 <Input
                   required
-                  type="month"
+                  type="date"
                   value={editMonthInput}
                   onChange={(e) => {
                     setEditMonthInput(e.target.value);
-                    setEditFormData({...editFormData, month: fromInputMonth(e.target.value)});
+                    if (e.target.value) {
+                      const [year, month, day] = e.target.value.split('-');
+                      setEditFormData({...editFormData, month: `${day}-${month}-${year}`});
+                    } else {
+                      setEditFormData({...editFormData, month: ''});
+                    }
                   }}
                   className="h-8 text-[11px] mt-0.5 cursor-pointer"
                 />

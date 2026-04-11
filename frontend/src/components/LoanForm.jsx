@@ -427,31 +427,26 @@ const LoanForm = ({ loan, onSuccess, onCancel }) => {
           />
         </div>
 
-        {/* Month */}
+        {/* Date */}
         <div className="space-y-2">
-          <Label htmlFor="month">Month *</Label>
+          <Label htmlFor="month">Date *</Label>
           <Input
             id="month"
-            type="month"
+            type="date"
             value={(() => {
-              // Convert stored format to yyyy-mm for native month input
               const v = formData.month;
               if (!v) return '';
-              const monthMap = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
-              const mmmMatch = v.match(/^([A-Za-z]{3})-(\d{4})$/);
-              if (mmmMatch) return `${mmmMatch[2]}-${monthMap[mmmMatch[1]]}`;
               const parts = v.split('-');
-              if (parts.length === 3 && parts[0].length === 2 && parts[2].length === 4) {
-                return `${parts[2]}-${parts[1]}`;
+              if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+                return `${parts[2]}-${parts[1]}-${parts[0]}`;
               }
               return v;
             })()}
             onChange={(e) => {
               const val = e.target.value;
               if (!val) { handleChange('month', ''); return; }
-              const [y, m] = val.split('-');
-              const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-              handleChange('month', `${names[parseInt(m)-1]}-${y}`);
+              const [y, m, d] = val.split('-');
+              handleChange('month', `${d}-${m}-${y}`);
             }}
             required
             data-testid="month-input"
