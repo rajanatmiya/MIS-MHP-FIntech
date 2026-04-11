@@ -460,6 +460,35 @@ const MonthlyMIS = () => {
     }
   };
 
+  const handleDeleteMonth = async (monthKey) => {
+    if (!window.confirm(`Delete all entries in "${monthKey}" and archive to DB Backup?\n\nThis will move all loans from this month to your backup page.`)) return;
+    try {
+      const response = await axios.post(`${API}/loans/delete-month`, { month_key: monthKey });
+      toast.success(response.data.message);
+      setEmptyMonthGroups(emptyMonthGroups.filter(m => m !== monthKey));
+      fetchLoans();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete month');
+    }
+  };
+
+  const handleExportMonth = async (monthKey) => {
+    try {
+      const response = await axios.get(`${API}/backup/export-month/${encodeURIComponent(monthKey)}`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `loans_${monthKey}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success(`Exported ${monthKey} loans`);
+    } catch (error) {
+      toast.error('Failed to export month data');
+    }
+  };
+
   const handleExportExcel = async () => {
     try {
       const response = await axios.get(`${API}/export/loans`, { responseType: 'blob' });
@@ -956,12 +985,30 @@ const MonthlyMIS = () => {
                     </div>
                   )}
                   <button
+                    onClick={(e) => { e.stopPropagation(); handleExportMonth(month); }}
+                    className="flex items-center gap-0.5 h-6 px-2 text-[10px] font-medium text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded transition-colors"
+                    data-testid={`export-month-${month}`}
+                    title={`Export ${month}`}
+                  >
+                    <Download className="w-3 h-3" /> Export
+                  </button>
+                  <button
                     onClick={(e) => { e.stopPropagation(); setAddEntryForMonth(month); setMonthInputValue(getDefaultDateForMonth(month)); setNewLoanData({ month: (() => { const r = getMonthDateRange(month); if (r.min) { const [y,m,d] = r.min.split('-'); return `${d}-${m}-${y}`; } return ''; })() }); setShowAddForm(true); }}
                     className="flex items-center gap-0.5 h-6 px-2 text-[10px] font-medium text-[#2c587a] bg-[#2c587a]/10 hover:bg-[#2c587a]/20 rounded transition-colors"
                     data-testid={`add-entry-${month}`}
                   >
                     <Plus className="w-3 h-3" /> Add
                   </button>
+                  {user?.role === 'admin' && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDeleteMonth(month); }}
+                      className="flex items-center gap-0.5 h-6 px-2 text-[10px] font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded transition-colors"
+                      data-testid={`delete-month-${month}`}
+                      title={`Delete & archive ${month}`}
+                    >
+                      <Trash2 className="w-3 h-3" /> Delete
+                    </button>
+                  )}
                 </div>
               </div>
 

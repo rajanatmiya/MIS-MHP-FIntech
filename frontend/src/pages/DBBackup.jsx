@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API, AuthContext } from '@/App';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Database, Download, HardDrive, Users, FileText, Tag, Flag, Building2, UserCheck, Upload, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Database, Download, HardDrive, Users, FileText, Tag, Flag, Building2, UserCheck, Upload, AlertTriangle, CheckCircle2, RefreshCw, ArchiveRestore, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -31,8 +31,10 @@ const DBBackup = () => {
   const [importMode, setImportMode] = useState('merge');
   const [importResult, setImportResult] = useState(null);
   const fileInputRef = useRef(null);
+  const [archivedMonths, setArchivedMonths] = useState([]);
+  const [restoringId, setRestoringId] = useState(null);
 
-  useEffect(() => { fetchStats(); }, []);
+  useEffect(() => { fetchStats(); fetchArchivedMonths(); }, []);
 
   const fetchStats = async () => {
     try {
@@ -40,6 +42,37 @@ const DBBackup = () => {
       setStats(res.data);
     } catch (error) { toast.error('Failed to fetch database stats'); }
     finally { setLoading(false); }
+  };
+
+  const fetchArchivedMonths = async () => {
+    try {
+      const res = await axios.get(`${API}/backup/archived-months`);
+      setArchivedMonths(res.data);
+    } catch (error) { /* silently fail if no archives */ }
+  };
+
+  const handleRestoreMonth = async (archiveId, monthKey) => {
+    if (!window.confirm(`Restore all loans from "${monthKey}" back to MIS?`)) return;
+    setRestoringId(archiveId);
+    try {
+      const res = await axios.post(`${API}/backup/restore-month/${archiveId}`);
+      toast.success(res.data.message);
+      fetchArchivedMonths();
+      fetchStats();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Restore failed');
+    } finally { setRestoringId(null); }
+  };
+
+  const handleDeleteArchive = async (archiveId, monthKey) => {
+    if (!window.confirm(`Permanently delete "${monthKey}" backup?\n\nThis cannot be undone.`)) return;
+    try {
+      await axios.delete(`${API}/backup/archived-month/${archiveId}`);
+      toast.success('Archive permanently deleted');
+      fetchArchivedMonths();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Delete failed');
+    }
   };
 
   const handleDownload = async () => {
@@ -210,6 +243,53 @@ const DBBackup = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Archived Month Backups */}
+      {archivedMonths.length > 0 && (
+        <Card className="shadow-sm" data-testid="archived-months-card">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <ArchiveRestore className="w-3.5 h-3.5 text-amber-600" />
+              <p className="text-xs font-semibold text-slate-700">Archived Month Backups</p>
+              <span className="text-[10px] text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full ml-1">{archivedMonths.length}</span>
+            </div>
+            <div className="space-y-1.5">
+              {archivedMonths.map((archive) => (
+                <div key={archive.id} className="flex items-center justify-between py-2 px-3 bg-amber-50/50 border border-amber-100 rounded-lg" data-testid={`archive-${archive.id}`}>
+                  <div className="flex-1">
+                    <p className="text-[11px] font-semibold text-slate-800">{archive.month_key}</p>
+                    <p className="text-[10px] text-slate-400">
+                      {archive.loan_count} loans | Deleted by {archive.deleted_by} on {new Date(archive.deleted_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRestoreMonth(archive.id, archive.month_key)}
+                      disabled={restoringId === archive.id}
+                      className="h-6 text-[10px] px-2 text-emerald-700 border-emerald-200 hover:bg-emerald-50"
+                      data-testid={`restore-archive-${archive.id}`}
+                    >
+                      <ArchiveRestore className="w-3 h-3 mr-0.5" />
+                      {restoringId === archive.id ? 'Restoring...' : 'Restore'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteArchive(archive.id, archive.month_key)}
+                      className="h-6 text-[10px] px-2 text-red-600 border-red-200 hover:bg-red-50"
+                      data-testid={`delete-archive-${archive.id}`}
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Import Preview Dialog */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>

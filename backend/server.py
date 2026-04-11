@@ -941,6 +941,181 @@ async def delete_all_loans(confirm: str, current_user: User = Depends(get_curren
         raise HTTPException(status_code=500, detail=f"Failed to delete all entries: {str(e)}")
 
 
+@api_router.post("/loans/delete-month")
+async def delete_month_group(data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    """Delete all loans in a month group and archive them to deleted_month_backups"""
+    check_admin(current_user)
+    month_key = data.get("month_key", "")
+    if not month_key:
+        raise HTTPException(status_code=400, detail="month_key is required")
+    
+    try:
+        import re
+        MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        
+        # Parse month_key (e.g., "Apr-2026") to find matching loans
+        match = re.match(r'^([A-Za-z]{3})-(\d{2,4})$', month_key)
+        if not match:
+            raise HTTPException(status_code=400, detail="Invalid month_key format. Use MMM-YYYY (e.g., Apr-2026)")
+        
+        month_name = match.group(1)
+        year = match.group(2)
+        if len(year) == 2:
+            year = f"20{year}"
+        mi = MONTH_NAMES.index(month_name) if month_name in MONTH_NAMES else -1
+        if mi == -1:
+            raise HTTPException(status_code=400, detail="Invalid month name")
+        mm = str(mi + 1).zfill(2)
+        
+        # Build query patterns to match various date formats for this month
+        # dd-mm-yyyy, MMM-YYYY, mm-yyyy etc.
+        month_patterns = [
+            {"month": {"$regex": f"^\\d{{2}}-{mm}-{year}$"}},  # dd-mm-yyyy
+            {"month": {"$regex": f"^{month_name}-{year}$", "$options": "i"}},  # MMM-YYYY
+            {"month": {"$regex": f"^{mm}-{year}$"}},  # mm-yyyy
+            {"month": {"$regex": f"^{year}-{mm}-\\d{{2}}$"}},  # yyyy-mm-dd
+        ]
+        # Also match 2-digit year
+        short_year = year[2:]
+        month_patterns.append({"month": {"$regex": f"^{month_name}-{short_year}$", "$options": "i"}})
+        month_patterns.append({"month": {"$regex": f"^\\d{{2}}-{mm}-{short_year}$"}})
+        
+        query = {"$or": month_patterns}
+        
+        # Fetch loans to archive
+        loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+        
+        if not loans:
+            return {"message": f"No loans found for {month_key}", "deleted_count": 0, "archived": False}
+        
+        # Archive to deleted_month_backups collection
+        archive_doc = {
+            "id": str(uuid.uuid4()),
+            "month_key": month_key,
+            "deleted_at": datetime.now(timezone.utc).isoformat(),
+            "deleted_by": current_user.name or current_user.email,
+            "loan_count": len(loans),
+            "loans": loans
+        }
+        await db.deleted_month_backups.insert_one(archive_doc)
+        
+        # Delete the loans
+        result = await db.loan_applications.delete_many(query)
+        
+        return {
+            "message": f"Deleted {result.deleted_count} loans from {month_key} and archived to backup",
+            "deleted_count": result.deleted_count,
+            "archived": True,
+            "archive_id": archive_doc["id"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Delete month error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete month: {str(e)}")
+
+@api_router.get("/backup/archived-months")
+async def get_archived_months(current_user: User = Depends(get_current_user)):
+    """Get list of archived month backups"""
+    check_admin(current_user)
+    archives = await db.deleted_month_backups.find({}, {"_id": 0, "loans": 0}).sort("deleted_at", -1).to_list(100)
+    return archives
+
+@api_router.post("/backup/restore-month/{archive_id}")
+async def restore_month_backup(archive_id: str, current_user: User = Depends(get_current_user)):
+    """Restore an archived month backup"""
+    check_admin(current_user)
+    archive = await db.deleted_month_backups.find_one({"id": archive_id}, {"_id": 0})
+    if not archive:
+        raise HTTPException(status_code=404, detail="Archive not found")
+    
+    loans = archive.get("loans", [])
+    if loans:
+        await db.loan_applications.insert_many(loans)
+    
+    # Remove from archive
+    await db.deleted_month_backups.delete_one({"id": archive_id})
+    
+    return {"message": f"Restored {len(loans)} loans from {archive.get('month_key', 'unknown')}", "restored_count": len(loans)}
+
+@api_router.delete("/backup/archived-month/{archive_id}")
+async def delete_archived_month(archive_id: str, current_user: User = Depends(get_current_user)):
+    """Permanently delete an archived month backup"""
+    check_admin(current_user)
+    result = await db.deleted_month_backups.delete_one({"id": archive_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Archive not found")
+    return {"message": "Archive permanently deleted"}
+
+@api_router.get("/backup/export-month/{month_key}")
+async def export_month_loans(month_key: str, current_user: User = Depends(get_current_user)):
+    """Export loans for a specific month as Excel"""
+    import re
+    MONTH_NAMES_EXP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    
+    match = re.match(r'^([A-Za-z]{3})-(\d{2,4})$', month_key)
+    if not match:
+        raise HTTPException(status_code=400, detail="Invalid month_key format")
+    
+    month_name = match.group(1)
+    year = match.group(2)
+    if len(year) == 2:
+        year = f"20{year}"
+    mi = MONTH_NAMES_EXP.index(month_name) if month_name in MONTH_NAMES_EXP else -1
+    if mi == -1:
+        raise HTTPException(status_code=400, detail="Invalid month name")
+    mm = str(mi + 1).zfill(2)
+    
+    # Build RBAC filter
+    accessible_ids = await get_accessible_user_ids(current_user)
+    rbac = build_rbac_filter(current_user, accessible_ids)
+    
+    month_patterns = [
+        {"month": {"$regex": f"^\\d{{2}}-{mm}-{year}$"}},
+        {"month": {"$regex": f"^{month_name}-{year}$", "$options": "i"}},
+        {"month": {"$regex": f"^{mm}-{year}$"}},
+        {"month": {"$regex": f"^{year}-{mm}-\\d{{2}}$"}},
+    ]
+    short_year = year[2:]
+    month_patterns.append({"month": {"$regex": f"^{month_name}-{short_year}$", "$options": "i"}})
+    
+    query = {"$or": month_patterns}
+    if rbac:
+        query = {"$and": [rbac, {"$or": month_patterns}]}
+    
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    df = pd.DataFrame(loans)
+    column_config = [
+        ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
+        ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
+        ('status', 'Status'), ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'),
+        ('remark', 'Remark'), ('decline_reason', 'Decline Reason'), ('scheme', 'Scheme'),
+        ('case_from', 'Case From'), ('location', 'Location'), ('branch', 'Branch'),
+        ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
+        ('rate', 'Rate'), ('pf', 'PF'), ('insurance', 'Insurance'), ('tenure', 'Tenure'),
+        ('subvention', 'Subvention'), ('brokerage_subvention', 'Brokerage'), ('agent_name', 'Agent Name'),
+    ]
+    
+    if not df.empty:
+        existing_cols = [c[0] for c in column_config if c[0] in df.columns]
+        df = df[existing_cols]
+        rename_map = {c[0]: c[1] for c in column_config if c[0] in df.columns}
+        df.rename(columns=rename_map, inplace=True)
+    
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name=month_key)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename=loans_{month_key}.xlsx"}
+    )
+
+
+
 @api_router.post("/loans/normalize-months")
 async def normalize_months(current_user: User = Depends(get_current_user)):
     """Normalize all month formats to 'Mon-YY' format - Admin only"""
