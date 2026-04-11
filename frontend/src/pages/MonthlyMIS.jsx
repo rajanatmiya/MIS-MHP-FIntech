@@ -824,7 +824,7 @@ const MonthlyMIS = () => {
                 { key: 'status', label: 'Status' },
                 { key: 'scheme', label: 'Scheme' },
                 { key: 'agent_name', label: 'Agent' },
-                { key: 'month', label: 'Month' },
+                { key: 'month', label: 'Date' },
                 { key: 'location', label: 'Location' },
                 { key: 'branch', label: 'Branch' },
                 { key: 'executive_name', label: 'Executive' },
