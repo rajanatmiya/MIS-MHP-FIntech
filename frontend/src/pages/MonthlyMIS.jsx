@@ -967,8 +967,9 @@ const MonthlyMIS = () => {
               <div
                 className="flex items-center justify-between px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
                 data-testid={`month-header-${month}`}
+                onClick={() => toggleMonth(month)}
               >
-                <div className="flex items-center gap-2" onClick={() => toggleMonth(month)}>
+                <div className="flex items-center gap-2">
                   {isExpanded ? (
                     <ChevronDown className="w-3.5 h-3.5 text-[#2c587a]" />
                   ) : (
@@ -977,7 +978,7 @@ const MonthlyMIS = () => {
                   <span className="font-semibold text-xs text-slate-800">{month}</span>
                   <span className="text-[10px] text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded-full">{monthLoans.length} entries</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                   {!isExpanded && (
                     <div className="flex items-center gap-3 text-[10px] text-slate-500">
                       <span>Sanctioned: <strong className="text-slate-700">₹{formatNumber(totals.sanction)}</strong></span>
