@@ -57,6 +57,25 @@ const fromInputMonth = (yyyymm) => {
   return mi >= 0 && mi < 12 ? `${MONTH_NAMES[mi]}-${y}` : yyyymm;
 };
 
+// Get date range for a month key (e.g., "Apr-2026" → {min: "2026-04-01", max: "2026-04-30"})
+const getMonthDateRange = (monthKey) => {
+  const match = monthKey.match(/^([A-Za-z]{3})-(\d{2,4})$/);
+  if (!match) return {};
+  const mi = MONTH_NAMES.indexOf(match[1]);
+  if (mi === -1) return {};
+  let year = match[2];
+  if (year.length === 2) year = `20${year}`;
+  const mm = String(mi + 1).padStart(2, '0');
+  const lastDay = new Date(parseInt(year), mi + 1, 0).getDate();
+  return { min: `${year}-${mm}-01`, max: `${year}-${mm}-${String(lastDay).padStart(2, '0')}` };
+};
+
+// Convert MMM-YYYY to default date for new entry (1st of that month)
+const getDefaultDateForMonth = (monthKey) => {
+  const range = getMonthDateRange(monthKey);
+  return range.min || '';
+};
+
 // Multi-checkbox filter dropdown component
 const MultiCheckFilter = ({ label, options, selected, onChange, testId }) => {
   const [open, setOpen] = useState(false);
@@ -123,6 +142,9 @@ const MonthlyMIS = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [editMonthInput, setEditMonthInput] = useState('');
+  const [showAddMonthDialog, setShowAddMonthDialog] = useState(false);
+  const [newMonthValue, setNewMonthValue] = useState('');
+  const [addEntryForMonth, setAddEntryForMonth] = useState(null);
   const [masterBanks, setMasterBanks] = useState([]);
   const [masterAgents, setMasterAgents] = useState([]);
   const [masterCompanies, setMasterCompanies] = useState([]);
@@ -130,6 +152,9 @@ const MonthlyMIS = () => {
   const [masterLocations, setMasterLocations] = useState([]);
   const [masterCategories, setMasterCategories] = useState([]);
   const [masterProducts, setMasterProducts] = useState([]);
+  
+  // Empty month groups (added via "Add Month" but no entries yet)
+  const [emptyMonthGroups, setEmptyMonthGroups] = useState([]);
   
   // Top-level multi-select filter states
   const [filterCategories, setFilterCategories] = useState([]);
@@ -392,6 +417,7 @@ const MonthlyMIS = () => {
       setShowAddForm(false);
       setNewLoanData({});
       setMonthInputValue('');
+      setAddEntryForMonth(null);
     } catch (error) {
       toast.error('Failed to add loan');
     }
@@ -531,7 +557,22 @@ const MonthlyMIS = () => {
     groupedLoans[month].push(loan);
   });
 
-  const months = Object.keys(groupedLoans).sort();
+  // Include empty month groups added via "Add Month"
+  emptyMonthGroups.forEach(m => {
+    if (!groupedLoans[m]) groupedLoans[m] = [];
+  });
+
+  const months = Object.keys(groupedLoans).sort((a, b) => {
+    // Sort descending by year-month
+    const getSort = (v) => {
+      const match = v.match(/^([A-Za-z]{3})-(\d{2,4})$/);
+      if (!match) return '0000-00';
+      let yr = match[2]; if (yr.length === 2) yr = `20${yr}`;
+      const mi = MONTH_NAMES.indexOf(match[1]);
+      return `${yr}-${String(mi).padStart(2, '0')}`;
+    };
+    return getSort(b).localeCompare(getSort(a));
+  });
 
   if (loading) {
     return (
@@ -705,13 +746,13 @@ const MonthlyMIS = () => {
             </>
           )}
           <Button
-            onClick={() => setShowAddForm(true)}
+            onClick={() => { setNewMonthValue(''); setShowAddMonthDialog(true); }}
             size="sm"
             className="h-7 text-[11px] px-3 bg-[#2c587a] hover:bg-[#234a68]"
-            data-testid="add-entry-btn"
+            data-testid="add-month-btn"
           >
             <Plus className="w-3 h-3 mr-1" />
-            Add Entry
+            Add Month
           </Button>
         </div>
       </div>
@@ -895,11 +936,10 @@ const MonthlyMIS = () => {
             <div key={month} className="border border-slate-200 rounded-lg bg-white shadow-sm">
               {/* Month Header */}
               <div
-                onClick={() => toggleMonth(month)}
                 className="flex items-center justify-between px-3 py-2 bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
                 data-testid={`month-header-${month}`}
               >
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={() => toggleMonth(month)}>
                   {isExpanded ? (
                     <ChevronDown className="w-3.5 h-3.5 text-[#2c587a]" />
                   ) : (
@@ -908,12 +948,21 @@ const MonthlyMIS = () => {
                   <span className="font-semibold text-xs text-slate-800">{month}</span>
                   <span className="text-[10px] text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded-full">{monthLoans.length} entries</span>
                 </div>
-                {!isExpanded && (
-                  <div className="flex items-center gap-3 text-[10px] text-slate-500">
-                    <span>Sanctioned: <strong className="text-slate-700">₹{formatNumber(totals.sanction)}</strong></span>
-                    <span>Disbursed: <strong className="text-emerald-700">₹{formatNumber(totals.disbursed)}</strong></span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  {!isExpanded && (
+                    <div className="flex items-center gap-3 text-[10px] text-slate-500">
+                      <span>Sanctioned: <strong className="text-slate-700">₹{formatNumber(totals.sanction)}</strong></span>
+                      <span>Disbursed: <strong className="text-emerald-700">₹{formatNumber(totals.disbursed)}</strong></span>
+                    </div>
+                  )}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setAddEntryForMonth(month); setMonthInputValue(getDefaultDateForMonth(month)); setNewLoanData({ month: (() => { const r = getMonthDateRange(month); if (r.min) { const [y,m,d] = r.min.split('-'); return `${d}-${m}-${y}`; } return ''; })() }); setShowAddForm(true); }}
+                    className="flex items-center gap-0.5 h-6 px-2 text-[10px] font-medium text-[#2c587a] bg-[#2c587a]/10 hover:bg-[#2c587a]/20 rounded transition-colors"
+                    data-testid={`add-entry-${month}`}
+                  >
+                    <Plus className="w-3 h-3" /> Add
+                  </button>
+                </div>
               </div>
 
               {/* Table */}
@@ -1024,7 +1073,7 @@ const MonthlyMIS = () => {
       <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
         <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-sm">Add New Entry</DialogTitle>
+            <DialogTitle className="text-sm">Add New Entry{addEntryForMonth ? ` — ${addEntryForMonth}` : ''}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddLoan} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
@@ -1119,11 +1168,13 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Date *</Label>
+                <Label className="text-[11px] text-slate-600">Date *{addEntryForMonth && <span className="text-[10px] text-[#2c587a] ml-1">({addEntryForMonth})</span>}</Label>
                 <Input
                   required
                   type="date"
                   value={monthInputValue}
+                  min={addEntryForMonth ? getMonthDateRange(addEntryForMonth).min : undefined}
+                  max={addEntryForMonth ? getMonthDateRange(addEntryForMonth).max : undefined}
                   onChange={(e) => {
                     setMonthInputValue(e.target.value);
                     if (e.target.value) {
@@ -1193,7 +1244,7 @@ const MonthlyMIS = () => {
               </div>
             </div>
             <div className="flex gap-2 justify-end pt-1">
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowAddForm(false)} className="h-7 text-[11px]">Cancel</Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setShowAddForm(false); setAddEntryForMonth(null); }} className="h-7 text-[11px]">Cancel</Button>
               <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">Add Entry</Button>
             </div>
           </form>
@@ -1441,6 +1492,50 @@ const MonthlyMIS = () => {
               <Button onClick={handleImportExcel} disabled={importing || !importFile} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">
                 <Upload className="w-3 h-3 mr-1" />
                 {importing ? 'Importing...' : 'Import'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Month Dialog */}
+      <Dialog open={showAddMonthDialog} onOpenChange={setShowAddMonthDialog}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle className="text-sm">Add Month Group</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label className="text-[11px] text-slate-600">Select Month</Label>
+              <Input
+                type="month"
+                value={newMonthValue}
+                onChange={(e) => setNewMonthValue(e.target.value)}
+                className="h-8 text-[11px] mt-1"
+                data-testid="add-month-input"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" size="sm" onClick={() => setShowAddMonthDialog(false)} className="h-7 text-[11px]">Cancel</Button>
+              <Button
+                size="sm"
+                className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]"
+                data-testid="add-month-confirm"
+                onClick={() => {
+                  if (!newMonthValue) { toast.error('Please select a month'); return; }
+                  const monthKey = fromInputMonth(newMonthValue);
+                  if (!emptyMonthGroups.includes(monthKey) && !Object.keys(groupedLoans).includes(monthKey)) {
+                    setEmptyMonthGroups([...emptyMonthGroups, monthKey]);
+                    setExpandedMonths(prev => new Set([...prev, monthKey]));
+                    toast.success(`${monthKey} added`);
+                  } else {
+                    setExpandedMonths(prev => new Set([...prev, monthKey]));
+                    toast.info(`${monthKey} already exists`);
+                  }
+                  setShowAddMonthDialog(false);
+                }}
+              >
+                Add Month
               </Button>
             </div>
           </div>
