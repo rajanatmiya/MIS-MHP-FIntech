@@ -1333,7 +1333,7 @@ async def export_loans(
     
     # Define columns with proper readable headers
     column_config = [
-        ('month', 'Date'),
+        ('month', 'Month'),
         ('customer_name', 'Customer Name'),
         ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'),

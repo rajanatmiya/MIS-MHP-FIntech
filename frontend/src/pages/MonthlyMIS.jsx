@@ -10,6 +10,53 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square } from 'lucide-react';
 
+// Month format helpers
+const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_MAP = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+
+// Convert any stored date/month value to "MMM-YYYY" for grouping
+const toMonthKey = (val) => {
+  if (!val) return 'Unknown';
+  // Already in MMM-YYYY format (e.g., "Apr-2026")
+  if (/^[A-Za-z]{3}-\d{4}$/.test(val)) return val;
+  const parts = val.split('-');
+  // dd-mm-yyyy format
+  if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) {
+    const mi = parseInt(parts[1]) - 1;
+    return mi >= 0 && mi < 12 ? `${MONTH_NAMES[mi]}-${parts[2]}` : val;
+  }
+  // yyyy-mm-dd format
+  if (parts.length === 3 && parts[0].length === 4) {
+    const mi = parseInt(parts[1]) - 1;
+    return mi >= 0 && mi < 12 ? `${MONTH_NAMES[mi]}-${parts[0]}` : val;
+  }
+  // mm-yyyy format (e.g., "04-2026")
+  if (parts.length === 2 && parts[0].length === 2 && parts[1].length === 4) {
+    const mi = parseInt(parts[0]) - 1;
+    return mi >= 0 && mi < 12 ? `${MONTH_NAMES[mi]}-${parts[1]}` : val;
+  }
+  return val;
+};
+
+// Convert stored value to yyyy-mm for native month input
+const toInputMonth = (val) => {
+  if (!val) return '';
+  const mmmMatch = val.match(/^([A-Za-z]{3})-(\d{4})$/);
+  if (mmmMatch && MONTH_MAP[mmmMatch[1]]) return `${mmmMatch[2]}-${MONTH_MAP[mmmMatch[1]]}`;
+  const parts = val.split('-');
+  if (parts.length === 3 && parts[0].length <= 2 && parts[2].length === 4) return `${parts[2]}-${parts[1]}`;
+  if (parts.length === 3 && parts[0].length === 4) return `${parts[0]}-${parts[1]}`;
+  return '';
+};
+
+// Convert yyyy-mm input to MMM-YYYY for storage
+const fromInputMonth = (yyyymm) => {
+  if (!yyyymm) return '';
+  const [y, m] = yyyymm.split('-');
+  const mi = parseInt(m) - 1;
+  return mi >= 0 && mi < 12 ? `${MONTH_NAMES[mi]}-${y}` : yyyymm;
+};
+
 // Multi-checkbox filter dropdown component
 const MultiCheckFilter = ({ label, options, selected, onChange, testId }) => {
   const [open, setOpen] = useState(false);
@@ -196,7 +243,7 @@ const MonthlyMIS = () => {
   const groupByMonth = () => {
     const grouped = {};
     loans.forEach(loan => {
-      const month = loan.month || 'Unknown';
+      const month = toMonthKey(loan.month);
       if (!grouped[month]) {
         grouped[month] = [];
       }
@@ -353,14 +400,7 @@ const MonthlyMIS = () => {
   const handleEditOpen = (loan) => {
     setEditingLoan(loan);
     setEditFormData({ ...loan });
-    // Convert dd-mm-yyyy to yyyy-mm-dd for date input
-    const m = loan.month || '';
-    const parts = m.split('-');
-    if (parts.length === 3 && parts[0].length === 2) {
-      setEditMonthInput(`${parts[2]}-${parts[1]}-${parts[0]}`);
-    } else {
-      setEditMonthInput('');
-    }
+    setEditMonthInput(toInputMonth(loan.month || ''));
     setShowEditForm(true);
   };
 
@@ -478,7 +518,7 @@ const MonthlyMIS = () => {
 
   const groupedLoans = {};
   filteredLoans.forEach(loan => {
-    const month = loan.month || 'Unknown';
+    const month = toMonthKey(loan.month);
     if (!groupedLoans[month]) {
       groupedLoans[month] = [];
     }
@@ -502,22 +542,13 @@ const MonthlyMIS = () => {
     if (isEditing) {
       // Date picker for month field
       if (field === 'month') {
-        let dateInputVal = editValue;
-        if (editValue && /^\d{2}-\d{2}-\d{4}$/.test(editValue)) {
-          const [d, m, y] = editValue.split('-');
-          dateInputVal = `${y}-${m}-${d}`;
-        }
+        let monthInputVal = toInputMonth(editValue);
         return (
           <input
-            type="date"
-            value={dateInputVal}
+            type="month"
+            value={monthInputVal}
             onChange={(e) => {
-              if (e.target.value) {
-                const [year, month, day] = e.target.value.split('-');
-                setEditValue(`${day}-${month}-${year}`);
-              } else {
-                setEditValue('');
-              }
+              setEditValue(fromInputMonth(e.target.value));
             }}
             onBlur={() => handleCellSave(loan.id, field)}
             onKeyDown={(e) => handleCellKeyDown(e, loan.id, field)}
@@ -618,7 +649,7 @@ const MonthlyMIS = () => {
         className="cursor-pointer hover:bg-blue-50/60 px-1.5 py-0.5 rounded transition-colors min-h-[24px] flex items-center text-[11px]"
         title="Click to edit"
       >
-        {value || <span className="text-slate-300 italic">—</span>}
+        {field === 'month' ? (toMonthKey(value) !== 'Unknown' ? toMonthKey(value) : value) : (value || <span className="text-slate-300 italic">—</span>)}
       </div>
     );
   };
@@ -793,7 +824,7 @@ const MonthlyMIS = () => {
                 { key: 'status', label: 'Status' },
                 { key: 'scheme', label: 'Scheme' },
                 { key: 'agent_name', label: 'Agent' },
-                { key: 'month', label: 'Date' },
+                { key: 'month', label: 'Month' },
                 { key: 'location', label: 'Location' },
                 { key: 'branch', label: 'Branch' },
                 { key: 'executive_name', label: 'Executive' },
@@ -1073,19 +1104,14 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Date *</Label>
+                <Label className="text-[11px] text-slate-600">Month *</Label>
                 <Input
                   required
-                  type="date"
+                  type="month"
                   value={monthInputValue}
                   onChange={(e) => {
                     setMonthInputValue(e.target.value);
-                    if (e.target.value) {
-                      const [year, month, day] = e.target.value.split('-');
-                      setNewLoanData({...newLoanData, month: `${day}-${month}-${year}`});
-                    } else {
-                      setNewLoanData({...newLoanData, month: ''});
-                    }
+                    setNewLoanData({...newLoanData, month: fromInputMonth(e.target.value)});
                   }}
                   className="h-8 text-[11px] mt-0.5 cursor-pointer"
                 />
@@ -1252,19 +1278,14 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Date *</Label>
+                <Label className="text-[11px] text-slate-600">Month *</Label>
                 <Input
                   required
-                  type="date"
+                  type="month"
                   value={editMonthInput}
                   onChange={(e) => {
                     setEditMonthInput(e.target.value);
-                    if (e.target.value) {
-                      const [year, month, day] = e.target.value.split('-');
-                      setEditFormData({...editFormData, month: `${day}-${month}-${year}`});
-                    } else {
-                      setEditFormData({...editFormData, month: ''});
-                    }
+                    setEditFormData({...editFormData, month: fromInputMonth(e.target.value)});
                   }}
                   className="h-8 text-[11px] mt-0.5 cursor-pointer"
                 />
