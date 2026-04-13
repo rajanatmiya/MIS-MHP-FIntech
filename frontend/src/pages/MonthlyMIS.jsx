@@ -1569,13 +1569,25 @@ const MonthlyMIS = () => {
                 size="sm"
                 className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]"
                 data-testid="add-month-confirm"
-                onClick={() => {
+                onClick={async () => {
                   if (!newMonthValue) { toast.error('Please select a month'); return; }
                   const monthKey = fromInputMonth(newMonthValue);
                   if (!emptyMonthGroups.includes(monthKey) && !Object.keys(groupedLoans).includes(monthKey)) {
                     setEmptyMonthGroups([...emptyMonthGroups, monthKey]);
                     setExpandedMonths(prev => new Set([...prev, monthKey]));
                     toast.success(`${monthKey} added`);
+                    // Auto carry-forward non-Disbursed loans from previous month
+                    try {
+                      const res = await axios.post(`${API}/loans/carry-forward`, { to_month_key: monthKey });
+                      if (res.data.carried_count > 0) {
+                        toast.success(`${res.data.carried_count} loans carried forward from ${res.data.from_month}`);
+                        fetchLoans();
+                      } else {
+                        toast.info(res.data.message);
+                      }
+                    } catch (err) {
+                      toast.error(err.response?.data?.detail || 'Carry forward failed');
+                    }
                   } else {
                     setExpandedMonths(prev => new Set([...prev, monthKey]));
                     toast.info(`${monthKey} already exists`);

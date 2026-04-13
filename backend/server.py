@@ -941,6 +941,90 @@ async def delete_all_loans(confirm: str, current_user: User = Depends(get_curren
         raise HTTPException(status_code=500, detail=f"Failed to delete all entries: {str(e)}")
 
 
+@api_router.post("/loans/carry-forward")
+async def carry_forward_loans(data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    """Carry forward non-Disbursed loans from previous month to a new month"""
+    to_month_key = data.get("to_month_key", "")
+    if not to_month_key:
+        raise HTTPException(status_code=400, detail="to_month_key is required (e.g., Apr-2026)")
+    
+    try:
+        import re
+        MONTH_NAMES_CF = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        
+        # Parse target month
+        match = re.match(r'^([A-Za-z]{3})-(\d{2,4})$', to_month_key)
+        if not match:
+            raise HTTPException(status_code=400, detail="Invalid month format")
+        
+        month_name = match.group(1)
+        year = match.group(2)
+        if len(year) == 2:
+            year = f"20{year}"
+        mi = MONTH_NAMES_CF.index(month_name) if month_name in MONTH_NAMES_CF else -1
+        if mi == -1:
+            raise HTTPException(status_code=400, detail="Invalid month name")
+        
+        # Calculate previous month
+        prev_mi = mi - 1
+        prev_year = int(year)
+        if prev_mi < 0:
+            prev_mi = 11
+            prev_year -= 1
+        prev_month_key = f"{MONTH_NAMES_CF[prev_mi]}-{prev_year}"
+        prev_mm = str(prev_mi + 1).zfill(2)
+        prev_yr = str(prev_year)
+        
+        # Build query to find previous month's loans
+        month_patterns = [
+            {"month": {"$regex": f"^\\d{{2}}-{prev_mm}-{prev_yr}$"}},
+            {"month": {"$regex": f"^{MONTH_NAMES_CF[prev_mi]}-{prev_yr}$", "$options": "i"}},
+            {"month": {"$regex": f"^{MONTH_NAMES_CF[prev_mi]}-{prev_yr[2:]}$", "$options": "i"}},
+            {"month": {"$regex": f"^{prev_mm}-{prev_yr}$"}},
+            {"month": {"$regex": f"^{prev_yr}-{prev_mm}-\\d{{2}}$"}},
+        ]
+        
+        # RBAC filter
+        accessible_ids = await get_accessible_user_ids(current_user)
+        rbac = build_rbac_filter(current_user, accessible_ids)
+        
+        query = {"$or": month_patterns, "status": {"$ne": "Disbursed"}}
+        if rbac:
+            query = {"$and": [rbac, {"$or": month_patterns}, {"status": {"$ne": "Disbursed"}}]}
+        
+        prev_loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+        
+        if not prev_loans:
+            return {"message": f"No non-Disbursed loans found in {prev_month_key} to carry forward", "carried_count": 0, "from_month": prev_month_key}
+        
+        # Create copies for the new month
+        new_mm = str(mi + 1).zfill(2)
+        new_date = f"01-{new_mm}-{year}"
+        
+        new_loans = []
+        for loan in prev_loans:
+            new_loan = {**loan}
+            new_loan["id"] = str(uuid.uuid4())
+            new_loan["month"] = new_date
+            new_loan["created_at"] = datetime.now(timezone.utc).isoformat()
+            new_loans.append(new_loan)
+        
+        if new_loans:
+            await db.loan_applications.insert_many(new_loans)
+        
+        return {
+            "message": f"Carried forward {len(new_loans)} loans from {prev_month_key} to {to_month_key}",
+            "carried_count": len(new_loans),
+            "from_month": prev_month_key,
+            "to_month": to_month_key
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Carry forward error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to carry forward: {str(e)}")
+
+
 @api_router.post("/loans/delete-month")
 async def delete_month_group(data: dict = Body(...), current_user: User = Depends(get_current_user)):
     """Delete all loans in a month group and archive them to deleted_month_backups"""
