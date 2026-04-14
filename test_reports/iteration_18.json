@@ -1,0 +1,104 @@
+{
+  "summary": "Entry Status Feature (Open/Closed toggle) fully tested and working. All 19 backend tests passed (100%). Frontend UI verified: toggle buttons present on each row, Lock/Unlock icons display correctly, closed entries have greyed-out styling with strikethrough, month header shows 'X closed' badge. Carry-forward correctly excludes Closed entries.",
+
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+
+  "passed_tests": [
+    "Backend: Admin login successful",
+    "Backend: Create test loan with default entry_status='Open'",
+    "Backend: PATCH /api/loans/{id}/entry-status toggles to Closed",
+    "Backend: Entry status persisted in database",
+    "Backend: Toggle entry_status back to Open",
+    "Backend: Invalid entry_status value rejected with 400",
+    "Backend: Manager can toggle entry_status",
+    "Backend: Carry-forward setup - created Open, Closed, and Disbursed test loans",
+    "Backend: Set loan to Closed entry_status",
+    "Backend: Carry-forward excludes Closed and Disbursed entries",
+    "Backend: Verify Closed loan NOT carried forward",
+    "Backend: Verify Disbursed loan NOT carried forward",
+    "Backend: Create loan with default entry_status='Open'",
+    "Backend: Update loan preserves entry_status",
+    "Backend: GET loan includes entry_status field",
+    "Backend: List loans includes entry_status field",
+    "Backend: Delete loan works correctly",
+    "UI: MIS Board loads correctly",
+    "UI: Entry status toggle buttons present (7 buttons found)",
+    "UI: Toggle button click works - shows toast 'Entry marked as Closed/Open'",
+    "UI: Lock icon (red) displayed for Closed entries",
+    "UI: Lock-open icon (green) displayed for Open entries",
+    "UI: Closed entries have opacity-60 and line-through styling",
+    "UI: Month header shows '1 closed' badge"
+  ],
+
+  "test_report_links": [
+    "/app/backend/tests/test_entry_status_feature.py",
+    "/app/test_reports/pytest/pytest_results_iteration18.xml"
+  ],
+
+  "action_items": [],
+
+  "critical_code_review_comments": [],
+
+  "updated_files": [
+    "/app/backend/tests/test_entry_status_feature.py"
+  ],
+
+  "success_rate": {
+    "backend": "100% (19/19 tests passed)",
+    "frontend": "100% (All UI tests passed)"
+  },
+
+  "test_credentials": {
+    "admin": "admin@mhpfintech.com / Admin@123",
+    "manager": "jyoti.tripathi@mhpfintech.com / Jyoti@MHP",
+    "agent": "dhruvi.shah@mhpfintech.com / Dhruvi@MHP"
+  },
+
+  "feature_verification": {
+    "entry_status_toggle": {
+      "endpoint": "PATCH /api/loans/{loan_id}/entry-status",
+      "accepts": "Open or Closed",
+      "validation": "Returns 400 for invalid values",
+      "status": "VERIFIED"
+    },
+    "visual_styling": {
+      "closed_entries": "bg-slate-100/80 opacity-60, line-through text-slate-400",
+      "lock_icon": "lucide-lock (red) for Closed",
+      "unlock_icon": "lucide-lock-open (green) for Open",
+      "status": "VERIFIED"
+    },
+    "closed_badge": {
+      "location": "Month group header",
+      "format": "X closed (red badge)",
+      "status": "VERIFIED - shows '1 closed' for Apr-2026"
+    },
+    "carry_forward": {
+      "endpoint": "POST /api/loans/carry-forward",
+      "excludes": "entry_status='Closed' AND status='Disbursed'",
+      "query_filter": "entry_status: {$ne: 'Closed'}",
+      "status": "VERIFIED"
+    }
+  },
+
+  "existing_data_state": {
+    "vishwa_entry": "entry_status='Closed' (first entry in Apr-2026)",
+    "other_entries": "entry_status=null (treated as Open)"
+  },
+
+  "seed_data_creation": "Test loans created and cleaned up during testing",
+
+  "retest_needed": false,
+
+  "should_main_agent_self_test": false,
+
+  "context_for_next_testing_agent": "Entry status feature fully implemented and tested. The PATCH /api/loans/{id}/entry-status endpoint toggles between 'Open' and 'Closed'. Carry-forward (POST /api/loans/carry-forward) excludes both Closed entries and Disbursed status loans. Frontend uses lucide-lock (red) for Closed and lucide-lock-open (green) for Open entries. The first entry in Apr-2026 (Vishwa) is currently Closed. No mocked APIs."
+}

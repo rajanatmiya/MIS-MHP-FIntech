@@ -20,7 +20,7 @@ import requests
 import os
 import io
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://agent-mis-portal.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://dsa-agent-portal-1.preview.emergentagent.com').rstrip('/')
 
 # Test credentials
 ADMIN_EMAIL = "admin@mhpfintech.com"

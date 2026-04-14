@@ -196,6 +196,7 @@ class LoanApplication(BaseModel):
     product: Optional[str] = ""
     month: str
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
+    entry_status: Optional[str] = "Open"  # "Open" or "Closed"
     file_count: Optional[int] = 0
     comment_count: Optional[int] = 0
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -258,6 +259,7 @@ class LoanApplicationUpdate(BaseModel):
     category: Optional[str] = None
     product: Optional[str] = None
     month: Optional[str] = None
+    entry_status: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
 
 # Auth helpers
@@ -851,6 +853,20 @@ async def delete_loan(loan_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "Loan application deleted successfully"}
 
+@api_router.patch("/loans/{loan_id}/entry-status")
+async def toggle_entry_status(loan_id: str, data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    """Toggle entry_status between Open and Closed"""
+    new_status = data.get("entry_status", "")
+    if new_status not in ("Open", "Closed"):
+        raise HTTPException(status_code=400, detail="entry_status must be 'Open' or 'Closed'")
+    result = await db.loan_applications.update_one(
+        {"id": loan_id},
+        {"$set": {"entry_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Loan not found")
+    return {"message": f"Entry status set to {new_status}", "entry_status": new_status}
+
 @api_router.post("/loans/bulk-delete")
 async def bulk_delete_loans(data: dict = Body(...), current_user: User = Depends(get_current_user)):
     check_admin(current_user)
@@ -989,9 +1005,9 @@ async def carry_forward_loans(data: dict = Body(...), current_user: User = Depen
         accessible_ids = await get_accessible_user_ids(current_user)
         rbac = build_rbac_filter(current_user, accessible_ids)
         
-        query = {"$or": month_patterns, "status": {"$ne": "Disbursed"}}
+        query = {"$or": month_patterns, "status": {"$ne": "Disbursed"}, "entry_status": {"$ne": "Closed"}}
         if rbac:
-            query = {"$and": [rbac, {"$or": month_patterns}, {"status": {"$ne": "Disbursed"}}]}
+            query = {"$and": [rbac, {"$or": month_patterns}, {"status": {"$ne": "Disbursed"}}, {"entry_status": {"$ne": "Closed"}}]}
         
         prev_loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
         
