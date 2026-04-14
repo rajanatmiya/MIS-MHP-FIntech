@@ -1005,7 +1005,7 @@ async def carry_forward_loans(data: dict = Body(...), current_user: User = Depen
         for loan in prev_loans:
             new_loan = {**loan}
             new_loan["id"] = str(uuid.uuid4())
-            new_loan["month"] = new_date
+            new_loan["group_month"] = to_month_key
             new_loan["created_at"] = datetime.now(timezone.utc).isoformat()
             new_loans.append(new_loan)
         

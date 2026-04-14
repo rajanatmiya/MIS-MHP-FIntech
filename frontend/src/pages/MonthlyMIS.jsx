@@ -15,7 +15,9 @@ const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct'
 const MONTH_MAP = {Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
 
 // Convert any stored date/month value to "MMM-YYYY" for grouping
-const toMonthKey = (val) => {
+// Uses group_month field if present (for carry-forward loans), else derives from date
+const toMonthKey = (val, groupMonth) => {
+  if (groupMonth) return groupMonth;
   if (!val) return 'Unknown';
   // Already in MMM-YYYY format (e.g., "Apr-2026")
   if (/^[A-Za-z]{3}-\d{4}$/.test(val)) return val;
@@ -268,7 +270,7 @@ const MonthlyMIS = () => {
   const groupByMonth = () => {
     const grouped = {};
     loans.forEach(loan => {
-      const month = toMonthKey(loan.month);
+      const month = toMonthKey(loan.month, loan.group_month);
       if (!grouped[month]) {
         grouped[month] = [];
       }
@@ -411,7 +413,11 @@ const MonthlyMIS = () => {
   const handleAddLoan = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API}/loans`, newLoanData);
+      const submitData = {...newLoanData};
+      if (addEntryForMonth) {
+        submitData.group_month = addEntryForMonth;
+      }
+      const response = await axios.post(`${API}/loans`, submitData);
       setLoans([response.data, ...loans]);
       toast.success('Loan added successfully');
       setShowAddForm(false);
@@ -579,7 +585,7 @@ const MonthlyMIS = () => {
 
   const groupedLoans = {};
   filteredLoans.forEach(loan => {
-    const month = toMonthKey(loan.month);
+    const month = toMonthKey(loan.month, loan.group_month);
     if (!groupedLoans[month]) {
       groupedLoans[month] = [];
     }
@@ -1221,8 +1227,6 @@ const MonthlyMIS = () => {
                   required
                   type="date"
                   value={monthInputValue}
-                  min={addEntryForMonth ? getMonthDateRange(addEntryForMonth).min : undefined}
-                  max={addEntryForMonth ? getMonthDateRange(addEntryForMonth).max : undefined}
                   onChange={(e) => {
                     setMonthInputValue(e.target.value);
                     if (e.target.value) {
