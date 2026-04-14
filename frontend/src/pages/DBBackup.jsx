@@ -3,7 +3,7 @@ import axios from 'axios';
 import { API, AuthContext } from '@/App';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Database, Download, HardDrive, Users, FileText, Tag, Flag, Building2, UserCheck, Upload, AlertTriangle, CheckCircle2, RefreshCw, ArchiveRestore, Trash2 } from 'lucide-react';
+import { Database, Download, HardDrive, Users, FileText, Tag, Flag, Building2, UserCheck, Upload, AlertTriangle, CheckCircle2, RefreshCw, ArchiveRestore, Trash2, FileSpreadsheet } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
@@ -24,6 +24,7 @@ const DBBackup = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
+  const [downloadingExcel, setDownloadingExcel] = useState(false);
   const [importing, setImporting] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
@@ -90,6 +91,23 @@ const DBBackup = () => {
       toast.success('Backup downloaded successfully');
     } catch (error) { toast.error('Failed to download backup'); }
     finally { setDownloading(false); }
+  };
+
+  const handleDownloadExcel = async () => {
+    setDownloadingExcel(true);
+    try {
+      const response = await axios.get(`${API}/backup/full-data`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `mhp_backup_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Excel backup downloaded successfully');
+    } catch (error) { toast.error('Failed to download Excel backup'); }
+    finally { setDownloadingExcel(false); }
   };
 
   const handleFileSelect = (e) => {
@@ -187,17 +205,24 @@ const DBBackup = () => {
             </div>
             <p className="text-xs font-semibold text-slate-700 mb-1">Export Database</p>
             <p className="text-[10px] text-slate-400 mb-3">
-              Downloads all collections as a single JSON file
+              Export as JSON backup or Excel with proper columns
             </p>
             <div className="bg-slate-50 rounded-lg px-3 py-2 mb-3">
               <p className="text-[10px] text-slate-500">Total Records</p>
               <p className="text-lg font-bold text-[#2c587a]" data-testid="total-records">{stats?.total_records?.toLocaleString() || 0}</p>
             </div>
-            <Button onClick={handleDownload} disabled={downloading}
-              className="w-full h-8 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="download-backup-btn">
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-              {downloading ? 'Preparing...' : 'Export Backup'}
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleDownloadExcel} disabled={downloadingExcel}
+                className="flex-1 h-8 text-[11px] bg-emerald-600 hover:bg-emerald-700" data-testid="download-excel-btn">
+                <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
+                {downloadingExcel ? 'Preparing...' : 'Excel'}
+              </Button>
+              <Button onClick={handleDownload} disabled={downloading}
+                className="flex-1 h-8 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="download-backup-btn">
+                <Download className="w-3.5 h-3.5 mr-1" />
+                {downloading ? 'Preparing...' : 'JSON'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

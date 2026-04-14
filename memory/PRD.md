@@ -28,6 +28,7 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - **Month-wise MIS Grouping** — Loans grouped by month with manual "Add Month" flow, auto carry-forward for non-Disbursed loans, Archive/Delete per month group
 - **Toggle buttons** (Columns, Filters, Select, Advanced) on MIS UI
 - **Entry Status (Open/Closed) — Apr 2026:** Each loan entry has an Open/Closed toggle. Closed entries are greyed out with strikethrough. Carry-forward excludes both Closed entries AND Disbursed status loans. PATCH /api/loans/{id}/entry-status endpoint.
+- **Export with Proper Columns — Apr 2026:** All 3 export endpoints (MIS month export, MIS top export, DB Backup full-data) use consistent column headers (Date, Customer Name, Company Name, etc.). DB Backup page now has both Excel and JSON export buttons. Auto-fit column widths on all Excel exports.
 
 ## Key API Endpoints
 - `/api/loans` (GET, POST) — CRUD with RBAC

@@ -1192,7 +1192,7 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     column_config = [
         ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
-        ('status', 'Status'), ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'),
+        ('status', 'Status'), ('entry_status', 'Entry Status'), ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'),
         ('remark', 'Remark'), ('decline_reason', 'Decline Reason'), ('scheme', 'Scheme'),
         ('case_from', 'Case From'), ('location', 'Location'), ('branch', 'Branch'),
         ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
@@ -1209,6 +1209,11 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     output = BytesIO()
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         df.to_excel(writer, index=False, sheet_name=month_key)
+        worksheet = writer.sheets[month_key]
+        from openpyxl.utils import get_column_letter
+        for col_idx, col in enumerate(df.columns, 1):
+            max_len = max(len(str(col)), df[col].astype(str).str.len().max() if not df.empty else 0)
+            worksheet.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 3, 40)
     output.seek(0)
     
     return StreamingResponse(
@@ -1616,7 +1621,10 @@ async def export_loans(
         ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'),
         ('bank', 'Bank'),
+        ('category', 'Category'),
+        ('product', 'Product'),
         ('status', 'Status'),
+        ('entry_status', 'Entry Status'),
         ('sanction', 'Sanction Amount'),
         ('disbursed', 'Disbursed Amount'),
         ('remark', 'Remark'),
@@ -1631,7 +1639,7 @@ async def export_loans(
         ('rate', 'Rate'),
         ('pf', 'PF'),
         ('insurance', 'Insurance'),
-        ('tenure', 'Tenure (Months)'),
+        ('tenure', 'Tenure'),
         ('subvention', 'Subvention'),
         ('brokerage_subvention', 'Brokerage'),
         ('agent_name', 'Agent Name'),
@@ -1666,7 +1674,7 @@ async def export_loans(
 
 @api_router.get("/backup/full-data")
 async def backup_all_data(current_user: User = Depends(get_current_user)):
-    """Export all data - Admin only"""
+    """Export all data as Excel with proper column headers - Admin only"""
     check_admin(current_user)
     
     # Get all loans
@@ -1678,17 +1686,53 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
     # Get all field configs
     field_configs = await db.field_configs.find({}, {"_id": 0}).to_list(100)
     
+    # Loan column config
+    loan_column_config = [
+        ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
+        ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
+        ('status', 'Status'), ('entry_status', 'Entry Status'), ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'),
+        ('remark', 'Remark'), ('decline_reason', 'Decline Reason'), ('scheme', 'Scheme'),
+        ('case_from', 'Case From'), ('location', 'Location'), ('branch', 'Branch'),
+        ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
+        ('rate', 'Rate'), ('pf', 'PF'), ('insurance', 'Insurance'), ('tenure', 'Tenure'),
+        ('subvention', 'Subvention'), ('brokerage_subvention', 'Brokerage'), ('agent_name', 'Agent Name'),
+        ('group_month', 'Group Month'),
+    ]
+    
+    user_column_config = [
+        ('name', 'Name'), ('email', 'Email'), ('role', 'Role'), ('team_code', 'Team Code'),
+        ('assigned_banks', 'Assigned Banks'), ('assigned_categories', 'Assigned Categories'),
+        ('assigned_products', 'Assigned Products'), ('active', 'Active'),
+    ]
+    
     output = BytesIO()
+    from openpyxl.utils import get_column_letter
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        # Loans sheet
+        # Loans sheet with proper columns
         if loans:
             df_loans = pd.DataFrame(loans)
+            existing_cols = [c[0] for c in loan_column_config if c[0] in df_loans.columns]
+            df_loans = df_loans[existing_cols]
+            rename_map = {c[0]: c[1] for c in loan_column_config if c[0] in df_loans.columns}
+            df_loans.rename(columns=rename_map, inplace=True)
             df_loans.to_excel(writer, index=False, sheet_name='Loans')
+            ws = writer.sheets['Loans']
+            for col_idx, col in enumerate(df_loans.columns, 1):
+                max_len = max(len(str(col)), df_loans[col].astype(str).str.len().max() if not df_loans.empty else 0)
+                ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 3, 40)
         
-        # Users sheet
+        # Users sheet with proper columns
         if users:
             df_users = pd.DataFrame(users)
+            existing_cols = [c[0] for c in user_column_config if c[0] in df_users.columns]
+            df_users = df_users[existing_cols]
+            rename_map = {c[0]: c[1] for c in user_column_config if c[0] in df_users.columns}
+            df_users.rename(columns=rename_map, inplace=True)
             df_users.to_excel(writer, index=False, sheet_name='Users')
+            ws = writer.sheets['Users']
+            for col_idx, col in enumerate(df_users.columns, 1):
+                max_len = max(len(str(col)), df_users[col].astype(str).str.len().max() if not df_users.empty else 0)
+                ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 3, 40)
         
         # Field Configs sheet
         if field_configs:
