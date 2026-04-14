@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight } from 'lucide-react';
 
 // Month format helpers
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -166,6 +166,42 @@ const MonthlyMIS = () => {
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showBulkStatus, setShowBulkStatus] = useState(false);
+  const [showBulkSelect, setShowBulkSelect] = useState(false);
+  
+  // Column visibility
+  const ALL_COLUMNS = [
+    { key: 'month', label: 'Date' },
+    { key: 'customer_name', label: 'Customer' },
+    { key: 'company_name', label: 'Company' },
+    { key: 'contact_no', label: 'Contact' },
+    { key: 'bank', label: 'Bank' },
+    { key: 'category', label: 'Category' },
+    { key: 'product', label: 'Product' },
+    { key: 'status', label: 'Status' },
+    { key: 'sanction', label: 'Sanction' },
+    { key: 'disbursed', label: 'Disbursed' },
+    { key: 'remark', label: 'Remark' },
+    { key: 'decline_reason', label: 'Decline' },
+    { key: 'scheme', label: 'Scheme' },
+    { key: 'case_from', label: 'Case From' },
+    { key: 'location', label: 'Location' },
+    { key: 'branch', label: 'Branch' },
+    { key: 'executive_name', label: 'Executive' },
+    { key: 'team_manager', label: 'Manager' },
+    { key: 'code', label: 'Code' },
+    { key: 'rate', label: 'Rate' },
+    { key: 'pf', label: 'PF' },
+    { key: 'insurance', label: 'Insurance' },
+    { key: 'tenure', label: 'Tenure' },
+    { key: 'subvention', label: 'Subvention' },
+    { key: 'brokerage_subvention', label: 'Brokerage' },
+    { key: 'agent_name', label: 'Agent' },
+  ];
+  const [visibleColumns, setVisibleColumns] = useState(() => ALL_COLUMNS.map(c => c.key));
+  const [showColumnPicker, setShowColumnPicker] = useState(false);
+  
+  // Show/hide quick filters
+  const [showQuickFilters, setShowQuickFilters] = useState(true);
   
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
@@ -807,12 +843,42 @@ const MonthlyMIS = () => {
         <Button
           variant="outline"
           size="sm"
+          onClick={() => setShowColumnPicker(!showColumnPicker)}
+          className={`h-8 text-[11px] px-2.5 shrink-0 ${showColumnPicker ? 'bg-[#2c587a] text-white border-[#2c587a]' : 'border-slate-200'}`}
+          data-testid="columns-toggle"
+        >
+          <Columns className="w-3 h-3 mr-1" />
+          Columns
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowQuickFilters(!showQuickFilters)}
+          className={`h-8 text-[11px] px-2.5 shrink-0 ${showQuickFilters ? 'bg-[#2c587a] text-white border-[#2c587a]' : 'border-slate-200'}`}
+          data-testid="quick-filters-toggle"
+        >
+          <Filter className="w-3 h-3 mr-1" />
+          Filters
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => { setShowBulkSelect(!showBulkSelect); if (showBulkSelect) setSelectedIds(new Set()); }}
+          className={`h-8 text-[11px] px-2.5 shrink-0 ${showBulkSelect ? 'bg-[#2c587a] text-white border-[#2c587a]' : 'border-slate-200'}`}
+          data-testid="bulk-select-toggle"
+        >
+          <CheckSquare className="w-3 h-3 mr-1" />
+          Select
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           onClick={() => setShowFilters(!showFilters)}
           className={`h-8 text-[11px] px-2.5 shrink-0 ${showFilters ? 'bg-[#2c587a] text-white border-[#2c587a]' : 'border-slate-200'}`}
           data-testid="filters-toggle"
         >
           <Filter className="w-3 h-3 mr-1" />
-          Filters
+          Advanced
           {activeFilterCount > 0 && (
             <span className="ml-1 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] flex items-center justify-center">{activeFilterCount}</span>
           )}
@@ -829,7 +895,37 @@ const MonthlyMIS = () => {
         </Button>
       </div>
 
+      {/* Column Picker */}
+      {showColumnPicker && (
+        <Card className="border-slate-200 shadow-sm" data-testid="column-picker">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-[11px] font-semibold text-slate-700">Show/Hide Columns</p>
+              <div className="flex gap-1">
+                <button onClick={() => setVisibleColumns(ALL_COLUMNS.map(c => c.key))} className="text-[10px] text-[#2c587a] hover:underline">All</button>
+                <span className="text-slate-300">|</span>
+                <button onClick={() => setVisibleColumns(['month','customer_name','bank','status','sanction','disbursed','agent_name'])} className="text-[10px] text-[#2c587a] hover:underline">Minimal</button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {ALL_COLUMNS.map(col => (
+                <label key={col.key} className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] cursor-pointer border transition-colors ${visibleColumns.includes(col.key) ? 'bg-[#2c587a]/10 text-[#2c587a] border-[#2c587a]/30' : 'bg-slate-50 text-slate-400 border-slate-200'}`}>
+                  <input
+                    type="checkbox"
+                    checked={visibleColumns.includes(col.key)}
+                    onChange={() => setVisibleColumns(prev => prev.includes(col.key) ? prev.filter(k => k !== col.key) : [...prev, col.key])}
+                    className="w-2.5 h-2.5"
+                  />
+                  {col.label}
+                </label>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Category / Product / Bank Multi-Checkbox Filters */}
+      {showQuickFilters && (
       <div className="flex flex-wrap items-center gap-2" data-testid="quick-filters">
         <MultiCheckFilter label="Category" options={masterCategories} selected={filterCategories} onChange={setFilterCategories} testId="filter-category" />
         <MultiCheckFilter label="Product" options={masterProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
@@ -848,6 +944,7 @@ const MonthlyMIS = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Bulk Action Bar */}
       {selectedIds.size > 0 && (
@@ -1025,6 +1122,7 @@ const MonthlyMIS = () => {
                   <table className="w-full text-[11px]">
                     <thead>
                       <tr className="border-b border-slate-200 bg-[#2c587a]/5">
+                        {showBulkSelect && (
                         <th className="px-2 py-1.5 w-8">
                           <input
                             type="checkbox"
@@ -1038,14 +1136,17 @@ const MonthlyMIS = () => {
                             data-testid={`select-all-${month}`}
                           />
                         </th>
-                        {['Date','Customer','Company','Contact','Bank','Category','Product','Status','Sanction','Disbursed','Remark','Decline','Scheme','Case From','Location','Branch','Executive','Manager','Code','Rate','PF','Insurance','Tenure','Subvention','Brokerage','Agent',''].map(h => (
-                          <th key={h} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                        )}
+                        {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(c => (
+                          <th key={c.key} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{c.label}</th>
                         ))}
+                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {monthLoans.map(loan => (
                         <tr key={loan.id} className={`hover:bg-slate-50/50 transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : ''}`}>
+                          {showBulkSelect && (
                           <td className="px-2 py-1">
                             <input
                               type="checkbox"
@@ -1059,7 +1160,8 @@ const MonthlyMIS = () => {
                               data-testid={`select-row-${loan.id}`}
                             />
                           </td>
-                          {['month','customer_name','company_name','contact_no','bank','category','product','status','sanction','disbursed','remark','decline_reason','scheme','case_from','location','branch','executive_name','team_manager','code','rate','pf','insurance','tenure','subvention','brokerage_subvention','agent_name'].map(field => (
+                          )}
+                          {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(({ key: field }) => (
                             <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''}`}>
                               {renderCell(loan, field, field)}
                             </td>
