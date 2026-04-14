@@ -975,13 +975,14 @@ async def carry_forward_loans(data: dict = Body(...), current_user: User = Depen
         prev_mm = str(prev_mi + 1).zfill(2)
         prev_yr = str(prev_year)
         
-        # Build query to find previous month's loans
+        # Build query to find previous month's loans (both original and carry-forwarded)
         month_patterns = [
             {"month": {"$regex": f"^\\d{{2}}-{prev_mm}-{prev_yr}$"}},
             {"month": {"$regex": f"^{MONTH_NAMES_CF[prev_mi]}-{prev_yr}$", "$options": "i"}},
             {"month": {"$regex": f"^{MONTH_NAMES_CF[prev_mi]}-{prev_yr[2:]}$", "$options": "i"}},
             {"month": {"$regex": f"^{prev_mm}-{prev_yr}$"}},
             {"month": {"$regex": f"^{prev_yr}-{prev_mm}-\\d{{2}}$"}},
+            {"group_month": prev_month_key},  # Loans carried into previous month
         ]
         
         # RBAC filter
@@ -1058,6 +1059,7 @@ async def delete_month_group(data: dict = Body(...), current_user: User = Depend
             {"month": {"$regex": f"^{month_name}-{year}$", "$options": "i"}},  # MMM-YYYY
             {"month": {"$regex": f"^{mm}-{year}$"}},  # mm-yyyy
             {"month": {"$regex": f"^{year}-{mm}-\\d{{2}}$"}},  # yyyy-mm-dd
+            {"group_month": month_key},  # Carry-forwarded loans
         ]
         # Also match 2-digit year
         short_year = year[2:]
@@ -1159,6 +1161,7 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
         {"month": {"$regex": f"^{month_name}-{year}$", "$options": "i"}},
         {"month": {"$regex": f"^{mm}-{year}$"}},
         {"month": {"$regex": f"^{year}-{mm}-\\d{{2}}$"}},
+        {"group_month": month_key},
     ]
     short_year = year[2:]
     month_patterns.append({"month": {"$regex": f"^{month_name}-{short_year}$", "$options": "i"}})
