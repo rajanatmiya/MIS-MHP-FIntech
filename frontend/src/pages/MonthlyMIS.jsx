@@ -196,6 +196,8 @@ const MonthlyMIS = () => {
     { key: 'subvention', label: 'Subvention' },
     { key: 'brokerage_subvention', label: 'Brokerage' },
     { key: 'agent_name', label: 'Agent' },
+    { key: 'technical_value', label: 'Technical Value' },
+    { key: 'legal_status', label: 'Legal Status' },
   ];
   const [visibleColumns, setVisibleColumns] = useState(() => ALL_COLUMNS.map(c => c.key));
   const [showColumnPicker, setShowColumnPicker] = useState(false);
@@ -229,6 +231,8 @@ const MonthlyMIS = () => {
     subvention: '',
     brokerage_subvention: '',
     agent_name: '',
+    technical_value: '',
+    legal_status: '',
     month: ''
   });
   
@@ -1056,7 +1060,7 @@ const MonthlyMIS = () => {
                   sanction: '', disbursed: '', remark: '', decline_reason: '', scheme: '',
                   case_from: '', location: '', branch: '', executive_name: '', team_manager: '',
                   code: '', rate: '', pf: '', insurance: '', tenure: '', subvention: '',
-                  brokerage_subvention: '', agent_name: '', month: ''
+                  brokerage_subvention: '', agent_name: '', technical_value: '', legal_status: '', month: ''
                 })}
                 data-testid="clear-filters-btn"
               >
@@ -1394,6 +1398,8 @@ const MonthlyMIS = () => {
                 { key: 'brokerage_subvention', label: 'Brokerage' },
                 { key: 'case_from', label: 'Case From' },
                 { key: 'code', label: 'Code' },
+                { key: 'technical_value', label: 'Technical Value' },
+                { key: 'legal_status', label: 'Legal Status' },
               ].map(f => (
                 <div key={f.key}>
                   <Label className="text-[11px] text-slate-600">{f.label}</Label>
@@ -1573,6 +1579,8 @@ const MonthlyMIS = () => {
                 { key: 'brokerage_subvention', label: 'Brokerage' },
                 { key: 'case_from', label: 'Case From' },
                 { key: 'code', label: 'Code' },
+                { key: 'technical_value', label: 'Technical Value' },
+                { key: 'legal_status', label: 'Legal Status' },
               ].map(f => (
                 <div key={f.key}>
                   <Label className="text-[11px] text-slate-600">{f.label}</Label>

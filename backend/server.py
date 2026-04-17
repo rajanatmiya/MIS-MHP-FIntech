@@ -194,6 +194,8 @@ class LoanApplication(BaseModel):
     brokerage_subvention: Optional[str] = ""
     category: Optional[str] = ""
     product: Optional[str] = ""
+    technical_value: Optional[str] = ""
+    legal_status: Optional[str] = ""
     month: str
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
     entry_status: Optional[str] = "Open"  # "Open" or "Closed"
@@ -229,6 +231,8 @@ class LoanApplicationCreate(BaseModel):
     brokerage_subvention: Optional[str] = ""
     category: Optional[str] = ""
     product: Optional[str] = ""
+    technical_value: Optional[str] = ""
+    legal_status: Optional[str] = ""
     month: str
     custom_fields: Optional[Dict[str, Any]] = None
 
@@ -258,6 +262,8 @@ class LoanApplicationUpdate(BaseModel):
     brokerage_subvention: Optional[str] = None
     category: Optional[str] = None
     product: Optional[str] = None
+    technical_value: Optional[str] = None
+    legal_status: Optional[str] = None
     month: Optional[str] = None
     entry_status: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
@@ -1198,12 +1204,16 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
         ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
         ('rate', 'Rate'), ('pf', 'PF'), ('insurance', 'Insurance'), ('tenure', 'Tenure'),
         ('subvention', 'Subvention'), ('brokerage_subvention', 'Brokerage'), ('agent_name', 'Agent Name'),
+        ('technical_value', 'Technical Value'), ('legal_status', 'Legal Status'),
     ]
     
     if not df.empty:
-        existing_cols = [c[0] for c in column_config if c[0] in df.columns]
-        df = df[existing_cols]
-        rename_map = {c[0]: c[1] for c in column_config if c[0] in df.columns}
+        for c_key, _ in column_config:
+            if c_key not in df.columns:
+                df[c_key] = ""
+        ordered_cols = [c[0] for c in column_config]
+        df = df[ordered_cols]
+        rename_map = {c[0]: c[1] for c in column_config}
         df.rename(columns=rename_map, inplace=True)
     
     output = BytesIO()
@@ -1643,12 +1653,17 @@ async def export_loans(
         ('subvention', 'Subvention'),
         ('brokerage_subvention', 'Brokerage'),
         ('agent_name', 'Agent Name'),
+        ('technical_value', 'Technical Value'),
+        ('legal_status', 'Legal Status'),
     ]
     
     if not df.empty:
-        existing_cols = [c[0] for c in column_config if c[0] in df.columns]
-        df = df[existing_cols]
-        rename_map = {c[0]: c[1] for c in column_config if c[0] in df.columns}
+        for c_key, _ in column_config:
+            if c_key not in df.columns:
+                df[c_key] = ""
+        ordered_cols = [c[0] for c in column_config]
+        df = df[ordered_cols]
+        rename_map = {c[0]: c[1] for c in column_config}
         df.rename(columns=rename_map, inplace=True)
     
     output = BytesIO()
@@ -1696,6 +1711,7 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
         ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
         ('rate', 'Rate'), ('pf', 'PF'), ('insurance', 'Insurance'), ('tenure', 'Tenure'),
         ('subvention', 'Subvention'), ('brokerage_subvention', 'Brokerage'), ('agent_name', 'Agent Name'),
+        ('technical_value', 'Technical Value'), ('legal_status', 'Legal Status'),
         ('group_month', 'Group Month'),
     ]
     
@@ -1711,9 +1727,12 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
         # Loans sheet with proper columns
         if loans:
             df_loans = pd.DataFrame(loans)
-            existing_cols = [c[0] for c in loan_column_config if c[0] in df_loans.columns]
-            df_loans = df_loans[existing_cols]
-            rename_map = {c[0]: c[1] for c in loan_column_config if c[0] in df_loans.columns}
+            for c_key, _ in loan_column_config:
+                if c_key not in df_loans.columns:
+                    df_loans[c_key] = ""
+            ordered_cols = [c[0] for c in loan_column_config]
+            df_loans = df_loans[ordered_cols]
+            rename_map = {c[0]: c[1] for c in loan_column_config}
             df_loans.rename(columns=rename_map, inplace=True)
             df_loans.to_excel(writer, index=False, sheet_name='Loans')
             ws = writer.sheets['Loans']
@@ -1813,6 +1832,12 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             'subvention': 'subvention',
             'brokerage': 'brokerage_subvention',
             'brokerage subvention': 'brokerage_subvention',
+            'technical value': 'technical_value',
+            'technicalvalue': 'technical_value',
+            'technical': 'technical_value',
+            'legal status': 'legal_status',
+            'legalstatus': 'legal_status',
+            'legal': 'legal_status',
         }
         
         # Normalize column names
