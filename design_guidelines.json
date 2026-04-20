@@ -1,0 +1,134 @@
+{
+  "project_context": {
+    "domain": "Finance, Banking",
+    "theme": "Light",
+    "archetype": "4 (Swiss & High-Contrast)",
+    "description": "Command-center style clean dashboard for DSA agents/managers. Resolves clutter by introducing strict F-pattern bento grids, visual containment (scrollable panels), and compact tabular data layouts."
+  },
+  "colors": {
+    "brand_primary": "#2c587a",
+    "brand_primary_hover": "#204059",
+    "background_base": "#F8FAFC",
+    "surface": "#FFFFFF",
+    "text_primary": "#0F172A",
+    "text_secondary": "#64748B",
+    "borders": "#E2E8F0",
+    "status": {
+      "approved": "#10B981",
+      "declined": "#EF4444",
+      "pending": "#F59E0B",
+      "wont_do": "#64748B"
+    }
+  },
+  "typography": {
+    "heading_font": "Manrope, sans-serif",
+    "body_font": "IBM Plex Sans, sans-serif",
+    "hierarchy": {
+      "h1": "text-2xl font-bold tracking-tight text-slate-900",
+      "h2": "text-lg font-semibold tracking-tight text-slate-800",
+      "h3": "text-base font-medium tracking-tight text-slate-900",
+      "body": "text-sm text-slate-600",
+      "labels": "text-xs font-semibold uppercase tracking-[0.1em] text-slate-500",
+      "metric_value": "text-3xl font-bold text-slate-900 tracking-tighter"
+    }
+  },
+  "layout_and_spacing": {
+    "grid_system": "The Control Room Grid",
+    "container": "w-full mx-auto p-4 md:p-6 lg:p-8 max-w-[1600px] bg-slate-50 min-h-screen space-y-6",
+    "card_style": "bg-white rounded-lg border border-slate-200 shadow-sm",
+    "scroll_containment": "max-h-[360px] overflow-y-auto custom-scrollbar",
+    "density": "Compact. Use h-full to stretch items so row heights match perfectly."
+  },
+  "component_instructions": {
+    "top_stats_row": {
+      "layout": "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4",
+      "design": "Cardless or 1px border cards. Label on top (text-xs uppercase), large metric value. Add subtle icon on top right."
+    },
+    "middle_section": {
+      "layout": "grid grid-cols-1 lg:grid-cols-4 gap-6",
+      "items": {
+        "performance_rates": {
+          "span": "lg:col-span-1",
+          "design": "Stack 3 circular ring charts vertically, or arrange compactly. Use small Recharts PieCharts or Shadcn radial charts.",
+          "fix": "Maximizes space efficiency rather than stretching rings across 40% of the screen."
+        },
+        "leaderboard": {
+          "span": "lg:col-span-3",
+          "design": "Compact table. Row heights small (py-2). Show Avatars. Target Progress bar as a subtle inline visual (h-2). Medal icons for top 3.",
+          "fix": "Fixes over-stretched vertical spacing."
+        }
+      }
+    },
+    "bottom_section": {
+      "layout": "grid grid-cols-1 lg:grid-cols-2 gap-6",
+      "items": {
+        "status_breakdown": {
+          "span": "lg:col-span-1",
+          "design": "Wrap the 20+ list items in a fixed height container with overflow-y-auto (e.g., max-h-[350px]). Use a compact horizontal bar style.",
+          "fix": "Prevents the page from being pushed infinitely below the fold."
+        },
+        "bank_analysis": {
+          "span": "lg:col-span-1",
+          "design": "Table inside a max-h-[350px] overflow-y-auto container with a sticky top-0 header bg-white. Compact cell padding.",
+          "fix": "Contains the 25+ banks in a scrollable view."
+        }
+      }
+    },
+    "set_targets_dialog": {
+      "design": "Clean Shadcn Dialog. Input fields and Save button using brand_primary color. Include data-testid='set-target-dialog'."
+    }
+  },
+  "media_urls": {
+    "avatars": [
+      {
+        "url": "https://images.unsplash.com/photo-1576558656222-ba66febe3dec?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwzfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjYwMTQ2MXww&ixlib=rb-4.1.0&q=85",
+        "description": "man wearing grey jacket"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1655249493799-9cee4fe983bb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHw0fHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjYwMTQ2MXww&ixlib=rb-4.1.0&q=85",
+        "description": "a person with a grey sweater"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1762522926157-bcc04bf0b10a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjYwMTQ2MXww&ixlib=rb-4.1.0&q=85",
+        "description": "Man in white shirt smiling against a grey background"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1769636929388-99eff95d3bf1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBoZWFkc2hvdCUyMHBvcnRyYWl0fGVufDB8fHx8MTc3NjYwMTQ2MXww&ixlib=rb-4.1.0&q=85",
+        "description": "Young woman with short black hair wearing a black sweatshirt."
+      },
+      {
+        "url": "https://images.pexels.com/photos/32721690/pexels-photo-32721690.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "close-up portrait of a man with curly hair"
+      },
+      {
+        "url": "https://images.pexels.com/photos/14589344/pexels-photo-14589344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+        "description": "Business portrait of a young man in a suit"
+      }
+    ]
+  },
+  "icons_and_assets": {
+    "library": "yarn add @phosphor-icons/react",
+    "usage": "Use Phosphor icons (duotone or regular) for top stats cards and sidebar. Use medal icons (PhMedal) for the top 3 leaderboard spots."
+  },
+  "testing": {
+    "attributes": "All interactive elements must have data-testid attributes.",
+    "examples": [
+      "data-testid='top-stats-row'",
+      "data-testid='performance-rates-chart'",
+      "data-testid='leaderboard-table'",
+      "data-testid='status-breakdown-list'",
+      "data-testid='bank-analysis-table'",
+      "data-testid='set-targets-btn'",
+      "data-testid='set-targets-dialog'"
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build the layout using 'The Control Room Grid'. Ensure no F-pattern violations.",
+    "Wrap Status Breakdown and Bank Analysis in `<div className='max-h-[360px] overflow-y-auto'>` with custom scrollbar.",
+    "Bank Analysis Table MUST have a sticky header (`sticky top-0 bg-white shadow-[0_1px_0_0_#e2e8f0]`).",
+    "Ensure Leaderboard table rows are compact (py-2, text-sm) to fit 9 agents without expanding excessively.",
+    "Replace generic avatars with the provided real images from 'media_urls'.",
+    "Use Shadcn UI components where possible, but heavily customize spacing to be tight/dense as per Swiss archetype.",
+    "The primary action color is #2c587a. Use it sparingly for primary buttons and active states."
+  ]
+}
