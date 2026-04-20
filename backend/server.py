@@ -1470,12 +1470,32 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
     return sorted_data
 
 @api_router.get("/analytics/by-bank")
-async def get_by_bank(current_user: User = Depends(get_current_user)):
+async def get_by_bank(month: Optional[str] = None, current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    MONTH_NAMES_BK = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    def to_mk(loan):
+        gm = loan.get('group_month', '')
+        if gm: return gm
+        val = loan.get('month', '')
+        if not val: return 'Unknown'
+        import re
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12: return f"{MONTH_NAMES_BK[mi]}-{parts[2]}"
+        if len(parts) == 3 and len(parts[0]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12: return f"{MONTH_NAMES_BK[mi]}-{parts[0]}"
+        return val
+    
+    if month and month != 'all':
+        loans = [l for l in loans if to_mk(l) == month]
     
     bank_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0})
     
@@ -1486,18 +1506,38 @@ async def get_by_bank(current_user: User = Depends(get_current_user)):
         bank_stats[bank]["total"] += 1
         if status == 'Disbursed':
             bank_stats[bank]["disbursed"] += 1
-        elif status == 'Decline':
+        elif status in ('Decline', 'Rejected'):
             bank_stats[bank]["declined"] += 1
     
     return dict(bank_stats)
 
 @api_router.get("/analytics/by-agent")
-async def get_by_agent(current_user: User = Depends(get_current_user)):
+async def get_by_agent(month: Optional[str] = None, current_user: User = Depends(get_current_user)):
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    MONTH_NAMES_AG = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    def to_mk(loan):
+        gm = loan.get('group_month', '')
+        if gm: return gm
+        val = loan.get('month', '')
+        if not val: return 'Unknown'
+        import re
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12: return f"{MONTH_NAMES_AG[mi]}-{parts[2]}"
+        if len(parts) == 3 and len(parts[0]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12: return f"{MONTH_NAMES_AG[mi]}-{parts[0]}"
+        return val
+    
+    if month and month != 'all':
+        loans = [l for l in loans if to_mk(l) == month]
     
     agent_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0, "pending": 0})
     
@@ -1508,9 +1548,9 @@ async def get_by_agent(current_user: User = Depends(get_current_user)):
         agent_stats[agent]["total"] += 1
         if status == 'Disbursed':
             agent_stats[agent]["disbursed"] += 1
-        elif status == 'Decline':
+        elif status in ('Decline', 'Rejected'):
             agent_stats[agent]["declined"] += 1
-        elif status in ['Hold', 'Login Done', 'Sent For Login', 'Pd To Be Done']:
+        else:
             agent_stats[agent]["pending"] += 1
     
     return dict(agent_stats)
@@ -1538,13 +1578,32 @@ async def get_by_month(current_user: User = Depends(get_current_user)):
     return dict(month_stats)
 
 @api_router.get("/analytics/deep")
-async def get_deep_analytics(current_user: User = Depends(get_current_user)):
+async def get_deep_analytics(month: Optional[str] = None, current_user: User = Depends(get_current_user)):
     """Deep analytics: category-wise, product-wise, status distribution, amounts"""
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    if month and month != 'all':
+        MONTH_NAMES_DP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        def to_mk(loan):
+            gm = loan.get('group_month', '')
+            if gm: return gm
+            val = loan.get('month', '')
+            if not val: return 'Unknown'
+            import re
+            if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
+            parts = val.split('-')
+            if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12: return f"{MONTH_NAMES_DP[mi]}-{parts[2]}"
+            if len(parts) == 3 and len(parts[0]) == 4:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12: return f"{MONTH_NAMES_DP[mi]}-{parts[0]}"
+            return val
+        loans = [l for l in loans if to_mk(l) == month]
     
     category_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "sanction_amt": 0, "disbursed_amt": 0})
     product_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "sanction_amt": 0, "disbursed_amt": 0})

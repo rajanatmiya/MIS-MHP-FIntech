@@ -26,16 +26,18 @@ const AnalyticsEnhanced = () => {
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchAnalytics(); }, []);
+  useEffect(() => { fetchAnalytics(); }, [selectedMonth]);
 
   const fetchAnalytics = async () => {
     try {
+      setLoading(true);
+      const monthParam = selectedMonth !== 'all' ? `?month=${encodeURIComponent(selectedMonth)}` : '';
       const [trendsRes, bankRes, agentRes, valuesRes, deepRes] = await Promise.all([
         axios.get(`${API}/analytics/monthly-trends`),
-        axios.get(`${API}/analytics/by-bank`),
-        axios.get(`${API}/analytics/by-agent`),
+        axios.get(`${API}/analytics/by-bank${monthParam}`),
+        axios.get(`${API}/analytics/by-agent${monthParam}`),
         axios.get(`${API}/analytics/unique-values`),
-        axios.get(`${API}/analytics/deep`)
+        axios.get(`${API}/analytics/deep${monthParam}`)
       ]);
       setMonthlyTrends(trendsRes.data);
       setBankStats(bankRes.data);
