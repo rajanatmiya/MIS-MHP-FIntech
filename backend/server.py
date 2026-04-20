@@ -173,10 +173,13 @@ class LoanApplication(BaseModel):
     customer_name: str
     company_name: str
     contact_no: str
+    login_date: Optional[str] = ""
     status: str
+    amount: Optional[str] = ""
     bank: str
     sanction: Optional[str] = ""
     disbursed: Optional[str] = ""
+    disbursed_date: Optional[str] = ""
     remark: Optional[str] = ""
     decline_reason: Optional[str] = ""
     scheme: Optional[str] = ""
@@ -210,10 +213,13 @@ class LoanApplicationCreate(BaseModel):
     customer_name: str
     company_name: str
     contact_no: str
+    login_date: Optional[str] = ""
     status: str
+    amount: Optional[str] = ""
     bank: str
     sanction: Optional[str] = ""
     disbursed: Optional[str] = ""
+    disbursed_date: Optional[str] = ""
     remark: Optional[str] = ""
     decline_reason: Optional[str] = ""
     scheme: Optional[str] = ""
@@ -241,10 +247,13 @@ class LoanApplicationUpdate(BaseModel):
     customer_name: Optional[str] = None
     company_name: Optional[str] = None
     contact_no: Optional[str] = None
+    login_date: Optional[str] = None
     status: Optional[str] = None
+    amount: Optional[str] = None
     bank: Optional[str] = None
     sanction: Optional[str] = None
     disbursed: Optional[str] = None
+    disbursed_date: Optional[str] = None
     remark: Optional[str] = None
     decline_reason: Optional[str] = None
     scheme: Optional[str] = None
@@ -1198,7 +1207,8 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     column_config = [
         ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
-        ('status', 'Status'), ('entry_status', 'Entry Status'), ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'),
+        ('login_date', 'Login Date'), ('status', 'Status'), ('amount', 'Amount'), ('entry_status', 'Entry Status'),
+        ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'), ('disbursed_date', 'Disbursed Date'),
         ('remark', 'Remark'), ('decline_reason', 'Decline Reason'), ('scheme', 'Scheme'),
         ('case_from', 'Case From'), ('location', 'Location'), ('branch', 'Branch'),
         ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
@@ -1633,10 +1643,13 @@ async def export_loans(
         ('bank', 'Bank'),
         ('category', 'Category'),
         ('product', 'Product'),
+        ('login_date', 'Login Date'),
         ('status', 'Status'),
+        ('amount', 'Amount'),
         ('entry_status', 'Entry Status'),
         ('sanction', 'Sanction Amount'),
         ('disbursed', 'Disbursed Amount'),
+        ('disbursed_date', 'Disbursed Date'),
         ('remark', 'Remark'),
         ('decline_reason', 'Decline Reason'),
         ('scheme', 'Scheme'),
@@ -1705,7 +1718,8 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
     loan_column_config = [
         ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
-        ('status', 'Status'), ('entry_status', 'Entry Status'), ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'),
+        ('login_date', 'Login Date'), ('status', 'Status'), ('amount', 'Amount'), ('entry_status', 'Entry Status'),
+        ('sanction', 'Sanction Amount'), ('disbursed', 'Disbursed Amount'), ('disbursed_date', 'Disbursed Date'),
         ('remark', 'Remark'), ('decline_reason', 'Decline Reason'), ('scheme', 'Scheme'),
         ('case_from', 'Case From'), ('location', 'Location'), ('branch', 'Branch'),
         ('executive_name', 'Executive Name'), ('team_manager', 'Team Manager'), ('code', 'Code'),
@@ -1838,6 +1852,13 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             'legal status': 'legal_status',
             'legalstatus': 'legal_status',
             'legal': 'legal_status',
+            'login date': 'login_date',
+            'logindate': 'login_date',
+            'amount': 'amount',
+            'loan amount': 'amount',
+            'disbursed date': 'disbursed_date',
+            'disburseddate': 'disbursed_date',
+            'disbursal date': 'disbursed_date',
         }
         
         # Normalize column names

@@ -177,9 +177,12 @@ const MonthlyMIS = () => {
     { key: 'bank', label: 'Bank' },
     { key: 'category', label: 'Category' },
     { key: 'product', label: 'Product' },
+    { key: 'login_date', label: 'Login Date' },
     { key: 'status', label: 'Status' },
+    { key: 'amount', label: 'Amount' },
     { key: 'sanction', label: 'Sanction' },
     { key: 'disbursed', label: 'Disbursed' },
+    { key: 'disbursed_date', label: 'Disbursed Date' },
     { key: 'remark', label: 'Remark' },
     { key: 'decline_reason', label: 'Decline' },
     { key: 'scheme', label: 'Scheme' },
@@ -1316,6 +1319,15 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
+                <Label className="text-[11px] text-slate-600">Login Date</Label>
+                <Input
+                  type="date"
+                  value={newLoanData.login_date || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, login_date: e.target.value})}
+                  className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                />
+              </div>
+              <div>
                 <Label className="text-[11px] text-slate-600">Status *</Label>
                 <Select value={newLoanData.status || ''} onValueChange={(value) => setNewLoanData({...newLoanData, status: value})}>
                   <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
@@ -1375,12 +1387,25 @@ const MonthlyMIS = () => {
                 {newLoanData.month && <p className="text-[10px] text-slate-400 mt-0.5">{newLoanData.month}</p>}
               </div>
               <div>
+                <Label className="text-[11px] text-slate-600">Amount</Label>
+                <Input value={newLoanData.amount || ''} onChange={(e) => setNewLoanData({...newLoanData, amount: e.target.value})} placeholder="e.g., 500000" className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
                 <Label className="text-[11px] text-slate-600">Sanction Amt</Label>
                 <Input value={newLoanData.sanction || ''} onChange={(e) => setNewLoanData({...newLoanData, sanction: e.target.value})} placeholder="e.g., 500000" className="h-8 text-[11px] mt-0.5" />
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Disbursed Amt</Label>
                 <Input value={newLoanData.disbursed || ''} onChange={(e) => setNewLoanData({...newLoanData, disbursed: e.target.value})} placeholder="e.g., 500000" className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Disbursed Date</Label>
+                <Input
+                  type="date"
+                  value={newLoanData.disbursed_date || ''}
+                  onChange={(e) => setNewLoanData({...newLoanData, disbursed_date: e.target.value})}
+                  className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                />
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Scheme</Label>
@@ -1497,6 +1522,15 @@ const MonthlyMIS = () => {
                 )}
               </div>
               <div>
+                <Label className="text-[11px] text-slate-600">Login Date</Label>
+                <Input
+                  type="date"
+                  value={editFormData.login_date || ''}
+                  onChange={(e) => setEditFormData({...editFormData, login_date: e.target.value})}
+                  className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                />
+              </div>
+              <div>
                 <Label className="text-[11px] text-slate-600">Status *</Label>
                 <Select value={editFormData.status || ''} onValueChange={(value) => setEditFormData({...editFormData, status: value})}>
                   <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
@@ -1556,12 +1590,25 @@ const MonthlyMIS = () => {
                 {editFormData.month && <p className="text-[10px] text-slate-400 mt-0.5">{editFormData.month}</p>}
               </div>
               <div>
+                <Label className="text-[11px] text-slate-600">Amount</Label>
+                <Input value={editFormData.amount || ''} onChange={(e) => setEditFormData({...editFormData, amount: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
                 <Label className="text-[11px] text-slate-600">Sanction Amt</Label>
                 <Input value={editFormData.sanction || ''} onChange={(e) => setEditFormData({...editFormData, sanction: e.target.value})} className="h-8 text-[11px] mt-0.5" />
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Disbursed Amt</Label>
                 <Input value={editFormData.disbursed || ''} onChange={(e) => setEditFormData({...editFormData, disbursed: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Disbursed Date</Label>
+                <Input
+                  type="date"
+                  value={editFormData.disbursed_date || ''}
+                  onChange={(e) => setEditFormData({...editFormData, disbursed_date: e.target.value})}
+                  className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                />
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Scheme</Label>
