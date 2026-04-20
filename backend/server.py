@@ -743,6 +743,31 @@ async def delete_status(status_id: str, current_user: User = Depends(get_current
     
     return {"message": "Status deleted successfully"}
 
+@api_router.post("/statuses/rename-in-loans")
+async def rename_status_in_loans(data: dict = Body(...), current_user: User = Depends(get_current_user)):
+    """Bulk rename a status in all loan applications (Admin only)"""
+    check_admin(current_user)
+    old_name = data.get("old_name", "").strip()
+    new_name = data.get("new_name", "").strip()
+    if not old_name or not new_name:
+        raise HTTPException(status_code=400, detail="old_name and new_name are required")
+    result = await db.loan_applications.update_many(
+        {"status": old_name},
+        {"$set": {"status": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": f"Renamed '{old_name}' to '{new_name}' in {result.modified_count} loans", "modified_count": result.modified_count}
+
+@api_router.get("/statuses/usage-count")
+async def get_status_usage_count(current_user: User = Depends(get_current_user)):
+    """Get count of loans using each status value"""
+    check_admin(current_user)
+    pipeline = [
+        {"$group": {"_id": "$status", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}}
+    ]
+    results = await db.loan_applications.aggregate(pipeline).to_list(1000)
+    return {r["_id"]: r["count"] for r in results if r["_id"]}
+
 # Loan routes with role-based access
 @api_router.get("/loans")
 async def get_loans(
