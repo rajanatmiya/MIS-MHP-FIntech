@@ -1614,6 +1614,29 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
+    MONTH_NAMES_UV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    
+    def to_month_key_uv(loan):
+        gm = loan.get('group_month', '')
+        if gm:
+            return gm
+        val = loan.get('month', '')
+        if not val:
+            return None
+        import re
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+            return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_UV[mi]}-{parts[2]}"
+        if len(parts) == 3 and len(parts[0]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_UV[mi]}-{parts[0]}"
+        return val
+    
     banks = set()
     statuses = set()
     agents = set()
@@ -1627,16 +1650,24 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
             statuses.add(loan['status'])
         if loan.get('agent_name'):
             agents.add(loan['agent_name'])
-        if loan.get('month'):
-            months.add(loan['month'])
+        mk = to_month_key_uv(loan)
+        if mk:
+            months.add(mk)
         if loan.get('scheme'):
             schemes.add(loan['scheme'])
+    
+    def month_sort_key(m):
+        import re
+        match = re.match(r'^([A-Za-z]{3})-(\d{4})$', m)
+        if match and match.group(1) in MONTH_NAMES_UV:
+            return f"{match.group(2)}-{str(MONTH_NAMES_UV.index(match.group(1))).zfill(2)}"
+        return m
     
     return {
         "banks": sorted(list(banks)),
         "statuses": sorted(list(statuses)),
         "agents": sorted(list(agents)),
-        "months": sorted(list(months)),
+        "months": sorted(list(months), key=month_sort_key),
         "schemes": sorted(list(schemes))
     }
 
