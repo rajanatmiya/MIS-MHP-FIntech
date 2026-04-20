@@ -30,7 +30,7 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - **Entry Status (Open/Closed) — Apr 2026:** Each loan entry has an Open/Closed toggle. Closed entries are greyed out with strikethrough. Carry-forward excludes both Closed entries AND Disbursed status loans. PATCH /api/loans/{id}/entry-status endpoint.
 - **Export with Proper Columns — Apr 2026:** All 3 export endpoints (MIS month export, MIS top export, DB Backup full-data) use consistent column headers (Date, Customer Name, Company Name, etc.). DB Backup page now has both Excel and JSON export buttons. Auto-fit column widths on all Excel exports.
 - **Technical Value & Legal Status Fields — Apr 2026:** Added two new free-text columns (Technical Value, Legal Status) to loan model, MIS table, Add/Edit forms, all exports, and import mapping.
-- **Login Date, Amount, Disbursed Date — Apr 2026:** Added 3 columns: Login Date (date, before Status), Amount (text, between Status & Sanction), Disbursed Date (date, after Disbursed). In table, forms, all exports, and import mapping.
+- **Dashboard UI Redesign — Apr 2026:** Rebuilt Dashboard layout using "Control Room Grid". Performance Rates + Leaderboard side-by-side (1:3). Status Breakdown + Bank Analysis side-by-side with max-h scrollable containers. Compact table rows, sticky headers, colored accent stat cards.
 
 ## Key API Endpoints
 - `/api/loans` (GET, POST) — CRUD with RBAC
