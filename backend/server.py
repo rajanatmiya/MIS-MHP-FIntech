@@ -1406,32 +1406,67 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
+    MONTH_NAMES_T = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    
+    def to_month_key(loan):
+        gm = loan.get('group_month', '')
+        if gm:
+            return gm
+        val = loan.get('month', '')
+        if not val:
+            return 'Unknown'
+        import re
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+            return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_T[mi]}-{parts[2]}"
+        if len(parts) == 3 and len(parts[0]) == 4:
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_T[mi]}-{parts[0]}"
+        return val
+    
     monthly_data = defaultdict(lambda: {
-        "total": 0,
-        "disbursed": 0,
-        "declined": 0,
-        "pending": 0,
-        "login_done": 0,
-        "month": ""
+        "total": 0, "disbursed": 0, "declined": 0, "pending": 0,
+        "sanction_amount": 0, "disbursed_amount": 0, "month": ""
     })
     
     for loan in loans:
-        month = loan.get('month', 'Unknown')
+        month = to_month_key(loan)
         status = loan.get('status', '')
         
         monthly_data[month]["month"] = month
         monthly_data[month]["total"] += 1
         
+        san = 0
+        dis = 0
+        try:
+            san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
+        except: pass
+        try:
+            dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
+        except: pass
+        monthly_data[month]["sanction_amount"] += san
+        monthly_data[month]["disbursed_amount"] += dis
+        
         if status == 'Disbursed':
             monthly_data[month]["disbursed"] += 1
-        elif status == 'Decline':
+        elif status in ('Decline', 'Rejected'):
             monthly_data[month]["declined"] += 1
-        elif status == 'Login Done':
-            monthly_data[month]["login_done"] += 1
-        elif status in ['Hold', 'Sent For Login', 'Pd To Be Done']:
+        else:
             monthly_data[month]["pending"] += 1
     
-    sorted_data = sorted(monthly_data.values(), key=lambda x: x["month"])
+    def sort_key(item):
+        import re
+        m = re.match(r'^([A-Za-z]{3})-(\d{4})$', item.get('month', ''))
+        if m and m.group(1) in MONTH_NAMES_T:
+            return f"{m.group(2)}-{str(MONTH_NAMES_T.index(m.group(1))).zfill(2)}"
+        return item.get('month', '')
+    
+    sorted_data = sorted(monthly_data.values(), key=sort_key)
     return sorted_data
 
 @api_router.get("/analytics/by-bank")
@@ -1501,6 +1536,75 @@ async def get_by_month(current_user: User = Depends(get_current_user)):
             month_stats[month]["declined"] += 1
     
     return dict(month_stats)
+
+@api_router.get("/analytics/deep")
+async def get_deep_analytics(current_user: User = Depends(get_current_user)):
+    """Deep analytics: category-wise, product-wise, status distribution, amounts"""
+    query = {}
+    accessible_ids = await get_accessible_user_ids(current_user)
+    query.update(build_rbac_filter(current_user, accessible_ids))
+    
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    category_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "sanction_amt": 0, "disbursed_amt": 0})
+    product_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "sanction_amt": 0, "disbursed_amt": 0})
+    status_dist = defaultdict(int)
+    entry_status_dist = {"Open": 0, "Closed": 0}
+    agent_amounts = defaultdict(lambda: {"total": 0, "sanction_amt": 0, "disbursed_amt": 0, "disbursed_count": 0})
+    
+    total_sanction = 0
+    total_disbursed = 0
+    
+    for loan in loans:
+        cat = loan.get('category', '') or 'Uncategorized'
+        prod = loan.get('product', '') or 'Unassigned'
+        status = loan.get('status', 'Unknown')
+        agent = loan.get('agent_name', 'Unknown')
+        es = loan.get('entry_status', 'Open')
+        
+        san = 0
+        dis = 0
+        try: san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
+        except: pass
+        try: dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
+        except: pass
+        
+        total_sanction += san
+        total_disbursed += dis
+        
+        category_stats[cat]["total"] += 1
+        category_stats[cat]["sanction_amt"] += san
+        category_stats[cat]["disbursed_amt"] += dis
+        if status == 'Disbursed':
+            category_stats[cat]["disbursed"] += 1
+        
+        product_stats[prod]["total"] += 1
+        product_stats[prod]["sanction_amt"] += san
+        product_stats[prod]["disbursed_amt"] += dis
+        if status == 'Disbursed':
+            product_stats[prod]["disbursed"] += 1
+        
+        status_dist[status] += 1
+        
+        if es == 'Closed':
+            entry_status_dist["Closed"] += 1
+        else:
+            entry_status_dist["Open"] += 1
+        
+        agent_amounts[agent]["total"] += 1
+        agent_amounts[agent]["sanction_amt"] += san
+        agent_amounts[agent]["disbursed_amt"] += dis
+        if status == 'Disbursed':
+            agent_amounts[agent]["disbursed_count"] += 1
+    
+    return {
+        "category_stats": dict(category_stats),
+        "product_stats": dict(product_stats),
+        "status_distribution": dict(status_dist),
+        "entry_status_distribution": entry_status_dist,
+        "agent_amounts": dict(sorted(agent_amounts.items(), key=lambda x: -x[1]["disbursed_amt"])),
+        "totals": {"total_loans": len(loans), "total_sanction": total_sanction, "total_disbursed": total_disbursed}
+    }
 
 @api_router.get("/analytics/unique-values")
 async def get_unique_values(current_user: User = Depends(get_current_user)):

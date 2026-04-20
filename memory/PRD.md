@@ -32,6 +32,7 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - **Technical Value & Legal Status Fields — Apr 2026:** Added two new free-text columns (Technical Value, Legal Status) to loan model, MIS table, Add/Edit forms, all exports, and import mapping.
 - **Dashboard UI Redesign — Apr 2026:** Rebuilt Dashboard layout using "Control Room Grid". Performance Rates + Leaderboard side-by-side (1:3). Status Breakdown + Bank Analysis side-by-side with max-h scrollable containers. Compact table rows, sticky headers, colored accent stat cards.
 - **Status Management Enhancement — Apr 2026:** Enhanced status deletion with replacement flow. When deleting a status used by loans, shows count + dropdown to pick replacement. Backend: POST /api/statuses/rename-in-loans bulk-renames status in all loans. GET /api/statuses/usage-count shows loan counts per status.
+- **Analytics Deep Upgrade — Apr 2026:** Fixed month-wise charts to show "Apr-2026" instead of raw dates. Added deep analytics: Summary KPIs, Status donut chart, Category-wise bars, Product-wise bars, Agent disbursement amounts, Month-wise amount trends (Sanctioned vs Disbursed). New endpoint: GET /api/analytics/deep.
 
 ## Key API Endpoints
 - `/api/loans` (GET, POST) — CRUD with RBAC
