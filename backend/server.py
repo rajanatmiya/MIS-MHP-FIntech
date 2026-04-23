@@ -2840,23 +2840,20 @@ async def create_default_admin():
             else:
                 logger.info(f"✅ Agent user already exists and assigned: {agent_email}")
         
-        # Initialize default schemes
-        default_schemes = [
-            {"name": "GST", "description": "GST Loan Scheme"},
-            {"name": "Degree Surrogate", "description": "Degree Surrogate Loan"},
-            {"name": "Prime Banking", "description": "Prime Banking Loan"},
-            {"name": "LTBL", "description": "LTBL Loan Scheme"},
-            {"name": "SEPL Income Programme", "description": "SEPL Income Programme"},
-            {"name": "Car loan", "description": "Car Loan Scheme"},
-            {"name": "Education Loan", "description": "Education Loan Scheme"}
-        ]
-        
-        admin_user_data = existing_admin or admin_user
-        admin_id = admin_user_data.get('id')
-        
-        for scheme_data in default_schemes:
-            existing_scheme = await db.schemes.find_one({"name": scheme_data["name"]})
-            if not existing_scheme:
+        # Initialize default schemes ONLY if collection is completely empty (first run)
+        scheme_count = await db.schemes.count_documents({})
+        if scheme_count == 0:
+            default_schemes = [
+                {"name": "GST", "description": "GST Loan Scheme"},
+                {"name": "Degree Surrogate", "description": "Degree Surrogate Loan"},
+                {"name": "Prime Banking", "description": "Prime Banking Loan"},
+                {"name": "LTBL", "description": "LTBL Loan Scheme"},
+                {"name": "SEPL Income Programme", "description": "SEPL Income Programme"},
+                {"name": "Car loan", "description": "Car Loan Scheme"},
+                {"name": "Education Loan", "description": "Education Loan Scheme"}
+            ]
+            
+            for scheme_data in default_schemes:
                 scheme = {
                     "id": str(uuid.uuid4()),
                     "name": scheme_data["name"],
@@ -2865,28 +2862,28 @@ async def create_default_admin():
                     "created_by": admin_id
                 }
                 await db.schemes.insert_one(scheme)
-                logger.info(f"✅ Created scheme: {scheme_data['name']}")
+                logger.info(f"Created default scheme: {scheme_data['name']}")
         
         scheme_count = await db.schemes.count_documents({})
-        logger.info(f"✅ Total schemes in database: {scheme_count}")
+        logger.info(f"Total schemes in database: {scheme_count}")
         
-        # Initialize default statuses
-        default_statuses = [
-            {"name": "Pending", "description": "Application pending", "color": "#FFA500", "order": 1},
-            {"name": "Login", "description": "Login stage", "color": "#00BFFF", "order": 2},
-            {"name": "Query", "description": "Query raised", "color": "#FFD700", "order": 3},
-            {"name": "Approved", "description": "Application approved", "color": "#32CD32", "order": 4},
-            {"name": "Post PD Docs", "description": "Post PD documents stage", "color": "#9370DB", "order": 5},
-            {"name": "Sanctioned", "description": "Loan sanctioned", "color": "#00CED1", "order": 6},
-            {"name": "Disbursed", "description": "Loan disbursed", "color": "#228B22", "order": 7},
-            {"name": "Decline", "description": "Application declined", "color": "#DC143C", "order": 8},
-            {"name": "Hold", "description": "Application on hold", "color": "#FF8C00", "order": 9},
-            {"name": "Rejected", "description": "Application rejected", "color": "#B22222", "order": 10}
-        ]
-        
-        for status_data in default_statuses:
-            existing_status = await db.statuses.find_one({"name": status_data["name"]})
-            if not existing_status:
+        # Initialize default statuses ONLY if collection is completely empty (first run)
+        status_count = await db.statuses.count_documents({})
+        if status_count == 0:
+            default_statuses = [
+                {"name": "Pending", "description": "Application pending", "color": "#FFA500", "order": 1},
+                {"name": "Login", "description": "Login stage", "color": "#00BFFF", "order": 2},
+                {"name": "Query", "description": "Query raised", "color": "#FFD700", "order": 3},
+                {"name": "Approved", "description": "Application approved", "color": "#32CD32", "order": 4},
+                {"name": "Post PD Docs", "description": "Post PD documents stage", "color": "#9370DB", "order": 5},
+                {"name": "Sanctioned", "description": "Loan sanctioned", "color": "#00CED1", "order": 6},
+                {"name": "Disbursed", "description": "Loan disbursed", "color": "#228B22", "order": 7},
+                {"name": "Decline", "description": "Application declined", "color": "#DC143C", "order": 8},
+                {"name": "Hold", "description": "Application on hold", "color": "#FF8C00", "order": 9},
+                {"name": "Rejected", "description": "Application rejected", "color": "#B22222", "order": 10}
+            ]
+            
+            for status_data in default_statuses:
                 status = {
                     "id": str(uuid.uuid4()),
                     "name": status_data["name"],
@@ -2897,7 +2894,7 @@ async def create_default_admin():
                     "created_by": admin_id
                 }
                 await db.statuses.insert_one(status)
-                logger.info(f"✅ Created status: {status_data['name']}")
+                logger.info(f"Created default status: {status_data['name']}")
         
         status_count = await db.statuses.count_documents({})
         logger.info(f"Total statuses in database: {status_count}")
