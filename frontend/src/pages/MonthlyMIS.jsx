@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight, Lock, Unlock } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight, Lock, Unlock, Copy, MoveRight } from 'lucide-react';
 
 // Month format helpers
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -517,6 +517,48 @@ const MonthlyMIS = () => {
       toast.success(`Entry marked as ${newStatus}`);
     } catch (error) {
       toast.error('Failed to update entry status');
+    }
+  };
+
+  const handleDuplicateEntry = async (loan) => {
+    try {
+      const dupData = { ...loan };
+      delete dupData.id;
+      delete dupData.created_at;
+      delete dupData.updated_at;
+      delete dupData.created_by;
+      delete dupData.file_count;
+      delete dupData.comment_count;
+      delete dupData._id;
+      dupData.entry_status = 'Open';
+      const response = await axios.post(`${API}/loans`, dupData);
+      setLoans([response.data, ...loans]);
+      toast.success('Entry duplicated successfully');
+    } catch (error) {
+      toast.error('Failed to duplicate entry');
+    }
+  };
+
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [movingLoan, setMovingLoan] = useState(null);
+  const [moveTargetMonth, setMoveTargetMonth] = useState('');
+
+  const handleMoveToMonth = (loan) => {
+    setMovingLoan(loan);
+    setMoveTargetMonth('');
+    setShowMoveDialog(true);
+  };
+
+  const handleMoveConfirm = async () => {
+    if (!movingLoan || !moveTargetMonth) return;
+    try {
+      await axios.put(`${API}/loans/${movingLoan.id}`, { group_month: moveTargetMonth });
+      setLoans(loans.map(l => l.id === movingLoan.id ? { ...l, group_month: moveTargetMonth } : l));
+      toast.success(`Entry moved to ${moveTargetMonth}`);
+      setShowMoveDialog(false);
+      setMovingLoan(null);
+    } catch (error) {
+      toast.error('Failed to move entry');
     }
   };
 
@@ -1211,6 +1253,22 @@ const MonthlyMIS = () => {
                               >
                                 <Edit className="w-3.5 h-3.5 text-[#2c587a]" />
                               </button>
+                              <button
+                                onClick={() => handleDuplicateEntry(loan)}
+                                className="p-1 rounded hover:bg-violet-50 transition-colors"
+                                title="Duplicate Entry"
+                                data-testid={`mis-duplicate-${loan.id}`}
+                              >
+                                <Copy className="w-3.5 h-3.5 text-violet-500" />
+                              </button>
+                              <button
+                                onClick={() => handleMoveToMonth(loan)}
+                                className="p-1 rounded hover:bg-amber-50 transition-colors"
+                                title="Move To Month"
+                                data-testid={`mis-move-${loan.id}`}
+                              >
+                                <MoveRight className="w-3.5 h-3.5 text-amber-600" />
+                              </button>
                               {user?.role === 'admin' && (
                                 <button
                                   onClick={() => handleDeleteLoan(loan.id)}
@@ -1785,6 +1843,48 @@ const MonthlyMIS = () => {
                 }}
               >
                 Add Month
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Move To Month Dialog */}
+      <Dialog open={showMoveDialog} onOpenChange={setShowMoveDialog}>
+        <DialogContent className="max-w-sm" data-testid="move-to-month-dialog">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-1.5">
+              <MoveRight className="w-4 h-4 text-amber-600" /> Move Entry To Month
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {movingLoan && (
+              <div className="bg-slate-50 rounded-lg p-2.5 text-[11px]">
+                <p className="font-medium text-slate-700">{movingLoan.customer_name}</p>
+                <p className="text-slate-400">{movingLoan.bank} | {movingLoan.status}</p>
+              </div>
+            )}
+            <div>
+              <Label className="text-[11px]">Move to month</Label>
+              <Input
+                type="month"
+                value={moveTargetMonth ? (() => { const m = moveTargetMonth.match(/^([A-Za-z]{3})-(\d{4})$/); if (m) { const mi = MONTH_NAMES.indexOf(m[1]); return mi >= 0 ? `${m[2]}-${String(mi+1).padStart(2,'0')}` : ''; } return ''; })() : ''}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setMoveTargetMonth(fromInputMonth(e.target.value));
+                  } else {
+                    setMoveTargetMonth('');
+                  }
+                }}
+                className="h-8 text-[11px] mt-0.5"
+                data-testid="move-month-input"
+              />
+              {moveTargetMonth && <p className="text-[10px] text-slate-500 mt-0.5">Target: {moveTargetMonth}</p>}
+            </div>
+            <div className="flex gap-2 pt-1">
+              <Button variant="outline" size="sm" className="flex-1 h-7 text-[11px]" onClick={() => setShowMoveDialog(false)}>Cancel</Button>
+              <Button size="sm" className="flex-1 h-7 text-[11px] bg-amber-600 hover:bg-amber-700" onClick={handleMoveConfirm} disabled={!moveTargetMonth} data-testid="confirm-move-btn">
+                Move Entry
               </Button>
             </div>
           </div>

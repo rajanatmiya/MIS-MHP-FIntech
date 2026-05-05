@@ -200,6 +200,7 @@ class LoanApplication(BaseModel):
     technical_value: Optional[str] = ""
     legal_status: Optional[str] = ""
     month: str
+    group_month: Optional[str] = ""
     custom_fields: Optional[Dict[str, Any]] = Field(default_factory=dict)
     entry_status: Optional[str] = "Open"  # "Open" or "Closed"
     file_count: Optional[int] = 0
@@ -240,6 +241,7 @@ class LoanApplicationCreate(BaseModel):
     technical_value: Optional[str] = ""
     legal_status: Optional[str] = ""
     month: str
+    group_month: Optional[str] = ""
     custom_fields: Optional[Dict[str, Any]] = None
 
 class LoanApplicationUpdate(BaseModel):
@@ -275,6 +277,7 @@ class LoanApplicationUpdate(BaseModel):
     legal_status: Optional[str] = None
     month: Optional[str] = None
     entry_status: Optional[str] = None
+    group_month: Optional[str] = None
     custom_fields: Optional[Dict[str, Any]] = None
 
 # Auth helpers
