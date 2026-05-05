@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight, Lock, Unlock, Copy, MoveRight } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight, Copy, MoveRight } from 'lucide-react';
 
 // Month format helpers
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1140,11 +1140,6 @@ const MonthlyMIS = () => {
                   )}
                   <span className="font-semibold text-xs text-slate-800">{month}</span>
                   <span className="text-[10px] text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded-full">{monthLoans.length} entries</span>
-                  {monthLoans.filter(l => l.entry_status === 'Closed').length > 0 && (
-                    <span className="text-[10px] text-red-500 bg-red-50 px-1.5 py-0.5 rounded-full">
-                      {monthLoans.filter(l => l.entry_status === 'Closed').length} closed
-                    </span>
-                  )}
                 </div>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                   {!isExpanded && (
@@ -1210,7 +1205,7 @@ const MonthlyMIS = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {monthLoans.map(loan => (
-                        <tr key={loan.id} className={`transition-colors ${loan.entry_status === 'Closed' ? 'bg-slate-100/80 opacity-60' : ''} ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : 'hover:bg-slate-50/50'}`}>
+                        <tr key={loan.id} className={`transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : 'hover:bg-slate-50/50'}`}>
                           {showBulkSelect && (
                           <td className="px-2 py-1">
                             <input
@@ -1227,24 +1222,12 @@ const MonthlyMIS = () => {
                           </td>
                           )}
                           {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(({ key: field }) => (
-                            <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''} ${loan.entry_status === 'Closed' ? 'line-through text-slate-400' : ''}`}>
+                            <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''}`}>
                               {renderCell(loan, field, field)}
                             </td>
                           ))}
                           <td className="px-2 py-1 whitespace-nowrap sticky right-0 bg-white">
                             <div className="flex items-center gap-0.5">
-                              <button
-                                onClick={() => handleToggleEntryStatus(loan)}
-                                className={`p-1 rounded transition-colors ${loan.entry_status === 'Closed' ? 'bg-red-50 hover:bg-red-100' : 'bg-emerald-50 hover:bg-emerald-100'}`}
-                                title={loan.entry_status === 'Closed' ? 'Entry Closed – Click to Open' : 'Entry Open – Click to Close'}
-                                data-testid={`entry-status-toggle-${loan.id}`}
-                              >
-                                {loan.entry_status === 'Closed' ? (
-                                  <Lock className="w-3.5 h-3.5 text-red-500" />
-                                ) : (
-                                  <Unlock className="w-3.5 h-3.5 text-emerald-600" />
-                                )}
-                              </button>
                               <button
                                 onClick={() => handleEditOpen(loan)}
                                 className="p-1 rounded hover:bg-blue-50 transition-colors"
