@@ -273,26 +273,46 @@ const AnalyticsEnhanced = () => {
         </Card>
       </div>
 
-      {/* ROW 4: Bank Performance + Top Agents Table */}
+      {/* ROW 4: Bank Analysis (with agent breakdown) + Top Agents Table (with amounts) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="shadow-sm border-slate-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-1.5 mb-3">
               <Building2 className="w-3.5 h-3.5 text-[#2c587a]" />
-              <p className="text-xs font-semibold text-slate-800 uppercase tracking-wide">Bank Performance</p>
+              <p className="text-xs font-semibold text-slate-800 uppercase tracking-wide">Bank Analysis (Agent-wise)</p>
             </div>
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={bankChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 8 }} angle={-30} textAnchor="end" height={50} />
-                <YAxis tick={{ fontSize: 9 }} />
-                <Tooltip contentStyle={{ fontSize: 11 }} />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Bar dataKey="Total" fill="#2c587a" name="Total" radius={[2,2,0,0]} />
-                <Bar dataKey="Disbursed" fill="#10b981" name="Disbursed" radius={[2,2,0,0]} />
-                <Bar dataKey="Declined" fill="#ef4444" name="Declined" radius={[2,2,0,0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="max-h-[320px] overflow-y-auto">
+              <table className="w-full text-[11px]" data-testid="bank-agent-table">
+                <thead className="sticky top-0 bg-white z-10">
+                  <tr className="border-b border-slate-200" style={{ boxShadow: '0 1px 0 0 #e2e8f0' }}>
+                    <th className="text-left py-1.5 px-2 font-semibold text-slate-500">Bank / Agent</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Apps</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Sanctioned</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Disbursed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(bankStats).sort((a,b) => b[1].total - a[1].total).map(([bank, data]) => (
+                    <React.Fragment key={bank}>
+                      <tr className="border-b border-slate-100 bg-slate-50/50">
+                        <td className="py-1.5 px-2 font-semibold text-slate-800 truncate max-w-[120px]">{bank}</td>
+                        <td className="py-1.5 px-2 text-right font-semibold text-slate-700">{data.total}</td>
+                        <td className="py-1.5 px-2 text-right font-semibold text-violet-700">{fmt(data.sanction_amt || 0)}</td>
+                        <td className="py-1.5 px-2 text-right font-semibold text-emerald-700">{fmt(data.disbursed_amt || 0)}</td>
+                      </tr>
+                      {data.agents && Object.entries(data.agents).sort((a,b) => b[1].total - a[1].total).map(([agent, agData]) => (
+                        <tr key={`${bank}-${agent}`} className="border-b border-slate-50 hover:bg-blue-50/30">
+                          <td className="py-1 px-2 pl-5 text-slate-500 text-[10px]">{agent}</td>
+                          <td className="py-1 px-2 text-right text-slate-500 text-[10px]">{agData.total}</td>
+                          <td className="py-1 px-2 text-right text-slate-500 text-[10px]">{fmt(agData.sanction_amt || 0)}</td>
+                          <td className="py-1 px-2 text-right text-slate-500 text-[10px]">{fmt(agData.disbursed_amt || 0)}</td>
+                        </tr>
+                      ))}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </CardContent>
         </Card>
 
@@ -302,22 +322,24 @@ const AnalyticsEnhanced = () => {
               <Activity className="w-3.5 h-3.5 text-emerald-600" />
               <p className="text-xs font-semibold text-slate-800 uppercase tracking-wide">Top Agents</p>
             </div>
-            <div className="max-h-[220px] overflow-y-auto">
+            <div className="max-h-[320px] overflow-y-auto">
               <table className="w-full text-[11px]" data-testid="agent-stats-table">
                 <thead className="sticky top-0 bg-white z-10">
                   <tr className="border-b border-slate-200" style={{ boxShadow: '0 1px 0 0 #e2e8f0' }}>
                     <th className="text-left py-1.5 px-2 font-semibold text-slate-500">Agent</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Loans</th>
+                    <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Sanctioned</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Disbursed</th>
                     <th className="text-right py-1.5 px-2 font-semibold text-slate-500">Conv.</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(agentStats).sort((a,b) => b[1].total - a[1].total).map(([agent, data]) => (
+                  {Object.entries(agentStats).sort((a,b) => (b[1].disbursed_amt || 0) - (a[1].disbursed_amt || 0)).map(([agent, data]) => (
                     <tr key={agent} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
                       <td className="py-1.5 px-2 font-medium text-slate-700 truncate max-w-[100px]">{agent}</td>
                       <td className="py-1.5 px-2 text-right text-slate-600">{data.total}</td>
-                      <td className="py-1.5 px-2 text-right font-medium text-emerald-700">{data.disbursed}</td>
+                      <td className="py-1.5 px-2 text-right text-violet-700">{fmt(data.sanction_amt || 0)}</td>
+                      <td className="py-1.5 px-2 text-right font-medium text-emerald-700">{fmt(data.disbursed_amt || 0)}</td>
                       <td className="py-1.5 px-2 text-right">
                         <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${
                           data.total > 0 && (data.disbursed / data.total * 100) >= 50 ? 'bg-emerald-50 text-emerald-700' :

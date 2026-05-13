@@ -212,8 +212,9 @@ const Dashboard = () => {
                   <thead className="sticky top-0 bg-white z-10">
                     <tr className="border-b border-slate-200">
                       <th className="text-left py-2 px-2 font-semibold text-slate-500 w-6">#</th>
-                      <th className="text-left py-2 px-2 font-semibold text-slate-500">Agent</th>
+                      <th className="text-left py-2 px-2 font-semibold text-slate-500">Name</th>
                       <th className="text-right py-2 px-2 font-semibold text-slate-500">Loans</th>
+                      <th className="text-right py-2 px-2 font-semibold text-slate-500">Sanctioned</th>
                       <th className="text-right py-2 px-2 font-semibold text-slate-500">Disbursed</th>
                       <th className="text-left py-2 px-2 font-semibold text-slate-500 min-w-[140px]">Target</th>
                       <th className="text-right py-2 px-2 font-semibold text-slate-500">Conv.</th>
@@ -230,8 +231,15 @@ const Dashboard = () => {
                              idx === 2 ? <Medal className="w-3.5 h-3.5 text-amber-700" /> :
                              <span className="text-slate-400 text-[10px]">{agent.rank}</span>}
                           </td>
-                          <td className="py-2 px-2 font-medium text-slate-700 truncate max-w-[120px]">{agent.agent_name}</td>
+                          <td className="py-2 px-2 font-medium text-slate-700 truncate max-w-[120px]">
+                            <div className="flex items-center gap-1">
+                              {agent.agent_name}
+                              {agent.role === 'manager' && <span className="text-[8px] bg-violet-100 text-violet-700 px-1 py-0.5 rounded font-semibold">MGR</span>}
+                              {agent.role === 'admin' && <span className="text-[8px] bg-[#2c587a]/10 text-[#2c587a] px-1 py-0.5 rounded font-semibold">ADM</span>}
+                            </div>
+                          </td>
                           <td className="py-2 px-2 text-right text-slate-600">{agent.total_loans}</td>
+                          <td className="py-2 px-2 text-right text-violet-700">{fmt(agent.sanction_amount)}</td>
                           <td className="py-2 px-2 text-right font-semibold text-emerald-700">{fmt(agent.disbursed_amount)}</td>
                           <td className="py-2 px-2">
                             {agent.target_amount > 0 ? (

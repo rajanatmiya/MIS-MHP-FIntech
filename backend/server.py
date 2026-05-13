@@ -1500,17 +1500,33 @@ async def get_by_bank(month: Optional[str] = None, current_user: User = Depends(
     if month and month != 'all':
         loans = [l for l in loans if to_mk(l) == month]
     
-    bank_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0})
+    bank_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0, "sanction_amt": 0, "disbursed_amt": 0, "agents": {}})
     
     for loan in loans:
         bank = loan.get('bank', 'Unknown')
         status = loan.get('status', '')
+        agent = loan.get('agent_name', 'Unknown')
+        
+        san = 0
+        dis = 0
+        try: san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
+        except: pass
+        try: dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
+        except: pass
         
         bank_stats[bank]["total"] += 1
+        bank_stats[bank]["sanction_amt"] += san
+        bank_stats[bank]["disbursed_amt"] += dis
         if status == 'Disbursed':
             bank_stats[bank]["disbursed"] += 1
         elif status in ('Decline', 'Rejected'):
             bank_stats[bank]["declined"] += 1
+        
+        if agent not in bank_stats[bank]["agents"]:
+            bank_stats[bank]["agents"][agent] = {"total": 0, "sanction_amt": 0, "disbursed_amt": 0}
+        bank_stats[bank]["agents"][agent]["total"] += 1
+        bank_stats[bank]["agents"][agent]["sanction_amt"] += san
+        bank_stats[bank]["agents"][agent]["disbursed_amt"] += dis
     
     return dict(bank_stats)
 
@@ -1542,13 +1558,22 @@ async def get_by_agent(month: Optional[str] = None, current_user: User = Depends
     if month and month != 'all':
         loans = [l for l in loans if to_mk(l) == month]
     
-    agent_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0, "pending": 0})
+    agent_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0, "pending": 0, "sanction_amt": 0, "disbursed_amt": 0})
     
     for loan in loans:
         agent = loan.get('agent_name', 'Unknown')
         status = loan.get('status', '')
         
+        san = 0
+        dis = 0
+        try: san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
+        except: pass
+        try: dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
+        except: pass
+        
         agent_stats[agent]["total"] += 1
+        agent_stats[agent]["sanction_amt"] += san
+        agent_stats[agent]["disbursed_amt"] += dis
         if status == 'Disbursed':
             agent_stats[agent]["disbursed"] += 1
         elif status in ('Decline', 'Rejected'):
@@ -1736,12 +1761,20 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
 
 @api_router.get("/analytics/team-leaderboard")
 async def get_team_leaderboard(month: Optional[str] = None, current_user: User = Depends(get_current_user)):
-    """Returns agent performance leaderboard for managers/admins"""
+    """Returns agent + manager performance leaderboard"""
     query = {}
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
 
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
+
+    # Load all users to get roles
+    users = await db.users.find({}, {"_id": 0, "id": 1, "name": 1, "role": 1, "email": 1}).to_list(1000)
+    user_role_map = {}
+    user_name_to_role = {}
+    for u in users:
+        user_role_map[u.get("id", "")] = u.get("role", "agent")
+        user_name_to_role[u.get("name", "")] = u.get("role", "agent")
 
     # Load targets for the selected month
     target_query = {}
@@ -1761,7 +1794,8 @@ async def get_team_leaderboard(month: Optional[str] = None, current_user: User =
     for loan in loans:
         agent = loan.get("agent_name") or loan.get("created_by") or "Unknown"
         if agent not in agent_stats:
-            agent_stats[agent] = {"agent_name": agent, "total_loans": 0, "sanction_amount": 0, "disbursed_amount": 0, "disbursed_count": 0, "pending_count": 0, "declined_count": 0}
+            role = user_name_to_role.get(agent, user_role_map.get(loan.get("created_by", ""), "agent"))
+            agent_stats[agent] = {"agent_name": agent, "role": role, "total_loans": 0, "sanction_amount": 0, "disbursed_amount": 0, "disbursed_count": 0, "pending_count": 0, "declined_count": 0}
         stats = agent_stats[agent]
         stats["total_loans"] += 1
         s = float(str(loan.get("sanction", "0") or "0").replace(",", "") or 0)
