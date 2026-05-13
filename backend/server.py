@@ -1879,14 +1879,32 @@ async def export_loans(
     if accessible_ids is not None:
         query["created_by"] = {"$in": accessible_ids}
     
-    if month:
-        query["month"] = month
     if status:
         query["status"] = status
     if bank:
         query["bank"] = bank
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    
+    # Filter by month using group_month / date-to-month conversion
+    if month and month != 'all':
+        import re
+        MONTH_NAMES_EX = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        def to_mk(loan):
+            gm = loan.get('group_month', '')
+            if gm: return gm
+            val = loan.get('month', '')
+            if not val: return 'Unknown'
+            if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
+            parts = val.split('-')
+            if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12: return f"{MONTH_NAMES_EX[mi]}-{parts[2]}"
+            if len(parts) == 3 and len(parts[0]) == 4:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12: return f"{MONTH_NAMES_EX[mi]}-{parts[0]}"
+            return val
+        loans = [l for l in loans if to_mk(l) == month]
     
     df = pd.DataFrame(loans)
     
