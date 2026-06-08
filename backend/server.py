@@ -210,14 +210,14 @@ class LoanApplication(BaseModel):
     created_by: str
 
 class LoanApplicationCreate(BaseModel):
-    agent_name: str
-    customer_name: str
-    company_name: str
-    contact_no: str
+    agent_name: Optional[str] = ""
+    customer_name: Optional[str] = ""
+    company_name: Optional[str] = ""
+    contact_no: Optional[str] = ""
     login_date: Optional[str] = ""
-    status: str
+    status: Optional[str] = "Pending"
     amount: Optional[str] = ""
-    bank: str
+    bank: Optional[str] = ""
     sanction: Optional[str] = ""
     disbursed: Optional[str] = ""
     disbursed_date: Optional[str] = ""
@@ -240,7 +240,7 @@ class LoanApplicationCreate(BaseModel):
     product: Optional[str] = ""
     technical_value: Optional[str] = ""
     legal_status: Optional[str] = ""
-    month: str
+    month: Optional[str] = ""
     group_month: Optional[str] = ""
     custom_fields: Optional[Dict[str, Any]] = None
 
@@ -2186,18 +2186,13 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             if old_col in df.columns:
                 df.rename(columns={old_col: new_col}, inplace=True)
         
-        # Required fields (removed month as it can be auto-generated)
-        required_fields = ['customer_name', 'status']
-        missing_fields = [field for field in required_fields if field not in df.columns]
-        
-        if missing_fields:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Missing required columns: {', '.join(missing_fields)}"
-            )
+        # No required fields - import works even if fields are blank
         
         # Auto-generate month if not present (use current month)
-        current_month = datetime.now().strftime("%b'%y")  # e.g., "Jan'25"
+        MONTH_NAMES_IMP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        now = datetime.now()
+        current_month_key = f"{MONTH_NAMES_IMP[now.month - 1]}-{now.year}"
+        current_date = now.strftime("%d-%m-%Y")
         
         # Import loans with duplicate detection
         imported_count = 0
@@ -2207,54 +2202,77 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
         
         for index, row in df.iterrows():
             try:
-                # Skip empty rows
-                if pd.isna(row.get('customer_name')) or not str(row.get('customer_name')).strip():
+                # Skip completely empty rows
+                if all(pd.isna(row.get(col)) or str(row.get(col, '')).strip() == '' for col in df.columns):
                     skipped_count += 1
                     continue
                 
-                customer_name = str(row.get('customer_name', '')).strip()
+                customer_name = str(row.get('customer_name', '')).strip() if pd.notna(row.get('customer_name')) else ''
                 contact_no = str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else ''
                 bank = str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else ''
                 
-                # Duplicate detection: check if same customer_name + contact_no + bank exists
-                dup_query = {"customer_name": customer_name}
-                if contact_no:
-                    dup_query["contact_no"] = contact_no
-                if bank:
-                    dup_query["bank"] = bank
+                def safe_str(val, default=''):
+                    if pd.notna(val) and str(val).strip():
+                        return str(val).strip()
+                    return default
                 
-                existing = await db.loan_applications.find_one(dup_query, {"_id": 0, "id": 1})
-                if existing:
-                    duplicate_count += 1
-                    continue
+                month_val = safe_str(row.get('month'), current_date)
                 
-                # Prepare loan data
+                # Determine group_month from month value
+                group_month = ''
+                if month_val:
+                    import re
+                    if re.match(r'^[A-Za-z]{3}-\d{4}$', month_val):
+                        group_month = month_val
+                    else:
+                        parts = month_val.split('-')
+                        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+                            mi = int(parts[1]) - 1
+                            if 0 <= mi < 12:
+                                group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[2]}"
+                        elif len(parts) == 3 and len(parts[0]) == 4:
+                            mi = int(parts[1]) - 1
+                            if 0 <= mi < 12:
+                                group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[0]}"
+                if not group_month:
+                    group_month = current_month_key
+                
+                # Prepare loan data - all fields optional
                 loan_data = {
                     "id": str(uuid.uuid4()),
-                    "customer_name": str(row.get('customer_name', '')).strip(),
-                    "company_name": str(row.get('company_name', '')).strip() if pd.notna(row.get('company_name')) else '',
-                    "contact_no": str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else '',
-                    "status": str(row.get('status', 'Pending')).strip(),
-                    "bank": str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else '',
-                    "sanction": str(row.get('sanction', '')).strip() if pd.notna(row.get('sanction')) else '',
-                    "disbursed": str(row.get('disbursed', '')).strip() if pd.notna(row.get('disbursed')) else '',
-                    "remark": str(row.get('remark', '')).strip() if pd.notna(row.get('remark')) else '',
-                    "decline_reason": str(row.get('decline_reason', '')).strip() if pd.notna(row.get('decline_reason')) else '',
-                    "scheme": str(row.get('scheme', '')).strip() if pd.notna(row.get('scheme')) else '',
-                    "case_from": str(row.get('case_from', '')).strip() if pd.notna(row.get('case_from')) else '',
-                    "location": str(row.get('location', '')).strip() if pd.notna(row.get('location')) else '',
-                    "branch": str(row.get('branch', '')).strip() if pd.notna(row.get('branch')) else '',
-                    "executive_name": str(row.get('executive_name', '')).strip() if pd.notna(row.get('executive_name')) else '',
-                    "agent_name": str(row.get('agent_name', current_user.name)).strip() if pd.notna(row.get('agent_name')) else current_user.name,
-                    "team_manager": str(row.get('team_manager', '')).strip() if pd.notna(row.get('team_manager')) else '',
-                    "code": str(row.get('code', '')).strip() if pd.notna(row.get('code')) else '',
-                    "rate": str(row.get('rate', '')).strip() if pd.notna(row.get('rate')) else '',
-                    "pf": str(row.get('pf', '')).strip() if pd.notna(row.get('pf')) else '',
-                    "insurance": str(row.get('insurance', '')).strip() if pd.notna(row.get('insurance')) else '',
-                    "tenure": str(row.get('tenure', '')).strip() if pd.notna(row.get('tenure')) else '',
-                    "subvention": str(row.get('subvention', '')).strip() if pd.notna(row.get('subvention')) else '',
-                    "brokerage_subvention": str(row.get('brokerage_subvention', '')).strip() if pd.notna(row.get('brokerage_subvention')) else '',
-                    "month": str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month,
+                    "customer_name": customer_name,
+                    "company_name": safe_str(row.get('company_name')),
+                    "contact_no": contact_no,
+                    "status": safe_str(row.get('status'), 'Pending'),
+                    "bank": bank,
+                    "category": safe_str(row.get('category')),
+                    "product": safe_str(row.get('product')),
+                    "login_date": safe_str(row.get('login_date')),
+                    "amount": safe_str(row.get('amount')),
+                    "sanction": safe_str(row.get('sanction')),
+                    "disbursed": safe_str(row.get('disbursed')),
+                    "disbursed_date": safe_str(row.get('disbursed_date')),
+                    "remark": safe_str(row.get('remark')),
+                    "decline_reason": safe_str(row.get('decline_reason')),
+                    "scheme": safe_str(row.get('scheme')),
+                    "case_from": safe_str(row.get('case_from')),
+                    "location": safe_str(row.get('location')),
+                    "branch": safe_str(row.get('branch')),
+                    "executive_name": safe_str(row.get('executive_name')),
+                    "agent_name": safe_str(row.get('agent_name'), current_user.name),
+                    "team_manager": safe_str(row.get('team_manager')),
+                    "code": safe_str(row.get('code')),
+                    "rate": safe_str(row.get('rate')),
+                    "pf": safe_str(row.get('pf')),
+                    "insurance": safe_str(row.get('insurance')),
+                    "tenure": safe_str(row.get('tenure')),
+                    "subvention": safe_str(row.get('subvention')),
+                    "brokerage_subvention": safe_str(row.get('brokerage_subvention')),
+                    "technical_value": safe_str(row.get('technical_value')),
+                    "legal_status": safe_str(row.get('legal_status')),
+                    "month": month_val,
+                    "group_month": group_month,
+                    "entry_status": "Open",
                     "created_by": current_user.id,
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
