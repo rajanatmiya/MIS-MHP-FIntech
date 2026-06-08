@@ -2056,6 +2056,49 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
+@api_router.get("/import/template")
+async def download_import_template(current_user: User = Depends(get_current_user)):
+    """Download blank Excel template with proper column headers for MIS import"""
+    column_headers = [
+        'Date', 'Customer Name', 'Company Name', 'Contact No', 'Bank',
+        'Category', 'Product', 'Login Date', 'Status', 'Amount',
+        'Sanction Amount', 'Disbursed Amount', 'Disbursed Date',
+        'Remark', 'Decline Reason', 'Scheme', 'Case From', 'Location',
+        'Branch', 'Executive Name', 'Team Manager', 'Code', 'Rate',
+        'PF', 'Insurance', 'Tenure', 'Subvention', 'Brokerage',
+        'Agent Name', 'Technical Value', 'Legal Status'
+    ]
+    
+    df = pd.DataFrame(columns=column_headers)
+    # Add one sample row
+    sample = {
+        'Date': '01-04-2026', 'Customer Name': 'Sample Customer', 'Company Name': 'Sample Company',
+        'Contact No': '9876543210', 'Bank': 'SBI', 'Category': 'Secured', 'Product': 'Home Loan',
+        'Login Date': '', 'Status': 'Pending', 'Amount': '500000',
+        'Sanction Amount': '', 'Disbursed Amount': '', 'Disbursed Date': '',
+        'Remark': '', 'Decline Reason': '', 'Scheme': '', 'Case From': '',
+        'Location': '', 'Branch': '', 'Executive Name': '', 'Team Manager': '',
+        'Code': '', 'Rate': '', 'PF': '', 'Insurance': '', 'Tenure': '',
+        'Subvention': '', 'Brokerage': '', 'Agent Name': 'Agent Name Here',
+        'Technical Value': '', 'Legal Status': ''
+    }
+    df = pd.concat([df, pd.DataFrame([sample])], ignore_index=True)
+    
+    output = BytesIO()
+    from openpyxl.utils import get_column_letter
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='MIS_Import_Template')
+        ws = writer.sheets['MIS_Import_Template']
+        for col_idx, col in enumerate(df.columns, 1):
+            ws.column_dimensions[get_column_letter(col_idx)].width = max(len(str(col)) + 3, 15)
+    output.seek(0)
+    
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": "attachment; filename=MIS_Import_Template.xlsx"}
+    )
+
 @api_router.post("/import/loans-excel")
 async def import_loans_from_excel(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
     """Import loans from Excel file"""

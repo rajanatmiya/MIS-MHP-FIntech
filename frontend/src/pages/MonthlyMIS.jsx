@@ -1757,11 +1757,35 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <div className="space-y-3">
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] text-slate-600">
-              <p><strong>Required:</strong> Customer Name, Status, Bank, Month</p>
-              <p className="mt-0.5"><strong>Optional:</strong> Company, Contact, Location, Executive, Sanction, Disbursed, etc.</p>
+              <p><strong>Required:</strong> Customer Name, Status, Bank, Date</p>
+              <p className="mt-0.5"><strong>Optional:</strong> Company, Contact, Category, Product, Location, Sanction, Disbursed, etc.</p>
+              <p className="mt-1 text-[10px] text-[#2c587a]">Download the template below, fill in your data, then upload.</p>
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-8 text-[11px] border-[#2c587a] text-[#2c587a] hover:bg-[#2c587a]/5"
+              onClick={async () => {
+                try {
+                  const response = await axios.get(`${API}/import/template`, { responseType: 'blob' });
+                  const url = window.URL.createObjectURL(new Blob([response.data]));
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.setAttribute('download', 'MIS_Import_Template.xlsx');
+                  document.body.appendChild(link);
+                  link.click();
+                  link.remove();
+                  window.URL.revokeObjectURL(url);
+                  toast.success('Template downloaded');
+                } catch (error) { toast.error('Failed to download template'); }
+              }}
+              data-testid="download-template-btn"
+            >
+              <Download className="w-3 h-3 mr-1" />
+              Download Template (.xlsx)
+            </Button>
             <div>
-              <Label className="text-[11px]">Excel File (.xlsx/.xls)</Label>
+              <Label className="text-[11px]">Upload filled Excel file</Label>
               <Input type="file" accept=".xlsx,.xls" onChange={(e) => setImportFile(e.target.files[0])} className="h-8 text-[11px] mt-0.5 cursor-pointer" />
               {importFile && <p className="text-[10px] text-emerald-600 mt-0.5">Selected: {importFile.name}</p>}
             </div>
