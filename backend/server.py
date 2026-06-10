@@ -2135,8 +2135,15 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
             'sanction amount': 'sanction',
             'sanction': 'sanction',
             'bank sanctioned': 'sanction',
+            'sanctioned': 'sanction',
+            'sanctioned amount': 'sanction',
+            'sanction amt': 'sanction',
+            'sanc amt': 'sanction',
             'disbursed amount': 'disbursed',
             'disbursed': 'disbursed',
+            'disbursed amt': 'disbursed',
+            'disbursal amount': 'disbursed',
+            'disbursal': 'disbursed',
             'remark': 'remark',
             'remarks': 'remark',
             'decline reason': 'decline_reason',
@@ -2181,10 +2188,20 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
         # Normalize column names
         df.columns = df.columns.str.strip().str.lower()
         
-        # Rename columns
-        for old_col, new_col in column_mapping.items():
-            if old_col in df.columns:
-                df.rename(columns={old_col: new_col}, inplace=True)
+        # Rename columns - handle potential duplicates by keeping first mapped column
+        renamed = {}
+        for old_col in df.columns:
+            if old_col in column_mapping:
+                new_name = column_mapping[old_col]
+                if new_name not in renamed:
+                    renamed[old_col] = new_name
+                else:
+                    # Duplicate mapping - drop this column
+                    df.drop(columns=[old_col], inplace=True, errors='ignore')
+        df.rename(columns=renamed, inplace=True)
+        
+        # Deduplicate any remaining duplicate columns (keep first)
+        df = df.loc[:, ~df.columns.duplicated()]
         
         # No required fields - import works even if fields are blank
         
@@ -2213,7 +2230,11 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                 
                 def safe_str(val, default=''):
                     if pd.notna(val) and str(val).strip():
-                        return str(val).strip()
+                        s = str(val).strip()
+                        # Clean float formatting: "750000.0" → "750000"
+                        if s.endswith('.0') and s[:-2].isdigit():
+                            s = s[:-2]
+                        return s
                     return default
                 
                 month_val = safe_str(row.get('month'), current_date)
