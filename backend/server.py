@@ -2099,6 +2099,51 @@ async def download_import_template(current_user: User = Depends(get_current_user
         headers={"Content-Disposition": "attachment; filename=MIS_Import_Template.xlsx"}
     )
 
+@api_router.post("/loans/fix-group-months")
+async def fix_group_months(current_user: User = Depends(get_current_user)):
+    """Backfill missing group_month for all loans based on their date field"""
+    check_admin(current_user)
+    MONTH_NAMES_FIX = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    
+    loans = await db.loan_applications.find(
+        {"$or": [{"group_month": {"$exists": False}}, {"group_month": ""}, {"group_month": None}]},
+        {"_id": 0, "id": 1, "month": 1}
+    ).to_list(50000)
+    
+    fixed = 0
+    for loan in loans:
+        val = loan.get('month', '')
+        gm = ''
+        if val:
+            import re
+            if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+                gm = val
+            else:
+                parts = val.replace('/', '-').split('-')
+                if len(parts) == 3:
+                    try:
+                        if len(parts[0]) <= 2 and len(parts[2]) == 4:
+                            mi = int(parts[1]) - 1
+                            if 0 <= mi < 12:
+                                gm = f"{MONTH_NAMES_FIX[mi]}-{parts[2]}"
+                        elif len(parts[0]) == 4:
+                            mi = int(parts[1]) - 1
+                            if 0 <= mi < 12:
+                                gm = f"{MONTH_NAMES_FIX[mi]}-{parts[0]}"
+                    except: pass
+        
+        if not gm:
+            now = datetime.now()
+            gm = f"{MONTH_NAMES_FIX[now.month - 1]}-{now.year}"
+        
+        await db.loan_applications.update_one(
+            {"id": loan["id"]},
+            {"$set": {"group_month": gm}}
+        )
+        fixed += 1
+    
+    return {"message": f"Fixed {fixed} loans with missing group_month", "fixed": fixed}
+
 @api_router.post("/import/loans-excel")
 async def import_loans_from_excel(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
     """Import loans from Excel file"""
@@ -2237,7 +2282,18 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                         return s
                     return default
                 
-                month_val = safe_str(row.get('month'), current_date)
+                month_raw = row.get('month')
+                month_val = ''
+                
+                # Handle Excel datetime objects
+                if pd.notna(month_raw):
+                    if hasattr(month_raw, 'strftime'):
+                        # It's a datetime object from Excel
+                        month_val = month_raw.strftime('%d-%m-%Y')
+                    else:
+                        month_val = safe_str(month_raw, current_date)
+                else:
+                    month_val = current_date
                 
                 # Determine group_month from month value
                 group_month = ''
@@ -2246,13 +2302,18 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     if re.match(r'^[A-Za-z]{3}-\d{4}$', month_val):
                         group_month = month_val
                     else:
-                        parts = month_val.split('-')
-                        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
-                            mi = int(parts[1]) - 1
-                            if 0 <= mi < 12:
-                                group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[2]}"
-                        elif len(parts) == 3 and len(parts[0]) == 4:
-                            mi = int(parts[1]) - 1
+                        parts = month_val.replace('/', '-').split('-')
+                        if len(parts) == 3:
+                            try:
+                                if len(parts[0]) <= 2 and len(parts[2]) == 4:
+                                    mi = int(parts[1]) - 1
+                                    if 0 <= mi < 12:
+                                        group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[2]}"
+                                elif len(parts[0]) == 4:
+                                    mi = int(parts[1]) - 1
+                                    if 0 <= mi < 12:
+                                        group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[0]}"
+                            except: pass
                             if 0 <= mi < 12:
                                 group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[0]}"
                 if not group_month:
