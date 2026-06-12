@@ -139,6 +139,7 @@ const MonthlyMIS = () => {
   const [monthInputValue, setMonthInputValue] = useState('');
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
+  const [importTargetMonth, setImportTargetMonth] = useState('');
   const [importing, setImporting] = useState(false);
   const [editingLoan, setEditingLoan] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
@@ -613,10 +614,15 @@ const MonthlyMIS = () => {
       toast.error('Please select an Excel file');
       return;
     }
+    if (!importTargetMonth) {
+      toast.error('Please select a target month');
+      return;
+    }
 
     setImporting(true);
     const formData = new FormData();
     formData.append('file', importFile);
+    formData.append('target_month', importTargetMonth);
 
     try {
       const response = await axios.post(`${API}/import/loans-excel`, formData, {
@@ -1757,9 +1763,21 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <div className="space-y-3">
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] text-slate-600">
-              <p><strong>Required:</strong> Customer Name, Status, Bank, Date</p>
-              <p className="mt-0.5"><strong>Optional:</strong> Company, Contact, Category, Product, Location, Sanction, Disbursed, etc.</p>
-              <p className="mt-1 text-[10px] text-[#2c587a]">Download the template below, fill in your data, then upload.</p>
+              <p>All imported entries will go into the <strong>selected month group</strong>.</p>
+              <p className="mt-0.5 text-[10px] text-[#2c587a]">Download the template below, fill in your data, then upload.</p>
+            </div>
+            <div>
+              <Label className="text-[11px] font-medium">Target Month *</Label>
+              <Select value={importTargetMonth} onValueChange={setImportTargetMonth}>
+                <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="import-target-month">
+                  <SelectValue placeholder="Select month to import into" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(groupedLoans).concat(emptyMonthGroups.filter(m => !Object.keys(groupedLoans).includes(m))).map(m => (
+                    <SelectItem key={m} value={m} className="text-[11px]">{m}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button
               variant="outline"
@@ -1790,10 +1808,10 @@ const MonthlyMIS = () => {
               {importFile && <p className="text-[10px] text-emerald-600 mt-0.5">Selected: {importFile.name}</p>}
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); }} className="h-7 text-[11px]">Cancel</Button>
-              <Button onClick={handleImportExcel} disabled={importing || !importFile} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">
+              <Button variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); setImportTargetMonth(''); }} className="h-7 text-[11px]">Cancel</Button>
+              <Button onClick={handleImportExcel} disabled={importing || !importFile || !importTargetMonth} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">
                 <Upload className="w-3 h-3 mr-1" />
-                {importing ? 'Importing...' : 'Import'}
+                {importing ? 'Importing...' : `Import to ${importTargetMonth || '...'}`}
               </Button>
             </div>
           </div>

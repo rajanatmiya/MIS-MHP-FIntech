@@ -2145,8 +2145,8 @@ async def fix_group_months(current_user: User = Depends(get_current_user)):
     return {"message": f"Fixed {fixed} loans with missing group_month", "fixed": fixed}
 
 @api_router.post("/import/loans-excel")
-async def import_loans_from_excel(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
-    """Import loans from Excel file"""
+async def import_loans_from_excel(file: UploadFile = File(...), target_month: str = Form(""), current_user: User = Depends(get_current_user)):
+    """Import loans from Excel file. All loans go into target_month."""
     check_admin(current_user)
     
     if not file.filename.endswith(('.xlsx', '.xls')):
@@ -2250,11 +2250,14 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
         
         # No required fields - import works even if fields are blank
         
-        # Auto-generate month if not present (use current month)
+        # Use target_month for all loans if provided
         MONTH_NAMES_IMP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
         now = datetime.now()
         current_month_key = f"{MONTH_NAMES_IMP[now.month - 1]}-{now.year}"
         current_date = now.strftime("%d-%m-%Y")
+        
+        # Target month for all imported loans
+        forced_group_month = target_month.strip() if target_month else ''
         
         # Import loans with duplicate detection
         imported_count = 0
@@ -2295,29 +2298,8 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                 else:
                     month_val = current_date
                 
-                # Determine group_month from month value
-                group_month = ''
-                if month_val:
-                    import re
-                    if re.match(r'^[A-Za-z]{3}-\d{4}$', month_val):
-                        group_month = month_val
-                    else:
-                        parts = month_val.replace('/', '-').split('-')
-                        if len(parts) == 3:
-                            try:
-                                if len(parts[0]) <= 2 and len(parts[2]) == 4:
-                                    mi = int(parts[1]) - 1
-                                    if 0 <= mi < 12:
-                                        group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[2]}"
-                                elif len(parts[0]) == 4:
-                                    mi = int(parts[1]) - 1
-                                    if 0 <= mi < 12:
-                                        group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[0]}"
-                            except: pass
-                            if 0 <= mi < 12:
-                                group_month = f"{MONTH_NAMES_IMP[mi]}-{parts[0]}"
-                if not group_month:
-                    group_month = current_month_key
+                # All imported loans go into the target month
+                group_month = forced_group_month if forced_group_month else current_month_key
                 
                 # Prepare loan data - all fields optional
                 loan_data = {
