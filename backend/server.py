@@ -2213,8 +2213,13 @@ async def import_loans_from_excel(file: UploadFile = File(...), target_month: st
             'tenure (months)': 'tenure',
             'tenure': 'tenure',
             'subvention': 'subvention',
+            'sub vention': 'subvention',
+            'sub': 'subvention',
             'brokerage': 'brokerage_subvention',
             'brokerage subvention': 'brokerage_subvention',
+            'brokerage/subvention': 'brokerage_subvention',
+            'broker': 'brokerage_subvention',
+            'brkg': 'brokerage_subvention',
             'technical value': 'technical_value',
             'technicalvalue': 'technical_value',
             'technical': 'technical_value',
@@ -2279,9 +2284,15 @@ async def import_loans_from_excel(file: UploadFile = File(...), target_month: st
                 def safe_str(val, default=''):
                     if pd.notna(val) and str(val).strip():
                         s = str(val).strip()
-                        # Clean float formatting: "750000.0" → "750000"
-                        if s.endswith('.0') and s[:-2].isdigit():
-                            s = s[:-2]
+                        # Clean float formatting: "750000.0" → "750000", "9833939903.0" → "9833939903"
+                        try:
+                            f = float(s)
+                            if f == int(f) and 'e' not in s.lower():
+                                s = str(int(f))
+                        except (ValueError, OverflowError):
+                            pass
+                        if s.lower() in ('nan', 'none', 'nat'):
+                            return default
                         return s
                     return default
                 
