@@ -163,6 +163,7 @@ const MonthlyMIS = () => {
   const [filterCategories, setFilterCategories] = useState([]);
   const [filterProducts, setFilterProducts] = useState([]);
   const [filterBanks, setFilterBanks] = useState([]);
+  const [filterStatuses, setFilterStatuses] = useState([]);
   
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -656,6 +657,7 @@ const MonthlyMIS = () => {
     if (filterCategories.length > 0 && !filterCategories.includes(loan.category)) return false;
     if (filterProducts.length > 0 && !filterProducts.includes(loan.product)) return false;
     if (filterBanks.length > 0 && !filterBanks.includes(loan.bank)) return false;
+    if (filterStatuses.length > 0 && !filterStatuses.includes(loan.status)) return false;
     
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
@@ -996,17 +998,19 @@ const MonthlyMIS = () => {
         <MultiCheckFilter label="Category" options={masterCategories} selected={filterCategories} onChange={setFilterCategories} testId="filter-category" />
         <MultiCheckFilter label="Product" options={masterProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
         <MultiCheckFilter label="Bank" options={masterBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
-        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterCategories([]); setFilterProducts([]); setFilterBanks([]); }}
+        <MultiCheckFilter label="Status" options={statuses.map(s => ({ id: s.id || s.name, name: s.name }))} selected={filterStatuses} onChange={setFilterStatuses} testId="filter-status" />
+        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterCategories([]); setFilterProducts([]); setFilterBanks([]); setFilterStatuses([]); }}
             className="h-7 text-[10px] px-2 text-slate-500 hover:text-red-500" data-testid="clear-quick-filters">
             <X className="w-3 h-3 mr-0.5" /> Clear all
           </Button>
         )}
-        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0) && (
+        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0) && (
           <div className="flex flex-wrap gap-1 ml-1">
             {filterCategories.map(c => <span key={c} className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-[9px] text-emerald-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterCategories(filterCategories.filter(x => x !== c))}>{c} &times;</span>)}
             {filterProducts.map(p => <span key={p} className="px-1.5 py-0.5 rounded-full bg-violet-100 text-[9px] text-violet-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterProducts(filterProducts.filter(x => x !== p))}>{p} &times;</span>)}
             {filterBanks.map(b => <span key={b} className="px-1.5 py-0.5 rounded-full bg-[#2c587a]/10 text-[9px] text-[#2c587a] font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterBanks(filterBanks.filter(x => x !== b))}>{b} &times;</span>)}
+            {filterStatuses.map(s => <span key={s} className="px-1.5 py-0.5 rounded-full bg-amber-100 text-[9px] text-amber-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterStatuses(filterStatuses.filter(x => x !== s))}>{s} &times;</span>)}
           </div>
         )}
       </div>
