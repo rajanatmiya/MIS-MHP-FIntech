@@ -164,6 +164,10 @@ const MonthlyMIS = () => {
   const [filterProducts, setFilterProducts] = useState([]);
   const [filterBanks, setFilterBanks] = useState([]);
   const [filterStatuses, setFilterStatuses] = useState([]);
+  const [filterCompanies, setFilterCompanies] = useState([]);
+  const [filterCaseFrom, setFilterCaseFrom] = useState([]);
+  const [filterManagers, setFilterManagers] = useState([]);
+  const [filterExecutives, setFilterExecutives] = useState([]);
   
   // Bulk selection state
   const [selectedIds, setSelectedIds] = useState(new Set());
@@ -658,6 +662,10 @@ const MonthlyMIS = () => {
     if (filterProducts.length > 0 && !filterProducts.includes(loan.product)) return false;
     if (filterBanks.length > 0 && !filterBanks.includes(loan.bank)) return false;
     if (filterStatuses.length > 0 && !filterStatuses.includes(loan.status)) return false;
+    if (filterCompanies.length > 0 && !filterCompanies.includes(loan.company_name)) return false;
+    if (filterCaseFrom.length > 0 && !filterCaseFrom.includes(loan.case_from)) return false;
+    if (filterManagers.length > 0 && !filterManagers.includes(loan.team_manager)) return false;
+    if (filterExecutives.length > 0 && !filterExecutives.includes(loan.executive_name)) return false;
     
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = (
@@ -686,6 +694,12 @@ const MonthlyMIS = () => {
     
     return matchesSearch && matchesFilters;
   });
+
+  // Build unique option lists for filters from actual loan data
+  const uniqueCompanies = [...new Set(loans.map(l => l.company_name).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
+  const uniqueCaseFrom = [...new Set(loans.map(l => l.case_from).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
+  const uniqueManagers = [...new Set(loans.map(l => l.team_manager).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
+  const uniqueExecutives = [...new Set(loans.map(l => l.executive_name).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
 
   const groupedLoans = {};
   filteredLoans.forEach(loan => {
@@ -999,18 +1013,26 @@ const MonthlyMIS = () => {
         <MultiCheckFilter label="Product" options={masterProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
         <MultiCheckFilter label="Bank" options={masterBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
         <MultiCheckFilter label="Status" options={statuses.map(s => ({ id: s.id || s.name, name: s.name }))} selected={filterStatuses} onChange={setFilterStatuses} testId="filter-status" />
-        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0) && (
-          <Button variant="ghost" size="sm" onClick={() => { setFilterCategories([]); setFilterProducts([]); setFilterBanks([]); setFilterStatuses([]); }}
+        <MultiCheckFilter label="Company" options={uniqueCompanies} selected={filterCompanies} onChange={setFilterCompanies} testId="filter-company" />
+        <MultiCheckFilter label="Case From" options={uniqueCaseFrom} selected={filterCaseFrom} onChange={setFilterCaseFrom} testId="filter-casefrom" />
+        <MultiCheckFilter label="Manager" options={uniqueManagers} selected={filterManagers} onChange={setFilterManagers} testId="filter-manager" />
+        <MultiCheckFilter label="Executive" options={uniqueExecutives} selected={filterExecutives} onChange={setFilterExecutives} testId="filter-executive" />
+        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0 || filterCompanies.length > 0 || filterCaseFrom.length > 0 || filterManagers.length > 0 || filterExecutives.length > 0) && (
+          <Button variant="ghost" size="sm" onClick={() => { setFilterCategories([]); setFilterProducts([]); setFilterBanks([]); setFilterStatuses([]); setFilterCompanies([]); setFilterCaseFrom([]); setFilterManagers([]); setFilterExecutives([]); }}
             className="h-7 text-[10px] px-2 text-slate-500 hover:text-red-500" data-testid="clear-quick-filters">
             <X className="w-3 h-3 mr-0.5" /> Clear all
           </Button>
         )}
-        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0) && (
+        {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0 || filterCompanies.length > 0 || filterCaseFrom.length > 0 || filterManagers.length > 0 || filterExecutives.length > 0) && (
           <div className="flex flex-wrap gap-1 ml-1">
             {filterCategories.map(c => <span key={c} className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-[9px] text-emerald-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterCategories(filterCategories.filter(x => x !== c))}>{c} &times;</span>)}
             {filterProducts.map(p => <span key={p} className="px-1.5 py-0.5 rounded-full bg-violet-100 text-[9px] text-violet-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterProducts(filterProducts.filter(x => x !== p))}>{p} &times;</span>)}
             {filterBanks.map(b => <span key={b} className="px-1.5 py-0.5 rounded-full bg-[#2c587a]/10 text-[9px] text-[#2c587a] font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterBanks(filterBanks.filter(x => x !== b))}>{b} &times;</span>)}
             {filterStatuses.map(s => <span key={s} className="px-1.5 py-0.5 rounded-full bg-amber-100 text-[9px] text-amber-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterStatuses(filterStatuses.filter(x => x !== s))}>{s} &times;</span>)}
+            {filterCompanies.map(c => <span key={c} className="px-1.5 py-0.5 rounded-full bg-cyan-100 text-[9px] text-cyan-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterCompanies(filterCompanies.filter(x => x !== c))}>{c} &times;</span>)}
+            {filterCaseFrom.map(c => <span key={c} className="px-1.5 py-0.5 rounded-full bg-pink-100 text-[9px] text-pink-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterCaseFrom(filterCaseFrom.filter(x => x !== c))}>{c} &times;</span>)}
+            {filterManagers.map(m => <span key={m} className="px-1.5 py-0.5 rounded-full bg-orange-100 text-[9px] text-orange-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterManagers(filterManagers.filter(x => x !== m))}>{m} &times;</span>)}
+            {filterExecutives.map(e => <span key={e} className="px-1.5 py-0.5 rounded-full bg-teal-100 text-[9px] text-teal-700 font-medium cursor-pointer hover:bg-red-100 hover:text-red-600" onClick={() => setFilterExecutives(filterExecutives.filter(x => x !== e))}>{e} &times;</span>)}
           </div>
         )}
       </div>
