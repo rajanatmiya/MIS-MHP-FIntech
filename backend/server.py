@@ -1798,10 +1798,18 @@ async def get_team_leaderboard(month: Optional[str] = None, current_user: User =
             agent_stats[agent] = {"agent_name": agent, "role": role, "total_loans": 0, "sanction_amount": 0, "disbursed_amount": 0, "disbursed_count": 0, "pending_count": 0, "declined_count": 0}
         stats = agent_stats[agent]
         stats["total_loans"] += 1
-        s = float(str(loan.get("sanction", "0") or "0").replace(",", "") or 0)
-        d = float(str(loan.get("disbursed", "0") or "0").replace(",", "") or 0)
-        stats["sanction_amount"] += s if not __import__('math').isnan(s) else 0
-        stats["disbursed_amount"] += d if not __import__('math').isnan(d) else 0
+        try:
+            s = float(str(loan.get("sanction", "") or "0").replace(",", "") or "0")
+            if s == s:  # NaN check
+                stats["sanction_amount"] += s
+        except (ValueError, TypeError):
+            pass
+        try:
+            d = float(str(loan.get("disbursed", "") or "0").replace(",", "") or "0")
+            if d == d:  # NaN check
+                stats["disbursed_amount"] += d
+        except (ValueError, TypeError):
+            pass
         status = (loan.get("status") or "").lower()
         if "disburse" in status:
             stats["disbursed_count"] += 1
