@@ -1498,7 +1498,6 @@ const MonthlyMIS = () => {
                 { key: 'tenure', label: 'Tenure (Months)', placeholder: '24, 36, 60' },
                 { key: 'subvention', label: 'Subvention' },
                 { key: 'brokerage_subvention', label: 'Brokerage' },
-                { key: 'case_from', label: 'Case From' },
                 { key: 'code', label: 'Code' },
                 { key: 'technical_value', label: 'Technical Value' },
                 { key: 'legal_status', label: 'Legal Status' },
@@ -1513,6 +1512,16 @@ const MonthlyMIS = () => {
                   />
                 </div>
               ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Case From</Label>
+                <Select value={newLoanData.case_from || ''} onValueChange={(value) => setNewLoanData({...newLoanData, case_from: value})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="In House" className="text-[11px]">In House</SelectItem>
+                    <SelectItem value="Out House" className="text-[11px]">Out House</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Branch</Label>
                 {masterBranches.length > 0 ? (
@@ -1701,7 +1710,6 @@ const MonthlyMIS = () => {
                 { key: 'tenure', label: 'Tenure (Months)' },
                 { key: 'subvention', label: 'Subvention' },
                 { key: 'brokerage_subvention', label: 'Brokerage' },
-                { key: 'case_from', label: 'Case From' },
                 { key: 'code', label: 'Code' },
                 { key: 'technical_value', label: 'Technical Value' },
                 { key: 'legal_status', label: 'Legal Status' },
@@ -1715,6 +1723,16 @@ const MonthlyMIS = () => {
                   />
                 </div>
               ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Case From</Label>
+                <Select value={editFormData.case_from || ''} onValueChange={(value) => setEditFormData({...editFormData, case_from: value})}>
+                  <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="In House" className="text-[11px]">In House</SelectItem>
+                    <SelectItem value="Out House" className="text-[11px]">Out House</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Branch</Label>
                 {masterBranches.length > 0 ? (
