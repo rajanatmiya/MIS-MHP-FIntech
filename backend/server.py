@@ -3268,83 +3268,25 @@ async def create_default_admin():
         except Exception as e:
             logger.error(f"Customer sync error: {str(e)}")
 
-        # Auto-sync existing loan executive_name into master_executives (idempotent)
+        # Versioned seed: clean-replace managers & executives from Excel (v2)
         try:
-            exec_pipeline = [
-                {"$match": {"executive_name": {"$exists": True, "$ne": ""}}},
-                {"$group": {"_id": "$executive_name"}}
-            ]
-            loan_execs = await db.loan_applications.aggregate(exec_pipeline).to_list(10000)
-            execs_added = 0
-            for le in loan_execs:
-                name = (le["_id"] or "").strip()
-                if not name:
-                    continue
-                existing = await db.master_executives.find_one({"name": name})
-                if not existing:
-                    try:
-                        await db.master_executives.insert_one({
-                            "id": str(uuid.uuid4()), "name": name,
-                            "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
-                        })
-                        execs_added += 1
-                    except Exception:
-                        pass
-            if execs_added > 0:
-                logger.info(f"Executive sync: {execs_added} executives added from loan data")
+            SEED_VERSION = "v3_excel_managers_executives"
+            seed_done = await db.migrations.find_one({"_id": SEED_VERSION})
+            if not seed_done:
+                seed_managers = ["Hiren Parmar","Priya Mistry","Bhavesh Lakhotiya","Komal Gupta","Ankit Shah","Karan Mehta","Sumeet Gosavi","Kunal Trivedi","Akash Parmar"]
+                seed_executives = ["Hiren Parmar","Priya Mistry","Bhavesh Lakhotiya","Komal Gupta","Ankit Shah","Karan Mehta","Sumeet Gosavi","Kunal Trivedi","Akash Parmar","Riya Vartak","Vishakha Solanki","Rohit Trilotkar","Puneet Sharma","Khushboo Kori","Hiral Gangar","Sonal Padhariya","Shashi Dubey","Deepa Patel","Kajal Yadav","Jayshree Sonar","Seema Shah","Diya Gandhi","Manav Mehta","Kashish Vaish","Krusha Gala","Rohan Shelar","Mahendra Mewada","Mahi Priya","Revati Vallamdas","Sagar Yadav","Jinal Gada","Mayuri Halpati","Bharti Patel","Soni Jayswal","Mayuri Singh","Kiran Pathak","Deepika Singh","Mohini Jadhav","Divesh Kantelia","Firoz Khan","Vikas Talreja","Dimple Solanki","Manoj Gupta","Kamlesh Mahajan","Hiren Mehta","Ravish Chitrigemath","Nitin Menon","Am Capital","Abaj Capital","Leonard","Navnit Singh","Pratik Rathod","Aarchi Patel","Hetal Bhanushali","Ravathi Nair","Lovely Singh","Jyoti Pandey","Rimi Chaudhary","Suraj Behra","Dhaval Shah","Dhaval K Shah","Dipti Chawda","Rushabh Bagadia","Ranveer Sethi","Khushal","Mb Capital","Ketan Verma","Kalpesh Shah","Kalpit Jain","Dhanraj Shetty","Abhay Deo","Nidhi Lodha","Koyal Rana","Sanjay Parmar","Satish Gupta","Jayesh Patekar","Sagar Hase","Amit Routela","Deepak More","True Finance","Shamim","Sarfaraz Khan","Raj Thakkar","Virendra"]
+                # Clear old data and insert fresh
+                await db.master_managers.delete_many({})
+                await db.master_executives.delete_many({})
+                now = datetime.now(timezone.utc).isoformat()
+                for name in seed_managers:
+                    await db.master_managers.insert_one({"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": "system"})
+                for name in seed_executives:
+                    await db.master_executives.insert_one({"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": "system"})
+                await db.migrations.insert_one({"_id": SEED_VERSION, "applied_at": now})
+                logger.info(f"Seed migration {SEED_VERSION}: {len(seed_managers)} managers, {len(seed_executives)} executives inserted")
         except Exception as e:
-            logger.error(f"Executive sync error: {str(e)}")
-
-        # Auto-sync existing loan team_manager into master_managers (idempotent)
-        try:
-            mgr_pipeline = [
-                {"$match": {"team_manager": {"$exists": True, "$ne": ""}}},
-                {"$group": {"_id": "$team_manager"}}
-            ]
-            loan_mgrs = await db.loan_applications.aggregate(mgr_pipeline).to_list(10000)
-            mgrs_added = 0
-            for lm in loan_mgrs:
-                name = (lm["_id"] or "").strip()
-                if not name:
-                    continue
-                existing = await db.master_managers.find_one({"name": name})
-                if not existing:
-                    try:
-                        await db.master_managers.insert_one({
-                            "id": str(uuid.uuid4()), "name": name,
-                            "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
-                        })
-                        mgrs_added += 1
-                    except Exception:
-                        pass
-            if mgrs_added > 0:
-                logger.info(f"Manager sync: {mgrs_added} managers added from loan data")
-        except Exception as e:
-            logger.error(f"Manager sync error: {str(e)}")
-
-        # Seed manager & executive names from Excel import (idempotent)
-        try:
-            seed_managers = ["Hiren Parmar","Priya Mistry","Bhavesh Lakhotiya","Komal Gupta","Ankit Shah","Karan Mehta","Sumeet Gosavi","Kunal Trivedi","Akash Parmar"]
-            seed_executives = ["Hiren Parmar","Priya Mistry","Bhavesh Lakhotiya","Komal Gupta","Ankit Shah","Karan Mehta","Sumeet Gosavi","Kunal Trivedi","Akash Parmar","Riya Vartak","Vishakha Solanki","Rohit Trilotkar","Puneet Sharma","Khushboo Kori","Hiral Gangar","Sonal Padhariya","Shashi Dubey","Deepa Patel","Kajal Yadav","Jayshree Sonar","Seema Shah","Diya Gandhi","Manav Mehta","Kashish Vaish","Krusha Gala","Rohan Shelar","Mahendra Mewada","Mahi Priya","Revati Vallamdas","Sagar Yadav","Jinal Gada","Mayuri Halpati","Bharti Patel","Soni Jayswal","Mayuri Singh","Kiran Pathak","Deepika Singh","Mohini Jadhav","Divesh Kantelia","Firoz Khan","Vikas Talreja","Dimple Solanki","Manoj Gupta","Kamlesh Mahajan","Hiren Mehta","Ravish Chitrigemath","Nitin Menon","Am Capital","Abaj Capital","Leonard","Navnit Singh","Pratik Rathod","Aarchi Patel","Hetal Bhanushali","Ravathi Nair","Lovely Singh","Jyoti Pandey","Rimi Chaudhary","Suraj Behra","Dhaval Shah","Dhaval K Shah","Dipti Chawda","Rushabh Bagadia","Ranveer Sethi","Khushal","Mb Capital","Ketan Verma","Kalpesh Shah","Kalpit Jain","Dhanraj Shetty","Abhay Deo","Nidhi Lodha","Koyal Rana","Sanjay Parmar","Satish Gupta","Jayesh Patekar","Sagar Hase","Amit Routela","Deepak More","True Finance","Shamim","Sarfaraz Khan","Raj Thakkar","Virendra"]
-            sm, se = 0, 0
-            for name in seed_managers:
-                if not await db.master_managers.find_one({"name": name}):
-                    try:
-                        await db.master_managers.insert_one({"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"})
-                        sm += 1
-                    except Exception:
-                        pass
-            for name in seed_executives:
-                if not await db.master_executives.find_one({"name": name}):
-                    try:
-                        await db.master_executives.insert_one({"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"})
-                        se += 1
-                    except Exception:
-                        pass
-            if sm > 0 or se > 0:
-                logger.info(f"Seed data: {sm} managers, {se} executives added")
-        except Exception as e:
-            logger.error(f"Seed data error: {str(e)}")
+            logger.error(f"Seed migration error: {str(e)}")
         
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")

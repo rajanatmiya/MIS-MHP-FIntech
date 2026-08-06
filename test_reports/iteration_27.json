@@ -1,0 +1,26 @@
+{
+  "summary": "Verified v3 clean-replace seed for master managers/executives. Backend: GET /api/master/managers returns exactly 9 correct names, GET /api/master/executives returns exactly 84 unique names, no stale names (Dimple/Manager One/Rajan/Exec One), no _id leakage, 401 for unauthenticated. Re-ran after a backend restart to confirm the removed loan-based sync no longer re-adds stale names (counts stayed 9/84). Frontend: Master File page shows Team Managers badge=9 with exactly the 9 expected names and Executive Names badge=84 with 84 rendered rows, zero duplicates. Month MIS -> Apr-2026 expand -> Add Entry: Team Manager dropdown shows 9 managers + '+ Add New Manager'; Executive dropdown shows 84 names + '+ Add New Executive', no duplicates/stale. Month groups are collapsed by default on load.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Auth redirect", "issues": ["Deep-link to /monthly-mis while unauthenticated redirects to /login, but after successful login the user lands on '/' instead of the originally requested route (no return-to-URL). Minor UX."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_master_v3_seed.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Seed migration comment still says '(v2)' while SEED_VERSION is 'v3_excel_managers_executives' (server.py ~3271) - cosmetic mismatch.",
+    "Seed inserts run in a per-name loop; use insert_many for the 84 executives to reduce startup round-trips.",
+    "/app/backend/server.py is ~3296 lines - consider splitting into routers/modules per code-review guideline (>700 lines)."
+  ],
+  "updated_files": ["/app/backend/tests/test_master_v3_seed.py", "/app/test_reports/iteration_27.json"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "None; validated existing startup seed only. No test data created.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "New regression test at /app/backend/tests/test_master_v3_seed.py asserts exactly 9 managers / 84 executives with no duplicates or stale names. Verified idempotency across a backend restart. Month groups on MIS Board are collapsed by default; the per-month Add/Export/Delete buttons render in the collapsed header row too, so use presence of [data-testid^='mis-table-scroll-'] to determine expansion state.",
+  "rca_of_the_issue": "Previous stale names came from a loan-based sync that re-inserted executive/manager names after the Excel seed cleared them. Removing that sync plus bumping the seed to v3 (delete_many + re-insert, tracked in the 'migrations' collection) fixed it; confirmed stable across restart."
+}
