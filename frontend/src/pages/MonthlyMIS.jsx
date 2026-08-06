@@ -176,6 +176,21 @@ const MonthlyMIS = () => {
   const [showBulkSelect, setShowBulkSelect] = useState(false);
   
   // Column visibility
+  // Columns to freeze (Date through Disbursed Amount)
+  const FREEZE_KEYS = ['month', 'customer_name', 'company_name', 'contact_no', 'bank', 'login_date', 'status', 'amount', 'sanction', 'disbursed'];
+  const COL_WIDTHS = { month: 75, customer_name: 100, company_name: 100, contact_no: 80, bank: 75, login_date: 75, status: 70, amount: 75, sanction: 85, disbursed: 85 };
+  
+  const getFreezeStyle = (key) => {
+    const visibleFrozen = ALL_COLUMNS.filter(c => visibleColumns.includes(c.key) && FREEZE_KEYS.includes(c.key));
+    const idx = visibleFrozen.findIndex(c => c.key === key);
+    if (idx === -1 || !FREEZE_KEYS.includes(key)) return {};
+    let left = 0;
+    for (let i = 0; i < idx; i++) {
+      left += COL_WIDTHS[visibleFrozen[i].key] || 80;
+    }
+    return { position: 'sticky', left: `${left}px`, zIndex: 10 };
+  };
+
   const ALL_COLUMNS = [
     { key: 'month', label: 'Date' },
     { key: 'customer_name', label: 'Customer' },
@@ -1214,7 +1229,7 @@ const MonthlyMIS = () => {
 
               {/* Table */}
               {isExpanded && (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto" data-testid={`mis-table-scroll-${month}`}>
                   <table className="w-full text-[11px]">
                     <thead>
                       <tr className="border-b border-slate-200 bg-[#2c587a]/5">
@@ -1234,7 +1249,7 @@ const MonthlyMIS = () => {
                         </th>
                         )}
                         {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(c => (
-                          <th key={c.key} className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">{c.label}</th>
+                          <th key={c.key} data-testid={`mis-th-${month}-${c.key}`} style={getFreezeStyle(c.key)} className={`px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${FREEZE_KEYS.includes(c.key) ? 'bg-slate-50' : ''}`}>{c.label}</th>
                         ))}
                         <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"></th>
                       </tr>
@@ -1258,7 +1273,7 @@ const MonthlyMIS = () => {
                           </td>
                           )}
                           {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(({ key: field }) => (
-                            <td key={field} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''}`}>
+                            <td key={field} style={getFreezeStyle(field)} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''} ${FREEZE_KEYS.includes(field) ? 'bg-white' : ''}`}>
                               {renderCell(loan, field, field)}
                             </td>
                           ))}
@@ -1304,20 +1319,20 @@ const MonthlyMIS = () => {
                       ))}
                       
                       {/* Totals Row */}
-                      <tr className="bg-[#2c587a]/5 border-t border-[#2c587a]/20">
-                        <td className="px-2 py-1.5"></td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a]" colSpan="8">
-                          TOTAL ({monthLoans.length})
-                        </td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.sanction)}</td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-emerald-700 text-right">₹{formatNumber(totals.disbursed)}</td>
-                        <td colSpan="10" className="px-2 py-1.5"></td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.pf)}</td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.insurance)}</td>
-                        <td className="px-2 py-1.5"></td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.subvention)}</td>
-                        <td className="px-2 py-1.5 text-[10px] font-bold text-[#2c587a] text-right">₹{formatNumber(totals.brokerage)}</td>
-                        <td className="px-2 py-1.5"></td>
+                      <tr className="bg-[#2c587a]/5 border-t-2 border-[#2c587a]/30" data-testid={`mis-totals-row-${month}`}>
+                        {showBulkSelect && <td className="px-2 py-1.5"></td>}
+                        {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(({ key }) => {
+                          const totalFields = { amount: totals.amount, sanction: totals.sanction, disbursed: totals.disbursed, pf: totals.pf, insurance: totals.insurance, subvention: totals.subvention, brokerage_subvention: totals.brokerage };
+                          const freezeStyle = getFreezeStyle(key);
+                          const isFrozen = FREEZE_KEYS.includes(key);
+                          if (key === 'month') {
+                            return <td key={key} data-testid={`mis-total-${month}-${key}`} style={freezeStyle} className={`px-2 py-1.5 text-[10px] font-bold text-[#2c587a] ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}>TOTAL ({monthLoans.length})</td>;
+                          }
+                          if (totalFields[key] !== undefined) {
+                            return <td key={key} data-testid={`mis-total-${month}-${key}`} style={freezeStyle} className={`px-2 py-1.5 text-[10px] font-bold whitespace-nowrap ${key === 'disbursed' ? 'text-emerald-700' : 'text-[#2c587a]'} ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}>₹{formatNumber(totalFields[key])}</td>;
+                          }
+                          return <td key={key} data-testid={`mis-total-${month}-${key}`} style={freezeStyle} className={`px-2 py-1.5 ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}></td>;
+                        })}
                         <td className="px-2 py-1.5"></td>
                       </tr>
                     </tbody>

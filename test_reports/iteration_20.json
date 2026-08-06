@@ -1,0 +1,44 @@
+{
+  "summary": "Tested the 3 MIS changes (company cleanup, column freeze, totals row) + leaderboard API. Backend (new pytest suite /app/backend/tests/test_mis_freeze_totals.py, 5/5 passed): GET /api/analytics/team-leaderboard returns 200 with a valid array, no _id leakage, 403 without token; GET /api/master/companies returns 200 but is EMPTY (0 companies) in preview so Pvt->Private / Ltd->Limited / dedup could not be verified via master data; loan rows contain companies ['Agent Co','Prolog India','Test Co','TestCo'] - no 'Pvt'/'Ltd' strings remain, but 'Test Co' vs 'TestCo' shows near-duplicates still coexist and there is NO normalization code anywhere in backend/frontend (grep found none), so change #1 exists only as a one-off DB edit and will regress on the next import/manual entry. Frontend (Playwright, admin login, 1440x900, Apr-2026 group expanded, 8 loans): all 10 quick filters render and are visible. Column freeze is BROKEN: measured header bounding boxes before/after scrolling the table container to scrollLeft=1521 (max) - month stays at x=249 but customer_name/company_name/bank/login_date/status/amount/sanction/disbursed all shift left and OVERLAP each other (5 measured overlaps, e.g. login_date x=679 vs bank ending at 750, status x=754 vs login_date ending 761), and non-frozen category/product columns scroll to negative x leaving a visual gap/collision. Screenshot confirms cut-off/overlapping headers ('AN','TI','A') and misaligned totals row. Totals row: TOTAL (8) renders in the Date column and Sanction=Rs.1,00,00,000 / Disbursed=Rs.50,00,000 are correct, but the AMOUNT total cell is EMPTY - calculateMonthTotals() never computes an 'amount' key, so totalFields.amount is undefined and the cell renders blank.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/master/companies", "issue": "Returns an empty list in preview - company master is unpopulated, so the Pvt->Private / Ltd->Limited normalization and dedup cannot be verified server-side; MIS Company filter therefore derives options only from loaded loan rows"},
+      {"endpoint": "N/A (data-level)", "issue": "No company-name normalization/dedup logic exists in backend (no Pvt/Ltd mapping in server.py, including the Excel import path ~line 2146). Any future import/entry with 'Pvt Ltd' re-introduces the un-cleaned values."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS totals row", "issue": "Amount total is blank. calculateMonthTotals() (MonthlyMIS.jsx ~line 412) initializes only sanction/disbursed/pf/insurance/subvention/brokerage/subvention_0 - no 'amount' accumulator - so totalFields.amount is undefined at line ~1325 and the Amount totals cell renders as an empty td. Requirement explicitly asks for an Amount total.", "selector": "[data-testid=\"mis-total-Apr-2026-amount\"]", "priority": "HIGH"},
+      {"component": "MonthlyMIS frozen columns", "issue": "Sticky offsets are computed from a hardcoded COL_WIDTHS map (month:75, customer_name:100, bank:75 ...) while actual rendered widths differ (measured 84/99/146 ...). Because the table has no fixed layout/explicit widths, the computed 'left' values do not match real column positions and frozen columns overlap each other when scrolled right (5 overlaps measured).", "selector": "[data-testid^=\"mis-th-Apr-2026-\"]", "priority": "CRITICAL"},
+      {"component": "MonthlyMIS FREEZE_KEYS", "issue": "FREEZE_KEYS is non-contiguous: ALL_COLUMNS order is ... bank, category, product, login_date ... but category/product are NOT frozen (and are visible by default). login_date onward therefore get 'left' offsets that ignore category/product widths, so they slide over the earlier frozen columns and the two non-frozen columns collapse to negative x. Either include category/product in the freeze set or move them after 'disbursed'.", "selector": "[data-testid=\"mis-th-Apr-2026-login_date\"]", "priority": "CRITICAL"},
+      {"component": "MonthlyMIS bulk-select column", "issue": "When 'Select' mode is on, an extra leading checkbox th/td is rendered but its width is not added to getFreezeStyle() offsets, so all frozen columns will be shifted/overlap the checkbox column while scrolled.", "selector": "[data-testid=\"select-all-Apr-2026\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MIS Board table (scrolled right)", "issues": ["Overlapping frozen headers/cells with truncated labels ('AN', 'TI', 'A')", "Totals row values (Rs.0 cells) end up under the wrong headers once frozen offsets drift", "Frozen cells use bg-white/bg-slate-50 but rows have hover/selected backgrounds, so frozen cells will not match row highlight colors"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_mis_freeze_totals.py", "/app/test_reports/pytest/mis_freeze_totals.xml"],
+  "action_items": [
+    "Add an 'amount' accumulator to calculateMonthTotals() so the totals row shows the Amount total.",
+    "Replace hardcoded COL_WIDTHS with real widths: either set table-layout:fixed with explicit per-column widths matching COL_WIDTHS, or measure offsets at runtime (refs/ResizeObserver). Current sticky offsets do not match rendered widths -> overlap.",
+    "Make the frozen range contiguous: reorder ALL_COLUMNS so Date..Disbursed are adjacent (move category/product after disbursed) or add category/product to FREEZE_KEYS.",
+    "Account for the bulk-select checkbox column width in getFreezeStyle() when showBulkSelect is true.",
+    "Implement server-side company-name normalization (Pvt->Private, Ltd->Limited, trim/case-fold dedup) in loan create/update and the Excel import path so the one-off cleanup does not regress; also populate /api/master/companies.",
+    "Give frozen th/td z-index above the row background and inherit row highlight color so hover/selected rows do not look split."
+  ],
+  "critical_code_review_comments": [
+    "getFreezeStyle() depends on a width table that is decoupled from the DOM - this is inherently fragile; any content-driven width change silently breaks the freeze.",
+    "MonthlyMIS.jsx is now ~1940 lines; split into filters bar, table, and dialogs.",
+    "Totals row builds a new totalFields object inside the per-column map callback (executed for every column of every month) - hoist it out."
+  ],
+  "updated_files": ["/app/frontend/src/pages/MonthlyMIS.jsx (added data-testid only: mis-table-scroll-{month}, mis-th-{month}-{key}, mis-totals-row-{month}, mis-total-{month}-{key})", "/app/backend/tests/test_mis_freeze_totals.py"],
+  "success_rate": {"backend": "100% (5/5 endpoints/asserts passed)", "frontend": "33% (filters OK; column freeze broken; Amount total missing)"},
+  "seed_data_creation": "None - used existing 8 preview loans, no data created or deleted",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Month groups are COLLAPSED by default on /monthly-mis - click the month label (e.g. get_by_text('Apr-2026')) before asserting table content. New testids added: mis-table-scroll-{month} (scroll container), mis-th-{month}-{colKey}, mis-totals-row-{month}, mis-total-{month}-{colKey}. Verify freeze by comparing bounding_box x of frozen headers at scrollLeft=0 vs scrollLeft=scrollWidth; frozen headers must keep x fixed and never overlap. Regression suite: /app/backend/tests/test_mis_freeze_totals.py.",
+  "rca_of_the_issue": "Freeze bug RCA: getFreezeStyle() sums hardcoded COL_WIDTHS for preceding frozen columns to compute 'left'. (a) Real rendered widths differ (table is w-full, auto layout, whitespace-nowrap) so offsets are wrong; (b) FREEZE_KEYS skips category/product which sit between bank and login_date in ALL_COLUMNS, so every frozen column after bank is offset short by ~198px. Result: frozen columns overlap when scrolled right (measured 5 overlaps at scrollLeft=1521). Totals bug RCA: calculateMonthTotals() has no 'amount' field, so totalFields.amount === undefined and the render falls through to the empty-td branch."
+}
