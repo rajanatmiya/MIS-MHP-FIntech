@@ -178,7 +178,7 @@ const MonthlyMIS = () => {
   // Column visibility
   // Columns to freeze (Date through Disbursed Amount) - contiguous in ALL_COLUMNS
   const FREEZE_KEYS = ['month', 'customer_name', 'company_name', 'contact_no', 'bank', 'login_date', 'status', 'amount', 'sanction', 'disbursed'];
-  const COL_WIDTHS = { month: 80, customer_name: 110, company_name: 110, contact_no: 85, bank: 80, login_date: 80, status: 75, amount: 80, sanction: 90, disbursed: 90 };
+  const COL_WIDTHS = { month: 80, customer_name: 110, company_name: 110, contact_no: 95, bank: 85, login_date: 85, status: 80, amount: 85, sanction: 120, disbursed: 120 };
   const DEFAULT_COL_W = 110;
   const CHECKBOX_COL_W = 32;
   const ACTION_COL_W = 120;
@@ -205,7 +205,7 @@ const MonthlyMIS = () => {
         left += COL_WIDTHS[col.key] || 80;
       }
     }
-    return { position: 'sticky', left: `${left}px`, zIndex: 10, width: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, minWidth: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, maxWidth: `${COL_WIDTHS[key] || DEFAULT_COL_W}px` };
+    return { position: 'sticky', left: `${left}px`, zIndex: 10, width: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, minWidth: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, maxWidth: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, overflow: 'hidden', textOverflow: 'ellipsis' };
   };
 
   const ALL_COLUMNS = [
@@ -1276,7 +1276,7 @@ const MonthlyMIS = () => {
                       {monthLoans.map(loan => (
                         <tr key={loan.id} className={`transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : 'hover:bg-slate-50/50'}`}>
                           {showBulkSelect && (
-                          <td className="px-2 py-1" style={{ position: 'sticky', left: 0, zIndex: 10, width: `${CHECKBOX_COL_W}px`, minWidth: `${CHECKBOX_COL_W}px` }}>
+                          <td className="px-2 py-1 bg-white" style={{ position: 'sticky', left: 0, zIndex: 10, width: `${CHECKBOX_COL_W}px`, minWidth: `${CHECKBOX_COL_W}px` }}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(loan.id)}
