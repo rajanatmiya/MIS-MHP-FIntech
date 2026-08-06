@@ -3197,97 +3197,126 @@ async def create_default_admin():
         await db.master_locations.create_index("name", unique=True)
         await db.master_categories.create_index("name", unique=True)
         await db.master_products.create_index("name", unique=True)
-        await db.master_customers.create_index("name", unique=True)
-        await db.master_executives.create_index("name", unique=True)
-        await db.master_managers.create_index("name", unique=True)
+        try:
+            await db.master_customers.create_index("name", unique=True)
+            await db.master_executives.create_index("name", unique=True)
+            await db.master_managers.create_index("name", unique=True)
+        except Exception as idx_err:
+            logger.warning(f"Index creation warning (may have duplicates): {str(idx_err)}")
+            await db.master_customers.create_index("name")
+            await db.master_executives.create_index("name")
+            await db.master_managers.create_index("name")
         logger.info("Database indexes created")
 
         # Auto-run bank name standardization migration (idempotent)
-        bank_renames = [
-            ("kotak", "Kotak Bank"), ("db", "Deutsche"), ("fullerton", "SMFG"),
-            ("icici bank", "ICICI"), ("idfc first", "IDFC"), ("indusind bank", "Indusind"),
-            ("L&T Finance", "L&T"), ("Piramal finance", "Piramal"), ("yes", "Yes Bank")
-        ]
-        total_renamed = 0
-        for old_name, new_name in bank_renames:
-            r1 = await db.master_banks.update_many(
-                {"name": {"$regex": f"^{old_name}$", "$options": "i"}},
-                {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
-            )
-            r2 = await db.loan_applications.update_many(
-                {"bank": {"$regex": f"^{old_name}$", "$options": "i"}},
-                {"$set": {"bank": new_name}}
-            )
-            total_renamed += r1.modified_count + r2.modified_count
-        if total_renamed > 0:
-            logger.info(f"Bank name migration: {total_renamed} records updated")
+        try:
+            import re as re_module
+            bank_renames = [
+                ("kotak", "Kotak Bank"), ("db", "Deutsche"), ("fullerton", "SMFG"),
+                ("icici bank", "ICICI"), ("idfc first", "IDFC"), ("indusind bank", "Indusind"),
+                ("L&T Finance", "L&T"), ("Piramal finance", "Piramal"), ("yes", "Yes Bank")
+            ]
+            total_renamed = 0
+            for old_name, new_name in bank_renames:
+                escaped = re_module.escape(old_name)
+                r1 = await db.master_banks.update_many(
+                    {"name": {"$regex": f"^{escaped}$", "$options": "i"}},
+                    {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+                )
+                r2 = await db.loan_applications.update_many(
+                    {"bank": {"$regex": f"^{escaped}$", "$options": "i"}},
+                    {"$set": {"bank": new_name}}
+                )
+                total_renamed += r1.modified_count + r2.modified_count
+            if total_renamed > 0:
+                logger.info(f"Bank name migration: {total_renamed} records updated")
+        except Exception as e:
+            logger.error(f"Bank rename migration error: {str(e)}")
 
         # Auto-sync existing loan customer_name + contact_no into master_customers (idempotent)
-        pipeline = [
-            {"$match": {"customer_name": {"$exists": True, "$ne": ""}}},
-            {"$group": {"_id": "$customer_name", "contact_no": {"$first": "$contact_no"}}}
-        ]
-        loan_customers = await db.loan_applications.aggregate(pipeline).to_list(10000)
-        customers_added = 0
-        for lc in loan_customers:
-            name = (lc["_id"] or "").strip()
-            if not name:
-                continue
-            existing = await db.master_customers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
-            if not existing:
-                doc = {
-                    "id": str(uuid.uuid4()),
-                    "name": name,
-                    "contact_no": str(lc.get("contact_no", "") or "").strip(),
-                    "created_at": datetime.now(timezone.utc).isoformat(),
-                    "created_by": "system"
-                }
-                await db.master_customers.insert_one(doc)
-                customers_added += 1
-        if customers_added > 0:
-            logger.info(f"Customer sync: {customers_added} customers added from loan data")
+        try:
+            pipeline = [
+                {"$match": {"customer_name": {"$exists": True, "$ne": ""}}},
+                {"$group": {"_id": "$customer_name", "contact_no": {"$first": "$contact_no"}}}
+            ]
+            loan_customers = await db.loan_applications.aggregate(pipeline).to_list(10000)
+            customers_added = 0
+            for lc in loan_customers:
+                name = (lc["_id"] or "").strip()
+                if not name:
+                    continue
+                existing = await db.master_customers.find_one({"name": name})
+                if not existing:
+                    doc = {
+                        "id": str(uuid.uuid4()),
+                        "name": name,
+                        "contact_no": str(lc.get("contact_no", "") or "").strip(),
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "created_by": "system"
+                    }
+                    try:
+                        await db.master_customers.insert_one(doc)
+                        customers_added += 1
+                    except Exception:
+                        pass
+            if customers_added > 0:
+                logger.info(f"Customer sync: {customers_added} customers added from loan data")
+        except Exception as e:
+            logger.error(f"Customer sync error: {str(e)}")
 
         # Auto-sync existing loan executive_name into master_executives (idempotent)
-        exec_pipeline = [
-            {"$match": {"executive_name": {"$exists": True, "$ne": ""}}},
-            {"$group": {"_id": "$executive_name"}}
-        ]
-        loan_execs = await db.loan_applications.aggregate(exec_pipeline).to_list(10000)
-        execs_added = 0
-        for le in loan_execs:
-            name = (le["_id"] or "").strip()
-            if not name:
-                continue
-            existing = await db.master_executives.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
-            if not existing:
-                await db.master_executives.insert_one({
-                    "id": str(uuid.uuid4()), "name": name,
-                    "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
-                })
-                execs_added += 1
-        if execs_added > 0:
-            logger.info(f"Executive sync: {execs_added} executives added from loan data")
+        try:
+            exec_pipeline = [
+                {"$match": {"executive_name": {"$exists": True, "$ne": ""}}},
+                {"$group": {"_id": "$executive_name"}}
+            ]
+            loan_execs = await db.loan_applications.aggregate(exec_pipeline).to_list(10000)
+            execs_added = 0
+            for le in loan_execs:
+                name = (le["_id"] or "").strip()
+                if not name:
+                    continue
+                existing = await db.master_executives.find_one({"name": name})
+                if not existing:
+                    try:
+                        await db.master_executives.insert_one({
+                            "id": str(uuid.uuid4()), "name": name,
+                            "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
+                        })
+                        execs_added += 1
+                    except Exception:
+                        pass
+            if execs_added > 0:
+                logger.info(f"Executive sync: {execs_added} executives added from loan data")
+        except Exception as e:
+            logger.error(f"Executive sync error: {str(e)}")
 
         # Auto-sync existing loan team_manager into master_managers (idempotent)
-        mgr_pipeline = [
-            {"$match": {"team_manager": {"$exists": True, "$ne": ""}}},
-            {"$group": {"_id": "$team_manager"}}
-        ]
-        loan_mgrs = await db.loan_applications.aggregate(mgr_pipeline).to_list(10000)
-        mgrs_added = 0
-        for lm in loan_mgrs:
-            name = (lm["_id"] or "").strip()
-            if not name:
-                continue
-            existing = await db.master_managers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
-            if not existing:
-                await db.master_managers.insert_one({
-                    "id": str(uuid.uuid4()), "name": name,
-                    "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
-                })
-                mgrs_added += 1
-        if mgrs_added > 0:
-            logger.info(f"Manager sync: {mgrs_added} managers added from loan data")
+        try:
+            mgr_pipeline = [
+                {"$match": {"team_manager": {"$exists": True, "$ne": ""}}},
+                {"$group": {"_id": "$team_manager"}}
+            ]
+            loan_mgrs = await db.loan_applications.aggregate(mgr_pipeline).to_list(10000)
+            mgrs_added = 0
+            for lm in loan_mgrs:
+                name = (lm["_id"] or "").strip()
+                if not name:
+                    continue
+                existing = await db.master_managers.find_one({"name": name})
+                if not existing:
+                    try:
+                        await db.master_managers.insert_one({
+                            "id": str(uuid.uuid4()), "name": name,
+                            "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
+                        })
+                        mgrs_added += 1
+                    except Exception:
+                        pass
+            if mgrs_added > 0:
+                logger.info(f"Manager sync: {mgrs_added} managers added from loan data")
+        except Exception as e:
+            logger.error(f"Manager sync error: {str(e)}")
         
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")

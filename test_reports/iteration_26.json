@@ -1,0 +1,42 @@
+{
+  "summary": "Verified the startup auto-sync migration fix (per-migration try/except + exact-name match) for master_customers / master_executives / master_managers. Backend: created /app/backend/tests/test_master_sync_migration.py (11 tests) and re-ran existing /app/backend/tests/test_master_customers_execs_managers.py (10 tests) -> 20/21 passed. Sync completeness verified: every distinct customer_name, executive_name and team_manager in loan_applications exists in the corresponding master collection, with no duplicate names (migration is idempotent). Backend logs confirm 'Customer sync: 7 customers added', 'Executive sync: 1', 'Manager sync: 1' after index creation, so migrations now run independently. Frontend: logged in as admin, Master File page shows Customer Names (12), Executive Names (3), Team Managers (3) with all expected synced entries (TestClient, Vishwa, Test Customer, HDFC Client, SBI Client, Agent Client, Date Test + contacts; Rajan; Dimple). Month MIS -> Apr-2026 -> Add Entry dropdowns render synced values (add-customer-select 13 options incl. contact in label, add-executive-select 4, add-manager-select 4) and selecting 'Vishwa (9819550594)' auto-fills Contact Number correctly. No console errors, no failed API calls.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/master/customers", "issue": "Legacy documents created before the contact_no field (e.g. 'Amit Kumar', 'Priya Singh', 'Rahul Verma') are returned without a contact_no key at all instead of contact_no: \"\". One test (test_customers_have_name_and_contact_field) fails on this. Recommend projecting/normalizing contact_no default in the GET response."},
+      {"endpoint": "startup sync vs POST /api/master/*", "issue": "Startup sync uses exact-match find_one({'name': name}) while POST uses case-insensitive regex. A loan value differing only in case (e.g. 'rajan' vs 'Rajan') would be inserted as a second master row (unique index on name is case-sensitive), creating duplicate dropdown entries. Suggest case-insensitive lookup in the migration too."},
+      {"endpoint": "POST /api/loans (loan create/update)", "issue": "Sync happens only at server startup; new customer/executive/manager names entered on a loan/MIS entry are not added to master collections until the next restart. Consider syncing on loan create/update if that is the intended product behaviour."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Master File", "issues": ["Page subtitle still reads 'Manage banks, agents, companies, branches, and locations' - does not mention Customers / Executives / Team Managers sections."]},
+      {"screen": "Month MIS - Add New Entry dialog", "issues": ["Date/Login Date/Disbursed Date use the browser native date input (mm/dd/yyyy) instead of the shadcn calendar component - pre-existing, not part of this fix.", "React warning: 'Missing Description or aria-describedby for DialogContent' (a11y, non-blocking)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_master_sync_migration.py",
+    "/app/backend/tests/test_master_customers_execs_managers.py",
+    "/app/test_reports/pytest/sync_results.xml"
+  ],
+  "action_items": [
+    "Normalize contact_no to \"\" in GET /api/master/customers response (or backfill legacy docs) so the field is always present.",
+    "Optional: make startup sync lookups case-insensitive to match POST duplicate-check semantics.",
+    "Optional: sync master customer/executive/manager on loan create/update rather than only at startup."
+  ],
+  "critical_code_review_comments": [
+    "server.py is 3326 lines - should be split into routers/modules (masters, loans, auth, migrations).",
+    "Startup migrations belong in a separate migrations module with a version/applied marker collection instead of running full-collection aggregations on every boot.",
+    "The bare `except Exception: pass` on insert_one hides real failures; log at debug/warning level with the name so silent data loss is traceable."
+  ],
+  "updated_files": ["/app/backend/tests/test_master_sync_migration.py"],
+  "success_rate": {"backend": "95% (20/21 pytest)", "frontend": "100% of tested flows"},
+  "seed_data_creation": "No new seed data; CRUD tests create and delete TEST_ prefixed masters (cleaned up).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Sync migration verified working on preview (12 customers, 3 executives, 3 managers). Use /app/backend/tests/test_master_sync_migration.py as regression for sync completeness/idempotency. Only open item: legacy master_customers docs missing the contact_no key.",
+  "rca_of_the_issue": "Original bug: all startup migrations were inside a single try/except, so a duplicate-key error during unique index creation aborted the block and skipped customer/executive/manager sync on production. Current code wraps index creation and each of the 4 migrations in independent try/except blocks with inner try/except around insert_one, so a failure in one no longer blocks the others. Verified via backend logs and API/UI data."
+}
