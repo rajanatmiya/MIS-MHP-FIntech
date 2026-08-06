@@ -1099,10 +1099,10 @@ const MonthlyMIS = () => {
         <MultiCheckFilter label="Product" options={masterProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
         <MultiCheckFilter label="Bank" options={masterBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
         <MultiCheckFilter label="Status" options={statuses.map(s => ({ id: s.id || s.name, name: s.name }))} selected={filterStatuses} onChange={setFilterStatuses} testId="filter-status" />
-        <MultiCheckFilter label="Company" options={uniqueCompanies} selected={filterCompanies} onChange={setFilterCompanies} testId="filter-company" />
+        <MultiCheckFilter label="Company" options={masterCompanies.length > 0 ? masterCompanies : uniqueCompanies} selected={filterCompanies} onChange={setFilterCompanies} testId="filter-company" />
         <MultiCheckFilter label="Case From" options={uniqueCaseFrom} selected={filterCaseFrom} onChange={setFilterCaseFrom} testId="filter-casefrom" />
-        <MultiCheckFilter label="Manager" options={uniqueManagers} selected={filterManagers} onChange={setFilterManagers} testId="filter-manager" />
-        <MultiCheckFilter label="Executive" options={uniqueExecutives} selected={filterExecutives} onChange={setFilterExecutives} testId="filter-executive" />
+        <MultiCheckFilter label="Manager" options={masterManagers.length > 0 ? masterManagers : uniqueManagers} selected={filterManagers} onChange={setFilterManagers} testId="filter-manager" />
+        <MultiCheckFilter label="Executive" options={masterExecutives.length > 0 ? masterExecutives : uniqueExecutives} selected={filterExecutives} onChange={setFilterExecutives} testId="filter-executive" />
         <MultiCheckFilter label="Branch" options={uniqueBranches} selected={filterBranches} onChange={setFilterBranches} testId="filter-branch" />
         <MultiCheckFilter label="Location" options={uniqueLocations} selected={filterLocations} onChange={setFilterLocations} testId="filter-location" />
         {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0 || filterCompanies.length > 0 || filterCaseFrom.length > 0 || filterManagers.length > 0 || filterExecutives.length > 0 || filterBranches.length > 0 || filterLocations.length > 0) && (
