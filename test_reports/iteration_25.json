@@ -1,0 +1,30 @@
+{
+  "summary": "Frontend-only retest of the inline add auto-select fix in Month MIS (MonthlyMIS.jsx). Verified Add form and Edit form for Customer / Executive / Manager via both the '+' button and the dropdown '+ Add New ...' option. All 8 scenarios PASS: new master record is created, master list refreshes, and the Radix Select trigger shows the newly added name (no reset to placeholder). Customer contact number auto-fills. Previously selected values are NOT wiped when a subsequent inline add happens. Manual selection of an existing option still works (regression check). All QA_Test_* master records created during testing were deleted afterwards.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS Edit form Select trigger", "issue": "When the row's saved customer/executive/manager is not in the master list, the fallback SelectItem label '<name> (current)' is rendered inside the collapsed trigger, so the trigger reads e.g. 'TestClient (current)'. The '(current)' hint should only appear in the dropdown list, not in the trigger. Suggest using <SelectItem value={x}><span>{x}</span><span className='text-slate-400'> (current)</span></SelectItem> is still shown in trigger — better: keep trigger clean via SelectValue children or drop the suffix.", "selector": "[data-testid=\"edit-customer-select\"]", "priority": "LOW"},
+      {"component": "MonthlyMIS Add/Edit customer Select trigger", "issue": "Customer trigger displays 'Name (contact)' e.g. 'QA_Test_Cust (1234567890)'. Contact is already shown in its own field next to it, so the suffix is redundant/noisy in the trigger.", "selector": "[data-testid=\"add-customer-select\"]", "priority": "LOW"},
+      {"component": "DialogContent (Add/Edit/Inline-add dialogs)", "issue": "React a11y console warning on every dialog open: 'Missing Description or aria-describedby={undefined} for DialogContent'. Add <DialogDescription> or aria-describedby.", "selector": "[role=\"dialog\"]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional/low priority: remove '(current)' and '(contact)' suffixes from what renders inside the Select trigger (keep them only as list-item hints).",
+    "Optional: add DialogDescription/aria-describedby to MonthlyMIS dialogs to clear the Radix a11y warning."
+  ],
+  "critical_code_review_comments": [
+    "MonthlyMIS.jsx is ~2147 lines — well over the 700-line guideline. The Add form and Edit form duplicate the identical customer/executive/manager Select+inline-add block 6 times (>10 lines each). Extract a shared <MasterSelectWithInlineAdd> component to remove the DRY violation and stop divergence (e.g. Edit form '+' buttons had no data-testid while Add form ones did).",
+    "The remount hack key={`cust-add-${masterCustomers.length}`} works but is fragile: if a master item is added and another removed in the same render the length is unchanged and the Select will not remount. Since the selected value is already always rendered as a SelectItem, the key prop is likely unnecessary — consider removing it or keying on a stable list hash."
+  ],
+  "updated_files": ["/app/frontend/src/pages/MonthlyMIS.jsx"],
+  "success_rate": { "backend": "not tested (skipped per request)", "frontend": "100% (8/8 inline-add auto-select scenarios)" },
+  "seed_data_creation": "Created master records QA_Test_Cust, QA_Test_Cust2, QA_Test_Cust3, QA_Test_Exec, QA_Test_Exec3, QA_Test_Mgr, QA_Test_Mgr3. All deleted after testing (3 customers, 2 executives, 2 managers removed). No loan/MIS rows were saved.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Inline-add auto-select bug (iteration_24) is FIXED and verified on the preview URL. Testid map: add form '+' buttons = inline-add-customer-btn / inline-add-executive-btn / inline-add-manager-btn; edit form '+' buttons now = edit-inline-add-customer-btn / edit-inline-add-executive-btn / edit-inline-add-manager-btn (added by this agent). Triggers = add-/edit- {customer,executive,manager}-select. Dialog inputs = inline-add-name-input, inline-add-contact-input, inline-add-save-btn. Month groups are collapsed by default: click [data-testid=\"month-header-Apr-2026\"] then [data-testid=\"add-entry-Apr-2026\"]. NOTE: a hidden native <select> also exists in the DOM, so get_by_text('+ Add New Customer') is ambiguous — use page.get_by_role('option', name=...). Verify auto-select via inner_text of the trigger. Backend was not tested this iteration.",
+  "rca_of_the_issue": "Fix verified. Radix Select was previously resetting the controlled value to '' when SelectContent unmounted with no matching SelectItem. The applied fix (always rendering the current value as a SelectItem, guarding onValueChange against empty values, functional setState updates, plus a remount key) resolves it in both Add and Edit forms."
+}
