@@ -3214,16 +3214,19 @@ async def create_default_admin():
 
         # Versioned bank rename migration (v2) - handles partial matches + ensures correct names exist
         try:
-            BANK_SEED_VER = "v2_bank_rename_and_seed"
+            BANK_SEED_VER = "v3_bank_rename_final"
             bank_seed_done = await db.migrations.find_one({"_id": BANK_SEED_VER})
             if not bank_seed_done:
                 import re as re_module
                 bank_renames = [
-                    ("kotak", "Kotak Bank"), ("db", "Deutsche"), ("fullerton", "SMFG"),
-                    ("icici bank", "ICICI"), ("icici", "ICICI"), ("idfc first", "IDFC"), ("idfc", "IDFC"),
-                    ("indusind bank", "Indusind"), ("indusind", "Indusind"),
-                    ("L&T Finance", "L&T"), ("l&t finance", "L&T"),
-                    ("Piramal finance", "Piramal"), ("piramal", "Piramal"),
+                    ("kotak", "Kotak Bank"), ("kotak bank", "Kotak Bank"), ("kotak mahindra", "Kotak Bank"), ("kotak mahindra bank", "Kotak Bank"),
+                    ("db", "Deutsche"), ("deutsche bank", "Deutsche"), ("deutsche", "Deutsche"),
+                    ("fullerton", "SMFG"), ("fullerton india", "SMFG"), ("smfg india", "SMFG"), ("smfg", "SMFG"),
+                    ("icici", "ICICI"), ("icici bank", "ICICI"),
+                    ("idfc", "IDFC"), ("idfc first", "IDFC"), ("idfc first bank", "IDFC"),
+                    ("indusind", "Indusind"), ("indusind bank", "Indusind"),
+                    ("L&T Finance", "L&T"), ("l&t finance", "L&T"), ("l&t", "L&T"), ("L&T finance ltd", "L&T"),
+                    ("Piramal finance", "Piramal"), ("piramal", "Piramal"), ("piramal capital", "Piramal"),
                     ("yes", "Yes Bank"), ("yes bank", "Yes Bank"),
                 ]
                 total_renamed = 0
