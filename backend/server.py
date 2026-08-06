@@ -2785,7 +2785,11 @@ async def delete_master_product(item_id: str, current_user: User = Depends(get_c
 # --- Master Customers (with contact_no) ---
 @api_router.get("/master/customers")
 async def get_master_customers(current_user: User = Depends(get_current_user)):
-    return await db.master_customers.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    docs = await db.master_customers.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    for doc in docs:
+        if "contact_no" not in doc:
+            doc["contact_no"] = ""
+    return docs
 
 @api_router.post("/master/customers")
 async def add_master_customer(request: Request, current_user: User = Depends(get_current_user)):
