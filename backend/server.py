@@ -3246,6 +3246,48 @@ async def create_default_admin():
                 customers_added += 1
         if customers_added > 0:
             logger.info(f"Customer sync: {customers_added} customers added from loan data")
+
+        # Auto-sync existing loan executive_name into master_executives (idempotent)
+        exec_pipeline = [
+            {"$match": {"executive_name": {"$exists": True, "$ne": ""}}},
+            {"$group": {"_id": "$executive_name"}}
+        ]
+        loan_execs = await db.loan_applications.aggregate(exec_pipeline).to_list(10000)
+        execs_added = 0
+        for le in loan_execs:
+            name = (le["_id"] or "").strip()
+            if not name:
+                continue
+            existing = await db.master_executives.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+            if not existing:
+                await db.master_executives.insert_one({
+                    "id": str(uuid.uuid4()), "name": name,
+                    "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
+                })
+                execs_added += 1
+        if execs_added > 0:
+            logger.info(f"Executive sync: {execs_added} executives added from loan data")
+
+        # Auto-sync existing loan team_manager into master_managers (idempotent)
+        mgr_pipeline = [
+            {"$match": {"team_manager": {"$exists": True, "$ne": ""}}},
+            {"$group": {"_id": "$team_manager"}}
+        ]
+        loan_mgrs = await db.loan_applications.aggregate(mgr_pipeline).to_list(10000)
+        mgrs_added = 0
+        for lm in loan_mgrs:
+            name = (lm["_id"] or "").strip()
+            if not name:
+                continue
+            existing = await db.master_managers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+            if not existing:
+                await db.master_managers.insert_one({
+                    "id": str(uuid.uuid4()), "name": name,
+                    "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"
+                })
+                mgrs_added += 1
+        if mgrs_added > 0:
+            logger.info(f"Manager sync: {mgrs_added} managers added from loan data")
         
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")
