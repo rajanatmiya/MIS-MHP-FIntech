@@ -3221,6 +3221,31 @@ async def create_default_admin():
             total_renamed += r1.modified_count + r2.modified_count
         if total_renamed > 0:
             logger.info(f"Bank name migration: {total_renamed} records updated")
+
+        # Auto-sync existing loan customer_name + contact_no into master_customers (idempotent)
+        pipeline = [
+            {"$match": {"customer_name": {"$exists": True, "$ne": ""}}},
+            {"$group": {"_id": "$customer_name", "contact_no": {"$first": "$contact_no"}}}
+        ]
+        loan_customers = await db.loan_applications.aggregate(pipeline).to_list(10000)
+        customers_added = 0
+        for lc in loan_customers:
+            name = (lc["_id"] or "").strip()
+            if not name:
+                continue
+            existing = await db.master_customers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+            if not existing:
+                doc = {
+                    "id": str(uuid.uuid4()),
+                    "name": name,
+                    "contact_no": str(lc.get("contact_no", "") or "").strip(),
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                    "created_by": "system"
+                }
+                await db.master_customers.insert_one(doc)
+                customers_added += 1
+        if customers_added > 0:
+            logger.info(f"Customer sync: {customers_added} customers added from loan data")
         
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")
