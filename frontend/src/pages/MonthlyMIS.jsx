@@ -1345,18 +1345,8 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <form onSubmit={handleAddLoan} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-              <div>
-                <Label className="text-[11px] text-slate-600">Customer Name *</Label>
-                {masterCompanies.length > 0 ? (
-                  <Select value={newLoanData.customer_name || ''} onValueChange={(value) => setNewLoanData({...newLoanData, customer_name: value})}>
-                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                    <SelectContent>{masterCompanies.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                ) : (
-                  <Input required value={newLoanData.customer_name || ''} onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
-                )}
-              </div>
               {[
+                { key: 'customer_name', label: 'Customer Name *', required: true },
                 { key: 'contact_no', label: 'Contact Number *', required: true },
                 { key: 'executive_name', label: 'Executive Name' },
                 { key: 'team_manager', label: 'Team Manager' },
@@ -1568,18 +1558,8 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <form onSubmit={handleEditSave} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-              <div>
-                <Label className="text-[11px] text-slate-600">Customer Name *</Label>
-                {masterCompanies.length > 0 ? (
-                  <Select value={editFormData.customer_name || ''} onValueChange={(value) => setEditFormData({...editFormData, customer_name: value})}>
-                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                    <SelectContent>{masterCompanies.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
-                  </Select>
-                ) : (
-                  <Input required value={editFormData.customer_name || ''} onChange={(e) => setEditFormData({...editFormData, customer_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
-                )}
-              </div>
               {[
+                { key: 'customer_name', label: 'Customer Name *', required: true },
                 { key: 'contact_no', label: 'Contact Number *', required: true },
                 { key: 'executive_name', label: 'Executive Name' },
                 { key: 'team_manager', label: 'Team Manager' },
