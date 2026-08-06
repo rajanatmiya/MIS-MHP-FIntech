@@ -1632,7 +1632,12 @@ const MonthlyMIS = () => {
                     setEditFormData({...editFormData, customer_name: value, ...(cust?.contact_no ? { contact_no: cust.contact_no } : {})});
                   }}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                    <SelectContent>{masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {editFormData.customer_name && !masterCustomers.some(c => c.name === editFormData.customer_name) && (
+                        <SelectItem value={editFormData.customer_name} className="text-[11px] text-slate-400">{editFormData.customer_name} (current)</SelectItem>
+                      )}
+                      {masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 ) : (
                   <Input required value={editFormData.customer_name || ''} onChange={(e) => setEditFormData({...editFormData, customer_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
@@ -1647,7 +1652,12 @@ const MonthlyMIS = () => {
                 {masterExecutives.length > 0 ? (
                   <Select value={editFormData.executive_name || ''} onValueChange={(value) => setEditFormData({...editFormData, executive_name: value})}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select executive" /></SelectTrigger>
-                    <SelectContent>{masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {editFormData.executive_name && !masterExecutives.some(e => e.name === editFormData.executive_name) && (
+                        <SelectItem value={editFormData.executive_name} className="text-[11px] text-slate-400">{editFormData.executive_name} (current)</SelectItem>
+                      )}
+                      {masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 ) : (
                   <Input value={editFormData.executive_name || ''} onChange={(e) => setEditFormData({...editFormData, executive_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
@@ -1658,7 +1668,12 @@ const MonthlyMIS = () => {
                 {masterManagers.length > 0 ? (
                   <Select value={editFormData.team_manager || ''} onValueChange={(value) => setEditFormData({...editFormData, team_manager: value})}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select manager" /></SelectTrigger>
-                    <SelectContent>{masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}</SelectContent>
+                    <SelectContent>
+                      {editFormData.team_manager && !masterManagers.some(m => m.name === editFormData.team_manager) && (
+                        <SelectItem value={editFormData.team_manager} className="text-[11px] text-slate-400">{editFormData.team_manager} (current)</SelectItem>
+                      )}
+                      {masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}
+                    </SelectContent>
                   </Select>
                 ) : (
                   <Input value={editFormData.team_manager || ''} onChange={(e) => setEditFormData({...editFormData, team_manager: e.target.value})} className="h-8 text-[11px] mt-0.5" />
