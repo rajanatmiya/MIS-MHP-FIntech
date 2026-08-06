@@ -6,12 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin, Tag, Package } from 'lucide-react';
+import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin, Tag, Package, Users, UserCog, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 
-const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAdmin }) => {
+const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAdmin, showContact }) => {
   const [search, setSearch] = useState('');
-  const filtered = items.filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+  const filtered = items.filter(i => {
+    const q = search.toLowerCase();
+    return i.name.toLowerCase().includes(q) || (i.contact_no && i.contact_no.toLowerCase().includes(q));
+  });
 
   return (
     <Card className="shadow-sm">
@@ -43,7 +46,12 @@ const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAd
             <div key={item.id} className={`flex items-center justify-between px-2.5 py-1.5 rounded ${idx % 2 === 0 ? 'bg-slate-50/60' : ''} hover:bg-blue-50/40 transition-colors group`}>
               <div className="flex items-center gap-2 min-w-0">
                 <span className="text-[10px] text-slate-400 w-5 text-right">{idx + 1}.</span>
-                <span className="text-[11px] text-slate-700 truncate" data-testid={`master-item-${item.id}`}>{item.name}</span>
+                <div className="min-w-0">
+                  <span className="text-[11px] text-slate-700 truncate block" data-testid={`master-item-${item.id}`}>{item.name}</span>
+                  {showContact && item.contact_no && (
+                    <span className="text-[10px] text-slate-400 truncate block">{item.contact_no}</span>
+                  )}
+                </div>
               </div>
               {isAdmin && (
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -66,6 +74,9 @@ const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAd
 };
 
 const CATEGORIES = [
+  { key: 'customers', endpoint: 'customers', title: 'Customer Names', icon: Users, placeholder: 'e.g., Rahul Sharma', hasContact: true },
+  { key: 'executives', endpoint: 'executives', title: 'Executive Names', icon: UserCog, placeholder: 'e.g., Amit Patel' },
+  { key: 'managers', endpoint: 'managers', title: 'Team Managers', icon: Shield, placeholder: 'e.g., Priya Singh' },
   { key: 'banks', endpoint: 'banks', title: 'Bank Names', icon: Building2, placeholder: 'e.g., State Bank of India' },
   { key: 'agents', endpoint: 'agents', title: 'Agent Names', icon: UserCheck, placeholder: 'e.g., Rajesh Kumar' },
   { key: 'companies', endpoint: 'companies', title: 'Company Names', icon: Briefcase, placeholder: 'e.g., Tata Consultancy' },
@@ -77,13 +88,14 @@ const CATEGORIES = [
 
 const MasterFile = () => {
   const { user } = useContext(AuthContext);
-  const [data, setData] = useState({ banks: [], agents: [], companies: [], branches: [], locations: [], categories: [], products: [] });
+  const [data, setData] = useState({ customers: [], executives: [], managers: [], banks: [], agents: [], companies: [], branches: [], locations: [], categories: [], products: [] });
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const [dialogMode, setDialogMode] = useState('add');
   const [editItem, setEditItem] = useState(null);
   const [inputValue, setInputValue] = useState('');
+  const [contactValue, setContactValue] = useState('');
 
   const isAdmin = user?.role === 'admin';
 
@@ -106,6 +118,7 @@ const MasterFile = () => {
     setDialogMode('add');
     setEditItem(null);
     setInputValue('');
+    setContactValue('');
     setShowDialog(true);
   };
 
@@ -114,22 +127,25 @@ const MasterFile = () => {
     setDialogMode('edit');
     setEditItem(item);
     setInputValue(item.name);
+    setContactValue(item.contact_no || '');
     setShowDialog(true);
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     if (!inputValue.trim() || !activeCategory) return;
+    const payload = { name: inputValue.trim() };
+    if (activeCategory.hasContact) payload.contact_no = contactValue.trim();
     try {
       if (dialogMode === 'add') {
-        const res = await axios.post(`${API}/master/${activeCategory.endpoint}`, { name: inputValue.trim() });
+        const res = await axios.post(`${API}/master/${activeCategory.endpoint}`, payload);
         setData(prev => ({ ...prev, [activeCategory.key]: [...prev[activeCategory.key], res.data] }));
         toast.success(`${activeCategory.title.replace(/s$/, '')} added`);
       } else {
-        await axios.put(`${API}/master/${activeCategory.endpoint}/${editItem.id}`, { name: inputValue.trim() });
+        await axios.put(`${API}/master/${activeCategory.endpoint}/${editItem.id}`, payload);
         setData(prev => ({
           ...prev,
-          [activeCategory.key]: prev[activeCategory.key].map(i => i.id === editItem.id ? { ...i, name: inputValue.trim() } : i)
+          [activeCategory.key]: prev[activeCategory.key].map(i => i.id === editItem.id ? { ...i, ...payload } : i)
         }));
         toast.success('Updated');
       }
@@ -171,6 +187,7 @@ const MasterFile = () => {
             icon={cat.icon}
             items={data[cat.key]}
             isAdmin={isAdmin}
+            showContact={cat.hasContact}
             onAdd={() => openAdd(cat)}
             onEdit={(item) => openEdit(cat, item)}
             onDelete={(item) => handleDelete(cat, item)}
@@ -198,6 +215,18 @@ const MasterFile = () => {
                 data-testid="master-name-input"
               />
             </div>
+            {activeCategory?.hasContact && (
+              <div>
+                <Label className="text-[11px] text-slate-600">Contact Number</Label>
+                <Input
+                  value={contactValue}
+                  onChange={(e) => setContactValue(e.target.value)}
+                  placeholder="e.g., 9876543210"
+                  className="h-8 text-[11px] mt-0.5"
+                  data-testid="master-contact-input"
+                />
+              </div>
+            )}
             <div className="flex gap-2 justify-end">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowDialog(false)} className="h-7 text-[11px]">Cancel</Button>
               <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="master-save-btn">

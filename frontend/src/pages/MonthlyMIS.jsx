@@ -154,6 +154,9 @@ const MonthlyMIS = () => {
   const [masterLocations, setMasterLocations] = useState([]);
   const [masterCategories, setMasterCategories] = useState([]);
   const [masterProducts, setMasterProducts] = useState([]);
+  const [masterCustomers, setMasterCustomers] = useState([]);
+  const [masterExecutives, setMasterExecutives] = useState([]);
+  const [masterManagers, setMasterManagers] = useState([]);
   
   // Empty month groups (added via "Add Month" but no entries yet)
   const [emptyMonthGroups, setEmptyMonthGroups] = useState([]);
@@ -177,7 +180,7 @@ const MonthlyMIS = () => {
   
   // Column visibility
   // Columns to freeze (Date through Disbursed Amount) - contiguous in ALL_COLUMNS
-  const FREEZE_KEYS = ['month', 'customer_name', 'company_name', 'contact_no', 'bank', 'login_date', 'status', 'amount', 'sanction', 'disbursed'];
+  const FREEZE_KEYS = ['month', 'customer_name', 'company_name', 'contact_no', 'bank', 'login_date', 'status'];
   const COL_WIDTHS = { month: 80, customer_name: 120, company_name: 110, contact_no: 95, bank: 85, login_date: 85, status: 80, amount: 85, sanction: 130, disbursed: 135 };
   const DEFAULT_COL_W = 110;
   const CHECKBOX_COL_W = 32;
@@ -293,14 +296,17 @@ const MonthlyMIS = () => {
   
   const fetchMasterData = async () => {
     try {
-      const [banksRes, agentsRes, companiesRes, branchesRes, locationsRes, categoriesRes, productsRes] = await Promise.all([
+      const [banksRes, agentsRes, companiesRes, branchesRes, locationsRes, categoriesRes, productsRes, customersRes, executivesRes, managersRes] = await Promise.all([
         axios.get(`${API}/master/banks`),
         axios.get(`${API}/master/agents`),
         axios.get(`${API}/master/companies`),
         axios.get(`${API}/master/branches`),
         axios.get(`${API}/master/locations`),
         axios.get(`${API}/master/categories`),
-        axios.get(`${API}/master/products`)
+        axios.get(`${API}/master/products`),
+        axios.get(`${API}/master/customers`),
+        axios.get(`${API}/master/executives`),
+        axios.get(`${API}/master/managers`)
       ]);
       setMasterBanks(banksRes.data);
       setMasterAgents(agentsRes.data);
@@ -309,6 +315,9 @@ const MonthlyMIS = () => {
       setMasterLocations(locationsRes.data);
       setMasterCategories(categoriesRes.data);
       setMasterProducts(productsRes.data);
+      setMasterCustomers(customersRes.data);
+      setMasterExecutives(executivesRes.data);
+      setMasterManagers(managersRes.data);
     } catch (error) { console.error('Failed to fetch master data'); }
   };
   
@@ -1379,23 +1388,46 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <form onSubmit={handleAddLoan} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-              {[
-                { key: 'customer_name', label: 'Customer Name *', required: true },
-                { key: 'contact_no', label: 'Contact Number *', required: true },
-                { key: 'executive_name', label: 'Executive Name' },
-                { key: 'team_manager', label: 'Team Manager' },
-              ].map(f => (
-                <div key={f.key}>
-                  <Label className="text-[11px] text-slate-600">{f.label}</Label>
-                  <Input
-                    required={f.required}
-                    value={newLoanData[f.key] || ''}
-                    onChange={(e) => setNewLoanData({...newLoanData, [f.key]: e.target.value})}
-                    placeholder={f.placeholder || ''}
-                    className="h-8 text-[11px] mt-0.5"
-                  />
-                </div>
-              ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Customer Name *</Label>
+                {masterCustomers.length > 0 ? (
+                  <Select value={newLoanData.customer_name || ''} onValueChange={(value) => {
+                    const cust = masterCustomers.find(c => c.name === value);
+                    setNewLoanData({...newLoanData, customer_name: value, ...(cust?.contact_no ? { contact_no: cust.contact_no } : {})});
+                  }}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                    <SelectContent>{masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input required value={newLoanData.customer_name || ''} onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Contact Number *</Label>
+                <Input required value={newLoanData.contact_no || ''} onChange={(e) => setNewLoanData({...newLoanData, contact_no: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Executive Name</Label>
+                {masterExecutives.length > 0 ? (
+                  <Select value={newLoanData.executive_name || ''} onValueChange={(value) => setNewLoanData({...newLoanData, executive_name: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select executive" /></SelectTrigger>
+                    <SelectContent>{masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={newLoanData.executive_name || ''} onChange={(e) => setNewLoanData({...newLoanData, executive_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Team Manager</Label>
+                {masterManagers.length > 0 ? (
+                  <Select value={newLoanData.team_manager || ''} onValueChange={(value) => setNewLoanData({...newLoanData, team_manager: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select manager" /></SelectTrigger>
+                    <SelectContent>{masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={newLoanData.team_manager || ''} onChange={(e) => setNewLoanData({...newLoanData, team_manager: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Company Name *</Label>
                 {masterCompanies.length > 0 ? (
@@ -1592,22 +1624,46 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <form onSubmit={handleEditSave} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
-              {[
-                { key: 'customer_name', label: 'Customer Name *', required: true },
-                { key: 'contact_no', label: 'Contact Number *', required: true },
-                { key: 'executive_name', label: 'Executive Name' },
-                { key: 'team_manager', label: 'Team Manager' },
-              ].map(f => (
-                <div key={f.key}>
-                  <Label className="text-[11px] text-slate-600">{f.label}</Label>
-                  <Input
-                    required={f.required}
-                    value={editFormData[f.key] || ''}
-                    onChange={(e) => setEditFormData({...editFormData, [f.key]: e.target.value})}
-                    className="h-8 text-[11px] mt-0.5"
-                  />
-                </div>
-              ))}
+              <div>
+                <Label className="text-[11px] text-slate-600">Customer Name *</Label>
+                {masterCustomers.length > 0 ? (
+                  <Select value={editFormData.customer_name || ''} onValueChange={(value) => {
+                    const cust = masterCustomers.find(c => c.name === value);
+                    setEditFormData({...editFormData, customer_name: value, ...(cust?.contact_no ? { contact_no: cust.contact_no } : {})});
+                  }}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                    <SelectContent>{masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input required value={editFormData.customer_name || ''} onChange={(e) => setEditFormData({...editFormData, customer_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Contact Number *</Label>
+                <Input required value={editFormData.contact_no || ''} onChange={(e) => setEditFormData({...editFormData, contact_no: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Executive Name</Label>
+                {masterExecutives.length > 0 ? (
+                  <Select value={editFormData.executive_name || ''} onValueChange={(value) => setEditFormData({...editFormData, executive_name: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select executive" /></SelectTrigger>
+                    <SelectContent>{masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={editFormData.executive_name || ''} onChange={(e) => setEditFormData({...editFormData, executive_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
+              <div>
+                <Label className="text-[11px] text-slate-600">Team Manager</Label>
+                {masterManagers.length > 0 ? (
+                  <Select value={editFormData.team_manager || ''} onValueChange={(value) => setEditFormData({...editFormData, team_manager: value})}>
+                    <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select manager" /></SelectTrigger>
+                    <SelectContent>{masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}</SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={editFormData.team_manager || ''} onChange={(e) => setEditFormData({...editFormData, team_manager: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                )}
+              </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Company Name *</Label>
                 {masterCompanies.length > 0 ? (

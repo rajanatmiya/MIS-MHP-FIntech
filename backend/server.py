@@ -2694,6 +2694,138 @@ async def delete_master_product(item_id: str, current_user: User = Depends(get_c
         raise HTTPException(status_code=404, detail="Product not found")
     return {"message": "Product deleted"}
 
+# --- Master Customers (with contact_no) ---
+@api_router.get("/master/customers")
+async def get_master_customers(current_user: User = Depends(get_current_user)):
+    return await db.master_customers.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/customers")
+async def add_master_customer(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    contact_no = data.get("contact_no", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Customer name is required")
+    existing = await db.master_customers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Customer name already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "contact_no": contact_no, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_customers.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/customers/{item_id}")
+async def update_master_customer(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    contact_no = data.get("contact_no", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Customer name is required")
+    existing = await db.master_customers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Customer name already exists")
+    result = await db.master_customers.update_one({"id": item_id}, {"$set": {"name": name, "contact_no": contact_no, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return {"id": item_id, "name": name, "contact_no": contact_no}
+
+@api_router.delete("/master/customers/{item_id}")
+async def delete_master_customer(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_customers.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return {"message": "Customer deleted"}
+
+# --- Master Executives ---
+@api_router.get("/master/executives")
+async def get_master_executives(current_user: User = Depends(get_current_user)):
+    return await db.master_executives.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/executives")
+async def add_master_executive(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Executive name is required")
+    existing = await db.master_executives.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Executive name already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_executives.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/executives/{item_id}")
+async def update_master_executive(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Executive name is required")
+    existing = await db.master_executives.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Executive name already exists")
+    result = await db.master_executives.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Executive not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/executives/{item_id}")
+async def delete_master_executive(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_executives.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Executive not found")
+    return {"message": "Executive deleted"}
+
+# --- Master Managers ---
+@api_router.get("/master/managers")
+async def get_master_managers(current_user: User = Depends(get_current_user)):
+    return await db.master_managers.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+
+@api_router.post("/master/managers")
+async def add_master_manager(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Manager name is required")
+    existing = await db.master_managers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Manager name already exists")
+    doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
+    await db.master_managers.insert_one(doc)
+    del doc["_id"]
+    return doc
+
+@api_router.put("/master/managers/{item_id}")
+async def update_master_manager(item_id: str, request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    name = data.get("name", "").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="Manager name is required")
+    existing = await db.master_managers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    if existing:
+        raise HTTPException(status_code=400, detail="Manager name already exists")
+    result = await db.master_managers.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Manager not found")
+    return {"id": item_id, "name": name}
+
+@api_router.delete("/master/managers/{item_id}")
+async def delete_master_manager(item_id: str, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    result = await db.master_managers.delete_one({"id": item_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Manager not found")
+    return {"message": "Manager deleted"}
+
+
 # ==================== DB Backup Endpoints ====================
 
 @api_router.get("/backup/download")
@@ -2701,7 +2833,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
     import json as json_lib
     backup = {}
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "agent_targets"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "master_customers", "master_executives", "master_managers", "agent_targets"]
     for col_name in collections:
         docs = await db[col_name].find({}, {"_id": 0}).to_list(100000)
         backup[col_name] = docs
@@ -2721,7 +2853,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
 @api_router.get("/backup/stats")
 async def get_backup_stats(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "agent_targets"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "master_customers", "master_executives", "master_managers", "agent_targets"]
     stats = {}
     total = 0
     for col_name in collections:
@@ -2742,7 +2874,7 @@ async def import_backup(file: UploadFile = File(...), mode: str = Form("merge"),
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON file")
 
-    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "agent_targets"]
+    collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "master_customers", "master_executives", "master_managers", "agent_targets"]
     results = {}
     total_imported = 0
 
