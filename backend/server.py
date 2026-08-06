@@ -3212,28 +3212,47 @@ async def create_default_admin():
             await db.master_managers.create_index("name")
         logger.info("Database indexes created")
 
-        # Auto-run bank name standardization migration (idempotent)
+        # Versioned bank rename migration (v2) - handles partial matches + ensures correct names exist
         try:
-            import re as re_module
-            bank_renames = [
-                ("kotak", "Kotak Bank"), ("db", "Deutsche"), ("fullerton", "SMFG"),
-                ("icici bank", "ICICI"), ("idfc first", "IDFC"), ("indusind bank", "Indusind"),
-                ("L&T Finance", "L&T"), ("Piramal finance", "Piramal"), ("yes", "Yes Bank")
-            ]
-            total_renamed = 0
-            for old_name, new_name in bank_renames:
-                escaped = re_module.escape(old_name)
-                r1 = await db.master_banks.update_many(
-                    {"name": {"$regex": f"^{escaped}$", "$options": "i"}},
-                    {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
-                )
-                r2 = await db.loan_applications.update_many(
-                    {"bank": {"$regex": f"^{escaped}$", "$options": "i"}},
-                    {"$set": {"bank": new_name}}
-                )
-                total_renamed += r1.modified_count + r2.modified_count
-            if total_renamed > 0:
-                logger.info(f"Bank name migration: {total_renamed} records updated")
+            BANK_SEED_VER = "v2_bank_rename_and_seed"
+            bank_seed_done = await db.migrations.find_one({"_id": BANK_SEED_VER})
+            if not bank_seed_done:
+                import re as re_module
+                bank_renames = [
+                    ("kotak", "Kotak Bank"), ("db", "Deutsche"), ("fullerton", "SMFG"),
+                    ("icici bank", "ICICI"), ("icici", "ICICI"), ("idfc first", "IDFC"), ("idfc", "IDFC"),
+                    ("indusind bank", "Indusind"), ("indusind", "Indusind"),
+                    ("L&T Finance", "L&T"), ("l&t finance", "L&T"),
+                    ("Piramal finance", "Piramal"), ("piramal", "Piramal"),
+                    ("yes", "Yes Bank"), ("yes bank", "Yes Bank"),
+                ]
+                total_renamed = 0
+                for old_name, new_name in bank_renames:
+                    escaped = re_module.escape(old_name)
+                    r1 = await db.master_banks.update_many(
+                        {"name": {"$regex": f"^{escaped}$", "$options": "i"}},
+                        {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+                    )
+                    r2 = await db.loan_applications.update_many(
+                        {"bank": {"$regex": f"^{escaped}$", "$options": "i"}},
+                        {"$set": {"bank": new_name}}
+                    )
+                    total_renamed += r1.modified_count + r2.modified_count
+                # Ensure all standard bank names exist in master_banks
+                standard_banks = ["Kotak Bank", "Deutsche", "SMFG", "ICICI", "IDFC", "Indusind", "L&T", "Piramal", "Yes Bank", "SBI", "HDFC Bank"]
+                for bname in standard_banks:
+                    existing = await db.master_banks.find_one({"name": bname})
+                    if not existing:
+                        try:
+                            await db.master_banks.insert_one({"id": str(uuid.uuid4()), "name": bname, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"})
+                        except Exception:
+                            pass
+                # Remove old/duplicate bank names that were renamed
+                old_names_to_remove = ["kotak", "db", "fullerton", "icici bank", "idfc first", "indusind bank", "L&T Finance", "Piramal finance", "yes", "l&t finance", "piramal finance"]
+                for old in old_names_to_remove:
+                    await db.master_banks.delete_many({"name": {"$regex": f"^{old}$", "$options": "i"}})
+                await db.migrations.insert_one({"_id": BANK_SEED_VER, "applied_at": datetime.now(timezone.utc).isoformat()})
+                logger.info(f"Bank migration {BANK_SEED_VER}: {total_renamed} records renamed, standard banks ensured")
         except Exception as e:
             logger.error(f"Bank rename migration error: {str(e)}")
 
