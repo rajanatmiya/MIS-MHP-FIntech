@@ -176,43 +176,59 @@ const MonthlyMIS = () => {
   const [showBulkSelect, setShowBulkSelect] = useState(false);
   
   // Column visibility
-  // Columns to freeze (Date through Disbursed Amount)
+  // Columns to freeze (Date through Disbursed Amount) - contiguous in ALL_COLUMNS
   const FREEZE_KEYS = ['month', 'customer_name', 'company_name', 'contact_no', 'bank', 'login_date', 'status', 'amount', 'sanction', 'disbursed'];
-  const COL_WIDTHS = { month: 75, customer_name: 100, company_name: 100, contact_no: 80, bank: 75, login_date: 75, status: 70, amount: 75, sanction: 85, disbursed: 85 };
-  
-  const getFreezeStyle = (key) => {
-    const visibleFrozen = ALL_COLUMNS.filter(c => visibleColumns.includes(c.key) && FREEZE_KEYS.includes(c.key));
-    const idx = visibleFrozen.findIndex(c => c.key === key);
-    if (idx === -1 || !FREEZE_KEYS.includes(key)) return {};
-    let left = 0;
-    for (let i = 0; i < idx; i++) {
-      left += COL_WIDTHS[visibleFrozen[i].key] || 80;
+  const COL_WIDTHS = { month: 80, customer_name: 110, company_name: 110, contact_no: 85, bank: 80, login_date: 80, status: 75, amount: 80, sanction: 90, disbursed: 90 };
+  const DEFAULT_COL_W = 110;
+  const CHECKBOX_COL_W = 32;
+  const ACTION_COL_W = 120;
+
+  const getTableWidth = () => {
+    const visibleCols = ALL_COLUMNS.filter(c => visibleColumns.includes(c.key));
+    let total = (showBulkSelect ? CHECKBOX_COL_W : 0) + ACTION_COL_W;
+    for (const col of visibleCols) {
+      total += COL_WIDTHS[col.key] || DEFAULT_COL_W;
     }
-    return { position: 'sticky', left: `${left}px`, zIndex: 10 };
+    return total;
+  };
+
+  const getFreezeStyle = (key) => {
+    if (!FREEZE_KEYS.includes(key)) {
+      const w = COL_WIDTHS[key] || DEFAULT_COL_W;
+      return { width: `${w}px`, minWidth: `${w}px` };
+    }
+    const visibleCols = ALL_COLUMNS.filter(c => visibleColumns.includes(c.key));
+    let left = showBulkSelect ? 32 : 0;
+    for (const col of visibleCols) {
+      if (col.key === key) break;
+      if (FREEZE_KEYS.includes(col.key)) {
+        left += COL_WIDTHS[col.key] || 80;
+      }
+    }
+    return { position: 'sticky', left: `${left}px`, zIndex: 10, width: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, minWidth: `${COL_WIDTHS[key] || DEFAULT_COL_W}px`, maxWidth: `${COL_WIDTHS[key] || DEFAULT_COL_W}px` };
   };
 
   const ALL_COLUMNS = [
     { key: 'month', label: 'Date' },
-    { key: 'customer_name', label: 'Customer' },
-    { key: 'company_name', label: 'Company' },
-    { key: 'contact_no', label: 'Contact' },
+    { key: 'customer_name', label: 'Customer Name' },
+    { key: 'company_name', label: 'Company Name' },
+    { key: 'contact_no', label: 'Contact No' },
     { key: 'bank', label: 'Bank' },
-    { key: 'category', label: 'Category' },
-    { key: 'product', label: 'Product' },
     { key: 'login_date', label: 'Login Date' },
     { key: 'status', label: 'Status' },
     { key: 'amount', label: 'Amount' },
-    { key: 'sanction', label: 'Sanction' },
-    { key: 'disbursed', label: 'Disbursed' },
-    { key: 'disbursed_date', label: 'Disbursed Date' },
+    { key: 'sanction', label: 'Sanction Amount' },
+    { key: 'disbursed', label: 'Disbursed Amount' },
     { key: 'remark', label: 'Remark' },
-    { key: 'decline_reason', label: 'Decline' },
-    { key: 'scheme', label: 'Scheme' },
+    { key: 'decline_reason', label: 'Decline Reason' },
     { key: 'case_from', label: 'Case From' },
+    { key: 'category', label: 'Category' },
+    { key: 'product', label: 'Product' },
+    { key: 'scheme', label: 'Scheme' },
     { key: 'location', label: 'Location' },
     { key: 'branch', label: 'Branch' },
-    { key: 'executive_name', label: 'Executive' },
-    { key: 'team_manager', label: 'Manager' },
+    { key: 'executive_name', label: 'Executive Name' },
+    { key: 'team_manager', label: 'Team Manager' },
     { key: 'code', label: 'Code' },
     { key: 'rate', label: 'Rate' },
     { key: 'pf', label: 'PF' },
@@ -220,7 +236,7 @@ const MonthlyMIS = () => {
     { key: 'tenure', label: 'Tenure' },
     { key: 'subvention', label: 'Subvention' },
     { key: 'brokerage_subvention', label: 'Brokerage' },
-    { key: 'agent_name', label: 'Agent' },
+    { key: 'agent_name', label: 'Agent Name' },
     { key: 'technical_value', label: 'Technical Value' },
     { key: 'legal_status', label: 'Legal Status' },
   ];
@@ -411,6 +427,7 @@ const MonthlyMIS = () => {
 
   const calculateMonthTotals = (loans) => {
     const totals = {
+      amount: 0,
       sanction: 0,
       disbursed: 0,
       pf: 0,
@@ -428,6 +445,7 @@ const MonthlyMIS = () => {
         return isNaN(num) ? 0 : num;
       };
 
+      totals.amount += parseNum(loan.amount);
       totals.sanction += parseNum(loan.sanction);
       totals.disbursed += parseNum(loan.disbursed);
       totals.pf += parseNum(loan.pf);
@@ -1230,11 +1248,11 @@ const MonthlyMIS = () => {
               {/* Table */}
               {isExpanded && (
                 <div className="overflow-x-auto" data-testid={`mis-table-scroll-${month}`}>
-                  <table className="w-full text-[11px]">
+                  <table className="text-[11px]" style={{ tableLayout: 'fixed', width: `${getTableWidth()}px` }}>
                     <thead>
                       <tr className="border-b border-slate-200 bg-[#2c587a]/5">
                         {showBulkSelect && (
-                        <th className="px-2 py-1.5 w-8">
+                        <th className="px-2 py-1.5 bg-slate-50" style={{ position: 'sticky', left: 0, zIndex: 10, width: `${CHECKBOX_COL_W}px`, minWidth: `${CHECKBOX_COL_W}px` }}>
                           <input
                             type="checkbox"
                             checked={monthLoans.length > 0 && monthLoans.every(l => selectedIds.has(l.id))}
@@ -1251,14 +1269,14 @@ const MonthlyMIS = () => {
                         {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(c => (
                           <th key={c.key} data-testid={`mis-th-${month}-${c.key}`} style={getFreezeStyle(c.key)} className={`px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap ${FREEZE_KEYS.includes(c.key) ? 'bg-slate-50' : ''}`}>{c.label}</th>
                         ))}
-                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap"></th>
+                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap" style={{ width: `${ACTION_COL_W}px`, minWidth: `${ACTION_COL_W}px` }}></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {monthLoans.map(loan => (
                         <tr key={loan.id} className={`transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : 'hover:bg-slate-50/50'}`}>
                           {showBulkSelect && (
-                          <td className="px-2 py-1">
+                          <td className="px-2 py-1" style={{ position: 'sticky', left: 0, zIndex: 10, width: `${CHECKBOX_COL_W}px`, minWidth: `${CHECKBOX_COL_W}px` }}>
                             <input
                               type="checkbox"
                               checked={selectedIds.has(loan.id)}
@@ -1277,7 +1295,7 @@ const MonthlyMIS = () => {
                               {renderCell(loan, field, field)}
                             </td>
                           ))}
-                          <td className="px-2 py-1 whitespace-nowrap sticky right-0 bg-white">
+                          <td className="px-2 py-1 whitespace-nowrap sticky right-0 bg-white" style={{ width: `${ACTION_COL_W}px`, minWidth: `${ACTION_COL_W}px` }}>
                             <div className="flex items-center gap-0.5">
                               <button
                                 onClick={() => handleEditOpen(loan)}
@@ -1320,20 +1338,20 @@ const MonthlyMIS = () => {
                       
                       {/* Totals Row */}
                       <tr className="bg-[#2c587a]/5 border-t-2 border-[#2c587a]/30" data-testid={`mis-totals-row-${month}`}>
-                        {showBulkSelect && <td className="px-2 py-1.5"></td>}
+                        {showBulkSelect && <td className="px-2 py-1.5 bg-[#2c587a]/5" style={{ position: 'sticky', left: 0, zIndex: 10, width: `${CHECKBOX_COL_W}px`, minWidth: `${CHECKBOX_COL_W}px` }}></td>}
                         {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(({ key }) => {
                           const totalFields = { amount: totals.amount, sanction: totals.sanction, disbursed: totals.disbursed, pf: totals.pf, insurance: totals.insurance, subvention: totals.subvention, brokerage_subvention: totals.brokerage };
-                          const freezeStyle = getFreezeStyle(key);
+                          const colStyle = getFreezeStyle(key);
                           const isFrozen = FREEZE_KEYS.includes(key);
                           if (key === 'month') {
-                            return <td key={key} data-testid={`mis-total-${month}-${key}`} style={freezeStyle} className={`px-2 py-1.5 text-[10px] font-bold text-[#2c587a] ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}>TOTAL ({monthLoans.length})</td>;
+                            return <td key={key} data-testid={`mis-total-${month}-${key}`} style={colStyle} className={`px-2 py-1.5 text-[10px] font-bold text-[#2c587a] ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}>TOTAL ({monthLoans.length})</td>;
                           }
                           if (totalFields[key] !== undefined) {
-                            return <td key={key} data-testid={`mis-total-${month}-${key}`} style={freezeStyle} className={`px-2 py-1.5 text-[10px] font-bold whitespace-nowrap ${key === 'disbursed' ? 'text-emerald-700' : 'text-[#2c587a]'} ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}>₹{formatNumber(totalFields[key])}</td>;
+                            return <td key={key} data-testid={`mis-total-${month}-${key}`} style={colStyle} className={`px-2 py-1.5 text-[10px] font-bold whitespace-nowrap ${key === 'disbursed' ? 'text-emerald-700' : 'text-[#2c587a]'} ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}>₹{formatNumber(totalFields[key])}</td>;
                           }
-                          return <td key={key} data-testid={`mis-total-${month}-${key}`} style={freezeStyle} className={`px-2 py-1.5 ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}></td>;
+                          return <td key={key} data-testid={`mis-total-${month}-${key}`} style={colStyle} className={`px-2 py-1.5 ${isFrozen ? 'bg-[#2c587a]/5' : ''}`}></td>;
                         })}
-                        <td className="px-2 py-1.5"></td>
+                        <td className="px-2 py-1.5" style={{ width: `${ACTION_COL_W}px`, minWidth: `${ACTION_COL_W}px` }}></td>
                       </tr>
                     </tbody>
                   </table>

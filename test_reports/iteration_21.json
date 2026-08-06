@@ -1,0 +1,35 @@
+{
+  "summary": "Frontend-only retest of Month MIS frozen columns + footer totals. Found a BLOCKING regression first: expanding any month crashed the page with 'ReferenceError: getTableWidth is not defined' (also CHECKBOX_COL_W and ACTION_COL_W were never declared) - the whole MIS Board went to the red runtime-error overlay. I added the 3 missing constants + getTableWidth() (in-scope missing-declaration fix) and re-ran: all 10 frozen columns render, stay pinned at identical x positions after scrolling to max scrollLeft (scrollLeft 1554 of 3200px table on 1646px viewport), zero bounding-box overlap, table-layout:fixed with width 3200px, and the totals row shows TOTAL (8) / Amount / Sanction / Disbursed. Amount total renders '\u20b90' which is correct for the seeded data (all 8 rows have empty amount). Remaining defects are visual text-bleed issues, not freeze-offset issues.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS table header", "issue": "Frozen header labels 'SANCTION AMOUNT' (114px content in 90px cell) and 'DISBURSED AMOUNT' (121px in 90px) overflow their sticky cells (overflow:visible + whitespace-nowrap), so after horizontal scroll the text visually bleeds over the adjacent scrolling column (renders as 'DISBURSED AMOUNPF'). Add overflow:hidden + text-overflow:ellipsis to frozen th/td, or widen COL_WIDTHS.sanction/disbursed.", "selector": "[data-testid='mis-th-Apr-2026-disbursed']", "priority": "MEDIUM"},
+      {"component": "MonthlyMIS bulk-select column", "issue": "With Select mode ON, the sticky checkbox <td> in tbody (and the totals-row checkbox td) has position:sticky/left:0 but no background class, so scrolled-away cell text shows through behind the checkbox (visible garbled text at x~205). Add bg-white / bg-[#2c587a]/5 to those sticky cells.", "selector": "[data-testid='select-row-*']", "priority": "MEDIUM"},
+      {"component": "MonthlyMIS COL_WIDTHS", "issue": "COL_WIDTHS still only defines the 10 frozen keys (contrary to the change description which claimed it was expanded to ALL columns). Non-frozen columns now fall back to the DEFAULT_COL_W=110 I introduced; main agent should confirm these widths are the intended design (e.g. Remark/Decline Reason likely need more than 110px).", "selector": "n/a", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MIS Board expanded month", "issues": ["Truncated cell values have no ellipsis (e.g. 'TEST_Replac', 'SEPL Income Pr') - hard to read", "Amount column shows '\u2014' for every row while the footer shows \u20b90; verify seed data / whether amount should fall back to sanction"]}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_21.json"],
+  "action_items": [
+    "REVIEW my fix in MonthlyMIS.jsx: added DEFAULT_COL_W=110, CHECKBOX_COL_W=32, ACTION_COL_W=120 and getTableWidth(); also added explicit width/minWidth to non-frozen columns and width to frozen columns in getFreezeStyle so table-layout:fixed matches the computed table width. Confirm these widths are intended.",
+    "Add overflow:hidden + text-overflow:ellipsis to frozen header/body cells so 'SANCTION AMOUNT'/'DISBURSED AMOUNT' labels stop bleeding into the scrolling area",
+    "Add an opaque background to the sticky bulk-select checkbox td (tbody + totals row)",
+    "Run `yarn eslint` / lint before handing off - the crash was a plain no-undef that lint catches instantly (2 no-unescaped-entities errors still remain at line 1369)"
+  ],
+  "critical_code_review_comments": [
+    "MonthlyMIS.jsx line 1236 referenced getTableWidth() which was never defined -> guaranteed ReferenceError on every month expand. Never ship a render-path helper without lint verification.",
+    "MonthlyMIS.jsx is 1950+ lines - split into MISTable/MISToolbar/MISFilters/hooks per the <=700 line guideline.",
+    "FREEZE_KEYS/COL_WIDTHS/getFreezeStyle/getTableWidth are re-created on every render inside the component; hoist to module scope (or useMemo) since they are pure constants."
+  ],
+  "updated_files": ["/app/frontend/src/pages/MonthlyMIS.jsx"],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100% of freeze/totals assertions pass AFTER my missing-constant fix; 0% before (page crashed)"},
+  "seed_data_creation": "none - used existing Apr-2026 group (8 entries)",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Login -> click [data-testid='nav-monthly-mis'] (sidebar label is 'Month MIS', NOT 'MIS Board') -> click [data-testid='month-header-Apr-2026'] to expand. Measure via JS: container [data-testid='mis-table-scroll-Apr-2026'], headers mis-th-Apr-2026-{key}, totals mis-total-Apr-2026-{key}. Verified values: table-layout fixed, width 3200px, frozen x = 249,329,439,549,634,714,794,869,949,1039 (unchanged after scrollLeft=1554); with bulk-select ON everything shifts +32. Totals: month 'TOTAL (8)', amount \u20b90, sanction \u20b91,00,00,000, disbursed \u20b950,00,000. Next run should focus on the text-bleed/ellipsis fixes and the sticky checkbox background.",
+  "rca_of_the_issue": "The previous fix introduced usages of getTableWidth(), CHECKBOX_COL_W and ACTION_COL_W in JSX (lines 1236-1339) but never declared them, so the first render of an expanded month threw ReferenceError inside Array.map and React unmounted the tree (red overlay, empty body). Repro: login -> Month MIS -> click month header. Mitigation applied: declared the constants and implemented getTableWidth() as sum(frozen widths) + non-frozen*DEFAULT_COL_W + checkbox + action, and gave every column an explicit width so table-layout:fixed column widths agree with the computed table width - this keeps sticky left offsets exact and eliminates the overlap reported in iteration_20."
+}
