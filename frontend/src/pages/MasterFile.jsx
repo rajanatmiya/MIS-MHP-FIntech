@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin, Tag, Package, Users, UserCog, Shield } from 'lucide-react';
+import { Building2, UserCheck, Plus, Edit, Trash2, Search, Briefcase, GitBranch, MapPin, Tag, Package, Users, UserCog, Shield, Upload, FileSpreadsheet } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 const MasterSection = ({ title, icon: Icon, items, onAdd, onEdit, onDelete, isAdmin, showContact }) => {
@@ -96,6 +97,10 @@ const MasterFile = () => {
   const [editItem, setEditItem] = useState(null);
   const [inputValue, setInputValue] = useState('');
   const [contactValue, setContactValue] = useState('');
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importFile, setImportFile] = useState(null);
+  const [importSection, setImportSection] = useState('');
+  const [importing, setImporting] = useState(false);
 
   const isAdmin = user?.role === 'admin';
 
@@ -164,6 +169,28 @@ const MasterFile = () => {
     } catch (error) { toast.error('Failed to delete'); }
   };
 
+  const handleImport = async () => {
+    if (!importFile || !importSection) return;
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('section', importSection);
+      const res = await axios.post(`${API}/master/import-excel`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(`Imported: ${res.data.added} added, ${res.data.skipped} skipped (duplicates)`);
+      setShowImportDialog(false);
+      setImportFile(null);
+      setImportSection('');
+      fetchAll();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Import failed');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -174,9 +201,16 @@ const MasterFile = () => {
 
   return (
     <div className="space-y-3 fade-in" data-testid="master-file-page">
-      <div>
-        <h1 className="text-sm font-bold text-slate-800" data-testid="master-file-title">Master File</h1>
-        <p className="text-[10px] text-slate-400 mt-0.5">Manage banks, agents, companies, branches, and locations</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-sm font-bold text-slate-800" data-testid="master-file-title">Master File</h1>
+          <p className="text-[10px] text-slate-400 mt-0.5">Manage banks, agents, companies, branches, and locations</p>
+        </div>
+        {isAdmin && (
+          <Button onClick={() => setShowImportDialog(true)} variant="outline" size="sm" className="h-7 text-[11px] px-2.5 border-slate-200 text-slate-600 hover:bg-slate-50" data-testid="import-master-btn">
+            <Upload className="w-3 h-3 mr-1" /> Import Excel
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
@@ -234,6 +268,43 @@ const MasterFile = () => {
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Import Excel Dialog */}
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-sm flex items-center gap-1.5"><FileSpreadsheet className="w-4 h-4 text-[#2c587a]" /> Import from Excel</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div>
+              <Label className="text-[11px] text-slate-600">Section *</Label>
+              <Select value={importSection} onValueChange={setImportSection}>
+                <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select section" /></SelectTrigger>
+                <SelectContent>
+                  {CATEGORIES.map(c => <SelectItem key={c.key} value={c.key} className="text-[11px]">{c.title}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[11px] text-slate-600">Excel File *</Label>
+              <Input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={(e) => setImportFile(e.target.files[0])}
+                className="h-8 text-[11px] mt-0.5 cursor-pointer"
+                data-testid="import-file-input"
+              />
+              <p className="text-[9px] text-slate-400 mt-1">Excel must have a column named "Name"{importSection === 'customers' ? ' and optionally "Contact No"' : ''}. Duplicates are skipped.</p>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); setImportSection(''); }} className="h-7 text-[11px]">Cancel</Button>
+              <Button type="button" size="sm" onClick={handleImport} disabled={!importFile || !importSection || importing} className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="import-submit-btn">
+                {importing ? 'Importing...' : 'Import'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

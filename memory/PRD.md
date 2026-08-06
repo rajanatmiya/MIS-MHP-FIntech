@@ -35,7 +35,8 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - **Analytics Deep Upgrade — Apr 2026:** Fixed month-wise charts to show "Apr-2026" instead of raw dates. Added deep analytics: Summary KPIs, Status donut chart, Category-wise bars, Product-wise bars, Agent disbursement amounts, Month-wise amount trends (Sanctioned vs Disbursed). New endpoint: GET /api/analytics/deep.
 - **Frozen Columns & Footer Totals — Aug 2026:** Month MIS table freezes 7 columns (Date through Status) via CSS `position:sticky` with `table-layout:fixed`. Footer totals row shows Amount, Sanction Amount, and Disbursed Amount totals with opaque backgrounds.
 - **Master Customer/Executive/Manager — Aug 2026:** Added 3 new Master File sections: Customer Names (with contact number), Executive Names, Team Managers. Used as dropdown selects in MIS Board add/edit forms. Customer selection auto-fills contact number. Edit form preserves legacy values with "(current)" indicator. Inline "+" buttons on MIS forms allow adding new entries without leaving the page.
-- **Company Name Cleanup — Aug 2026:** Deduplicated company names in Master File (698 → 677). Propagated standardized names to 224 loan records.
+- **Bank Name Standardization — Aug 2026:** Auto-run startup migration renames 9 bank names (kotak→Kotak Bank, db→Deutsche, fullerton→SMFG, etc.) in both master_banks and loan records. Idempotent — safe to run multiple times. Also added `POST /api/master/banks/rename-bulk` endpoint for custom renames.
+- **Bulk Excel Import — Aug 2026:** Master File page has "Import Excel" button. Upload .xlsx to bulk import into any master section (Banks, Agents, Companies, Customers, Executives, Managers, etc.). Auto-detects "Name" and "Contact No" columns. Skips duplicates. Backend: `POST /api/master/import-excel`.
 
 ## Key API Endpoints
 - `/api/loans` (GET, POST) — CRUD with RBAC

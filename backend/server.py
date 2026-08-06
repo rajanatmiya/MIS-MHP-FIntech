@@ -2467,6 +2467,64 @@ async def rename_banks_bulk(request: Request, current_user: User = Depends(get_c
     return {"results": results}
 
 
+@api_router.post("/master/import-excel")
+async def import_master_excel(file: UploadFile = File(...), section: str = Form(...), current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    VALID_SECTIONS = {
+        "banks": "master_banks",
+        "agents": "master_agents",
+        "companies": "master_companies",
+        "branches": "master_branches",
+        "locations": "master_locations",
+        "categories": "master_categories",
+        "products": "master_products",
+        "customers": "master_customers",
+        "executives": "master_executives",
+        "managers": "master_managers",
+    }
+    if section not in VALID_SECTIONS:
+        raise HTTPException(status_code=400, detail=f"Invalid section: {section}")
+    collection_name = VALID_SECTIONS[section]
+    try:
+        content = await file.read()
+        df = pd.read_excel(BytesIO(content))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read Excel file: {str(e)}")
+    # Find the name column (case-insensitive)
+    name_col = None
+    contact_col = None
+    for col in df.columns:
+        cl = col.strip().lower()
+        if cl in ("name", "customer name", "bank name", "agent name", "executive name", "manager name", "company name", "branch", "location", "category", "product"):
+            name_col = col
+        if cl in ("contact", "contact_no", "contact number", "phone", "mobile", "phone number"):
+            contact_col = col
+    if name_col is None:
+        # Fall back to first column
+        name_col = df.columns[0]
+    added = 0
+    skipped = 0
+    for _, row in df.iterrows():
+        name = str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
+        if not name or name.lower() == "nan":
+            continue
+        existing = await db[collection_name].find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+        if existing:
+            skipped += 1
+            continue
+        doc = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "created_by": current_user.id
+        }
+        if section == "customers" and contact_col and pd.notna(row.get(contact_col, None)):
+            doc["contact_no"] = str(row[contact_col]).strip()
+        await db[collection_name].insert_one(doc)
+        added += 1
+    return {"added": added, "skipped": skipped, "total_rows": len(df)}
+
+
 @api_router.get("/master/agents")
 async def get_master_agents(current_user: User = Depends(get_current_user)):
     agents = await db.master_agents.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
@@ -3139,7 +3197,30 @@ async def create_default_admin():
         await db.master_locations.create_index("name", unique=True)
         await db.master_categories.create_index("name", unique=True)
         await db.master_products.create_index("name", unique=True)
+        await db.master_customers.create_index("name", unique=True)
+        await db.master_executives.create_index("name", unique=True)
+        await db.master_managers.create_index("name", unique=True)
         logger.info("Database indexes created")
+
+        # Auto-run bank name standardization migration (idempotent)
+        bank_renames = [
+            ("kotak", "Kotak Bank"), ("db", "Deutsche"), ("fullerton", "SMFG"),
+            ("icici bank", "ICICI"), ("idfc first", "IDFC"), ("indusind bank", "Indusind"),
+            ("L&T Finance", "L&T"), ("Piramal finance", "Piramal"), ("yes", "Yes Bank")
+        ]
+        total_renamed = 0
+        for old_name, new_name in bank_renames:
+            r1 = await db.master_banks.update_many(
+                {"name": {"$regex": f"^{old_name}$", "$options": "i"}},
+                {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+            )
+            r2 = await db.loan_applications.update_many(
+                {"bank": {"$regex": f"^{old_name}$", "$options": "i"}},
+                {"$set": {"bank": new_name}}
+            )
+            total_renamed += r1.modified_count + r2.modified_count
+        if total_renamed > 0:
+            logger.info(f"Bank name migration: {total_renamed} records updated")
         
     except Exception as e:
         logger.error(f"❌ Error in startup: {str(e)}")
