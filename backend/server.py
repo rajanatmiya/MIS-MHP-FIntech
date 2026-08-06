@@ -2437,6 +2437,36 @@ async def delete_master_bank(bank_id: str, current_user: User = Depends(get_curr
         raise HTTPException(status_code=404, detail="Bank not found")
     return {"message": "Bank deleted"}
 
+@api_router.post("/master/banks/rename-bulk")
+async def rename_banks_bulk(request: Request, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
+    data = await request.json()
+    mappings = data.get("mappings", [])  # [{old_name, new_name}]
+    results = []
+    for m in mappings:
+        old_name = m.get("old_name", "").strip()
+        new_name = m.get("new_name", "").strip()
+        if not old_name or not new_name:
+            continue
+        # Update master_banks (case-insensitive match)
+        master_result = await db.master_banks.update_many(
+            {"name": {"$regex": f"^{old_name}$", "$options": "i"}},
+            {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        # Update loan records
+        loan_result = await db.loan_applications.update_many(
+            {"bank": {"$regex": f"^{old_name}$", "$options": "i"}},
+            {"$set": {"bank": new_name}}
+        )
+        results.append({
+            "old_name": old_name,
+            "new_name": new_name,
+            "master_updated": master_result.modified_count,
+            "loans_updated": loan_result.modified_count
+        })
+    return {"results": results}
+
+
 @api_router.get("/master/agents")
 async def get_master_agents(current_user: User = Depends(get_current_user)):
     agents = await db.master_agents.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
