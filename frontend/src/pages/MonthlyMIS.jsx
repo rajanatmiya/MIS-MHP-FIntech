@@ -1435,17 +1435,17 @@ const MonthlyMIS = () => {
               <div>
                 <Label className="text-[11px] text-slate-600">Customer Name *</Label>
                 <div className="flex gap-1 mt-0.5">
-                  {masterCustomers.length > 0 ? (
-                    <Select value={newLoanData.customer_name || ''} onValueChange={(value) => {
-                      const cust = masterCustomers.find(c => c.name === value);
-                      setNewLoanData({...newLoanData, customer_name: value, ...(cust?.contact_no ? { contact_no: cust.contact_no } : {})});
-                    }}>
-                      <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                      <SelectContent>{masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}</SelectContent>
-                    </Select>
-                  ) : (
-                    <Input required value={newLoanData.customer_name || ''} onChange={(e) => setNewLoanData({...newLoanData, customer_name: e.target.value})} className="h-8 text-[11px] flex-1" />
-                  )}
+                  <Select value={newLoanData.customer_name || ''} onValueChange={(value) => {
+                    if (value === '__add_new__') { openInlineAdd('customer', 'add'); return; }
+                    const cust = masterCustomers.find(c => c.name === value);
+                    setNewLoanData({...newLoanData, customer_name: value, ...(cust?.contact_no ? { contact_no: cust.contact_no } : {})});
+                  }}>
+                    <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__add_new__" className="text-[11px] text-[#2c587a] font-medium">+ Add New Customer</SelectItem>
+                      {masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <button type="button" onClick={() => openInlineAdd('customer', 'add')} className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 hover:bg-[#2c587a]/10 transition-colors shrink-0" title="Add new customer" data-testid="inline-add-customer-btn"><Plus className="w-3.5 h-3.5 text-[#2c587a]" /></button>
                 </div>
               </div>
@@ -1456,28 +1456,32 @@ const MonthlyMIS = () => {
               <div>
                 <Label className="text-[11px] text-slate-600">Executive Name</Label>
                 <div className="flex gap-1 mt-0.5">
-                  {masterExecutives.length > 0 ? (
-                    <Select value={newLoanData.executive_name || ''} onValueChange={(value) => setNewLoanData({...newLoanData, executive_name: value})}>
-                      <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select executive" /></SelectTrigger>
-                      <SelectContent>{masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  ) : (
-                    <Input value={newLoanData.executive_name || ''} onChange={(e) => setNewLoanData({...newLoanData, executive_name: e.target.value})} className="h-8 text-[11px] flex-1" />
-                  )}
+                  <Select value={newLoanData.executive_name || ''} onValueChange={(value) => {
+                    if (value === '__add_new__') { openInlineAdd('executive', 'add'); return; }
+                    setNewLoanData({...newLoanData, executive_name: value});
+                  }}>
+                    <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select executive" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__add_new__" className="text-[11px] text-[#2c587a] font-medium">+ Add New Executive</SelectItem>
+                      {masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <button type="button" onClick={() => openInlineAdd('executive', 'add')} className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 hover:bg-[#2c587a]/10 transition-colors shrink-0" title="Add new executive" data-testid="inline-add-executive-btn"><Plus className="w-3.5 h-3.5 text-[#2c587a]" /></button>
                 </div>
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Team Manager</Label>
                 <div className="flex gap-1 mt-0.5">
-                  {masterManagers.length > 0 ? (
-                    <Select value={newLoanData.team_manager || ''} onValueChange={(value) => setNewLoanData({...newLoanData, team_manager: value})}>
-                      <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select manager" /></SelectTrigger>
-                      <SelectContent>{masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}</SelectContent>
-                    </Select>
-                  ) : (
-                    <Input value={newLoanData.team_manager || ''} onChange={(e) => setNewLoanData({...newLoanData, team_manager: e.target.value})} className="h-8 text-[11px] flex-1" />
-                  )}
+                  <Select value={newLoanData.team_manager || ''} onValueChange={(value) => {
+                    if (value === '__add_new__') { openInlineAdd('manager', 'add'); return; }
+                    setNewLoanData({...newLoanData, team_manager: value});
+                  }}>
+                    <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select manager" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__add_new__" className="text-[11px] text-[#2c587a] font-medium">+ Add New Manager</SelectItem>
+                      {masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                   <button type="button" onClick={() => openInlineAdd('manager', 'add')} className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 hover:bg-[#2c587a]/10 transition-colors shrink-0" title="Add new manager" data-testid="inline-add-manager-btn"><Plus className="w-3.5 h-3.5 text-[#2c587a]" /></button>
                 </div>
               </div>
@@ -1680,22 +1684,20 @@ const MonthlyMIS = () => {
               <div>
                 <Label className="text-[11px] text-slate-600">Customer Name *</Label>
                 <div className="flex gap-1 mt-0.5">
-                  {masterCustomers.length > 0 ? (
-                    <Select value={editFormData.customer_name || ''} onValueChange={(value) => {
+                  <Select value={editFormData.customer_name || ''} onValueChange={(value) => {
+                      if (value === '__add_new__') { openInlineAdd('customer', 'edit'); return; }
                       const cust = masterCustomers.find(c => c.name === value);
                       setEditFormData({...editFormData, customer_name: value, ...(cust?.contact_no ? { contact_no: cust.contact_no } : {})});
                     }}>
                       <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select customer" /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__add_new__" className="text-[11px] text-[#2c587a] font-medium">+ Add New Customer</SelectItem>
                         {editFormData.customer_name && !masterCustomers.some(c => c.name === editFormData.customer_name) && (
                           <SelectItem value={editFormData.customer_name} className="text-[11px] text-slate-400">{editFormData.customer_name} (current)</SelectItem>
                         )}
                         {masterCustomers.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}{c.contact_no ? ` (${c.contact_no})` : ''}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <Input required value={editFormData.customer_name || ''} onChange={(e) => setEditFormData({...editFormData, customer_name: e.target.value})} className="h-8 text-[11px] flex-1" />
-                  )}
                   <button type="button" onClick={() => openInlineAdd('customer', 'edit')} className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 hover:bg-[#2c587a]/10 transition-colors shrink-0" title="Add new customer"><Plus className="w-3.5 h-3.5 text-[#2c587a]" /></button>
                 </div>
               </div>
@@ -1706,38 +1708,38 @@ const MonthlyMIS = () => {
               <div>
                 <Label className="text-[11px] text-slate-600">Executive Name</Label>
                 <div className="flex gap-1 mt-0.5">
-                  {masterExecutives.length > 0 ? (
-                    <Select value={editFormData.executive_name || ''} onValueChange={(value) => setEditFormData({...editFormData, executive_name: value})}>
+                  <Select value={editFormData.executive_name || ''} onValueChange={(value) => {
+                      if (value === '__add_new__') { openInlineAdd('executive', 'edit'); return; }
+                      setEditFormData({...editFormData, executive_name: value});
+                    }}>
                       <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select executive" /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__add_new__" className="text-[11px] text-[#2c587a] font-medium">+ Add New Executive</SelectItem>
                         {editFormData.executive_name && !masterExecutives.some(e => e.name === editFormData.executive_name) && (
                           <SelectItem value={editFormData.executive_name} className="text-[11px] text-slate-400">{editFormData.executive_name} (current)</SelectItem>
                         )}
                         {masterExecutives.map(e => <SelectItem key={e.id} value={e.name} className="text-[11px]">{e.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <Input value={editFormData.executive_name || ''} onChange={(e) => setEditFormData({...editFormData, executive_name: e.target.value})} className="h-8 text-[11px] flex-1" />
-                  )}
                   <button type="button" onClick={() => openInlineAdd('executive', 'edit')} className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 hover:bg-[#2c587a]/10 transition-colors shrink-0" title="Add new executive"><Plus className="w-3.5 h-3.5 text-[#2c587a]" /></button>
                 </div>
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Team Manager</Label>
                 <div className="flex gap-1 mt-0.5">
-                  {masterManagers.length > 0 ? (
-                    <Select value={editFormData.team_manager || ''} onValueChange={(value) => setEditFormData({...editFormData, team_manager: value})}>
+                  <Select value={editFormData.team_manager || ''} onValueChange={(value) => {
+                      if (value === '__add_new__') { openInlineAdd('manager', 'edit'); return; }
+                      setEditFormData({...editFormData, team_manager: value});
+                    }}>
                       <SelectTrigger className="h-8 text-[11px] flex-1"><SelectValue placeholder="Select manager" /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="__add_new__" className="text-[11px] text-[#2c587a] font-medium">+ Add New Manager</SelectItem>
                         {editFormData.team_manager && !masterManagers.some(m => m.name === editFormData.team_manager) && (
                           <SelectItem value={editFormData.team_manager} className="text-[11px] text-slate-400">{editFormData.team_manager} (current)</SelectItem>
                         )}
                         {masterManagers.map(m => <SelectItem key={m.id} value={m.name} className="text-[11px]">{m.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  ) : (
-                    <Input value={editFormData.team_manager || ''} onChange={(e) => setEditFormData({...editFormData, team_manager: e.target.value})} className="h-8 text-[11px] flex-1" />
-                  )}
                   <button type="button" onClick={() => openInlineAdd('manager', 'edit')} className="h-8 w-8 flex items-center justify-center rounded-md border border-slate-200 hover:bg-[#2c587a]/10 transition-colors shrink-0" title="Add new manager"><Plus className="w-3.5 h-3.5 text-[#2c587a]" /></button>
                 </div>
               </div>

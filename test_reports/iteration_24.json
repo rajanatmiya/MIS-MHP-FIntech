@@ -1,0 +1,39 @@
+{
+  "summary": "Frontend-only retest of the MonthlyMIS Customer/Executive/Manager dropdown fix (Add + Edit forms) as admin. VERIFIED PASS: all three fields now always render Radix Select dropdowns (placeholders 'Select customer/executive/manager') in both Add and Edit forms, each with '+ Add New <Type>' as the FIRST option (blue/bold), followed by master entries; the inline add dialog opens (name + contact for customer, name only for executive/manager), POST /api/master/{customers|executives|managers} returns 200 and the new entry immediately appears in the dropdown list. CRITICAL FAIL: the newly added entry is NOT auto-selected — the trigger falls back to the placeholder AND the form state is wiped to an empty string, so submitting saves an entry with a BLANK customer name (reproduces the original production symptom 'Customer Names not showing'). Same failure in the Edit form (existing 'TestClient (current)' selection is replaced by the placeholder after an inline add). Manually re-picking the new name from the dropdown works, so it is a workaround only.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS Add form - Customer Name", "issue": "Customer Name is marked required (*) but the Select has no validation; form submits with customer_name:'' and the row renders '—' in CUSTOMER NAME. Add explicit pre-submit validation for customer_name (and Select-based required fields in general).", "selector": "button[role='combobox'] (Customer Name), button[type='submit']", "priority": "HIGH"},
+      {"component": "MonthlyMIS inline add dialog", "issue": "Select triggers for Customer/Executive/Manager have no data-testid (had to select via placeholder text); the Edit-form '+' buttons also lack data-testid (Add form has inline-add-customer-btn etc.).", "selector": "button[role='combobox']", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Add Entry -> '+ Add New Customer' (dropdown option OR '+' button) -> save inline dialog", "issue": "CRITICAL: new master entry is created (200) and appears in the dropdown, but is NOT auto-selected. Trigger shows 'Select customer' and network capture of POST /api/loans shows payload {\"customer_name\":\"\", \"contact_no\":\"9444400011\", ...} -> loan saved with empty customer_name (verified in GET /api/loans). Reproduced 5/5 times, both flows, independent of field-fill ordering, and after a frontend restart (bundle confirmed to contain the latest handleInlineAddSave code).", "affected_selectors": ["[data-testid='inline-add-customer-btn']", "[data-testid='inline-add-save-btn']", "button[role='combobox']"]},
+      {"flow": "Add Entry -> '+ Add New Executive' / '+ Add New Manager'", "issue": "Same auto-select failure: trigger stays on 'Select executive'/'Select manager' and executive_name is saved empty.", "affected_selectors": ["[data-testid='inline-add-executive-btn']", "[data-testid='inline-add-manager-btn']"]},
+      {"flow": "Edit Entry -> inline add customer", "issue": "Same failure and worse: the pre-existing selection ('TestClient (current)') is replaced by the 'Select customer' placeholder, so an unsuspecting save can blank an existing record's customer name.", "affected_selectors": ["button[role='combobox']", "button[title='Add new customer']"]}
+    ],
+    "design_issues": [
+      {"screen": "MonthlyMIS Add/Edit dialogs", "issues": ["'+ Add New ...' first option styling (blue, medium) is correct and readable", "No visible validation feedback when required Select fields are empty on submit"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/cleanup_qa_data.py"],
+  "action_items": [
+    "Fix auto-select after inline add: ignore Radix's spurious empty-value callback, e.g. in every Customer/Executive/Manager onValueChange add `if (!value) return;` before updating state (currently value==='' falls through and writes customer_name:'').",
+    "Additionally make the selected value always renderable while SelectContent is unmounted: render the currently selected name as a SelectItem in the Add form too (the Edit form's '(current)' pattern), or remount the Select with a key after masterCustomers updates, or defer setNewLoanData/setEditFormData by one tick (setTimeout 0) after the master list state update.",
+    "Add client-side validation so an entry cannot be saved with an empty required Select (customer_name) — currently backend accepts customer_name:''.",
+    "Consider server-side guard: reject blank customer_name in POST/PUT /api/loans (min_length=1) so this class of bug cannot corrupt data.",
+    "Add data-testid to the Customer/Executive/Manager SelectTriggers in both forms and to the Edit-form '+' buttons."
+  ],
+  "critical_code_review_comments": [
+    "MonthlyMIS.jsx is 2132 lines — split into subcomponents (AddEntryDialog, EditEntryDialog, InlineMasterAddDialog).",
+    "All Select/Input handlers use the stale-spread pattern `setNewLoanData({...newLoanData, x: v})`; switch to functional updates to avoid lost updates.",
+    "Radix SelectContent is unmounted when closed, so a controlled value that has no mounted SelectItem triggers a reset to '' via the hidden native select — never trust the master list alone; always render the selected value as an item."
+  ],
+  "updated_files": ["/app/backend/tests/cleanup_qa_data.py"],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "60% (4/6 requested checks pass; auto-select in Add and Edit forms fail)"},
+  "seed_data_creation": "Created and then deleted TEST_QA_* master customers/executives and 3 TEST_QA_* loan rows via /app/backend/tests/cleanup_qa_data.py — environment restored to 8 Apr-2026 entries.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Flow: login -> nav-monthly-mis -> click month-header-Apr-2026 (collapsed by default) -> add-entry-Apr-2026. Select triggers have no data-testid; use button[role='combobox'] within the last div[role='dialog'] (order: 0=customer, 1=executive, 2=manager, 3=status). Edit buttons are [data-testid^='mis-edit-']. To verify the fix, capture POST /api/loans request payload in Playwright and assert customer_name equals the inline-added name; also assert the trigger text equals the new name right after clicking inline-add-save-btn. Run /app/backend/tests/cleanup_qa_data.py afterwards.",
+  "rca_of_the_issue": "handleInlineAddSave (MonthlyMIS.jsx ~305-332) correctly POSTs the master entry and calls setNewLoanData/setEditFormData with the new name (bundle served to the browser was verified to contain this code). However the Radix Select's content (and therefore its SelectItems / hidden native <select> options) is unmounted while the dropdown is closed, so the newly set value matches no registered item; Radix's hidden BubbleSelect resets and fires onValueChange('') , which the component's handler happily writes back as customer_name:'' (it only special-cases '__add_new__'). Result: placeholder shown and POST /api/loans sends customer_name:'' (captured live), which the backend accepts (LoanApplicationCreate.customer_name: str allows ''), producing exactly the reported 'customer names not showing' rows. Fix = guard against empty value in onValueChange + always render the selected value as a SelectItem (or remount/defer), plus required-field validation."
+}
