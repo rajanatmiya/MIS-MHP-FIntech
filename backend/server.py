@@ -832,6 +832,30 @@ async def get_loans(
         "total_pages": (total + limit - 1) // limit
     }
 
+async def _sync_loan_to_master(loan_dict: dict, user_id: str):
+    """Auto-add new customer/company/executive/manager/bank to master collections"""
+    now = datetime.now(timezone.utc).isoformat()
+    syncs = [
+        ("customer_name", "master_customers", True),
+        ("company_name", "master_companies", False),
+        ("executive_name", "master_executives", False),
+        ("team_manager", "master_managers", False),
+        ("bank", "master_banks", False),
+    ]
+    for field, collection, include_contact in syncs:
+        name = str(loan_dict.get(field, "") or "").strip()
+        if not name:
+            continue
+        existing = await db[collection].find_one({"name": name})
+        if not existing:
+            doc = {"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": user_id}
+            if include_contact:
+                doc["contact_no"] = str(loan_dict.get("contact_no", "") or "").strip()
+            try:
+                await db[collection].insert_one(doc)
+            except Exception:
+                pass
+
 @api_router.post("/loans", response_model=LoanApplication)
 async def create_loan(loan_data: LoanApplicationCreate, current_user: User = Depends(get_current_user)):
     loan = LoanApplication(**loan_data.model_dump(), created_by=current_user.id)
@@ -841,6 +865,10 @@ async def create_loan(loan_data: LoanApplicationCreate, current_user: User = Dep
     loan_dict['updated_at'] = loan_dict['updated_at'].isoformat()
     
     await db.loan_applications.insert_one(loan_dict)
+    
+    # Auto-sync to master collections
+    await _sync_loan_to_master(loan_dict, current_user.id)
+    
     return loan
 
 async def check_loan_access(loan_id: str, user: User) -> dict:
@@ -876,6 +904,10 @@ async def update_loan(loan_id: str, loan_data: LoanApplicationUpdate, current_us
     update_dict['updated_at'] = datetime.now(timezone.utc).isoformat()
     
     await db.loan_applications.update_one({"id": loan_id}, {"$set": update_dict})
+    
+    # Auto-sync to master collections
+    updated_for_sync = {**loan, **update_dict}
+    await _sync_loan_to_master(updated_for_sync, current_user.id)
     
     updated_loan = await db.loan_applications.find_one({"id": loan_id}, {"_id": 0})
     if isinstance(updated_loan.get('created_at'), str):
