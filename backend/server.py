@@ -326,7 +326,7 @@ async def get_accessible_user_ids(user: User) -> List[str]:
         team_users = await db.users.find(
             {"$or": [{"manager_id": user.id}, {"id": user.id}]},
             {"_id": 0, "id": 1}
-        ).to_list(1000)
+        ).to_list(None)
         return [u["id"] for u in team_users]
     else:
         return [user.id]
@@ -422,7 +422,7 @@ async def change_password(password_data: PasswordChange, current_user: User = De
 @api_router.get("/users", response_model=List[User])
 async def get_users(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(None)
     
     for user in users:
         if isinstance(user.get('created_at'), str):
@@ -565,7 +565,7 @@ async def update_organization_schedule(
 @api_router.get("/field-configs", response_model=List[CustomFieldConfig])
 async def get_field_configs(current_user: User = Depends(get_current_user)):
     """Get all custom field configurations"""
-    fields = await db.field_configs.find({}, {"_id": 0}).sort("order", 1).to_list(1000)
+    fields = await db.field_configs.find({}, {"_id": 0}).sort("order", 1).to_list(None)
     
     for field in fields:
         if isinstance(field.get('created_at'), str):
@@ -626,7 +626,7 @@ async def delete_field_config(field_id: str, current_user: User = Depends(get_cu
 @api_router.get("/schemes", response_model=List[Scheme])
 async def get_schemes(current_user: User = Depends(get_current_user)):
     """Get all schemes"""
-    schemes = await db.schemes.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    schemes = await db.schemes.find({}, {"_id": 0}).sort("name", 1).to_list(None)
     
     for scheme in schemes:
         if isinstance(scheme.get('created_at'), str):
@@ -690,7 +690,7 @@ async def delete_scheme(scheme_id: str, current_user: User = Depends(get_current
 @api_router.get("/statuses", response_model=List[Status])
 async def get_statuses(current_user: User = Depends(get_current_user)):
     """Get all statuses"""
-    statuses = await db.statuses.find({}, {"_id": 0}).sort("order", 1).to_list(1000)
+    statuses = await db.statuses.find({}, {"_id": 0}).sort("order", 1).to_list(None)
     
     for status in statuses:
         if isinstance(status.get('created_at'), str):
@@ -768,7 +768,7 @@ async def get_status_usage_count(current_user: User = Depends(get_current_user))
         {"$group": {"_id": "$status", "count": {"$sum": 1}}},
         {"$sort": {"count": -1}}
     ]
-    results = await db.loan_applications.aggregate(pipeline).to_list(1000)
+    results = await db.loan_applications.aggregate(pipeline).to_list(None)
     return {r["_id"]: r["count"] for r in results if r["_id"]}
 
 # Loan routes with role-based access
@@ -1802,7 +1802,7 @@ async def get_team_leaderboard(month: Optional[str] = None, current_user: User =
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
 
     # Load all users to get roles
-    users = await db.users.find({}, {"_id": 0, "id": 1, "name": 1, "role": 1, "email": 1}).to_list(1000)
+    users = await db.users.find({}, {"_id": 0, "id": 1, "name": 1, "role": 1, "email": 1}).to_list(None)
     user_role_map = {}
     user_name_to_role = {}
     for u in users:
@@ -2024,7 +2024,7 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
     loans = await db.loan_applications.find({}, {"_id": 0}).to_list(10000)
     
     # Get all users (without passwords)
-    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(1000)
+    users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(None)
     
     # Get all field configs
     field_configs = await db.field_configs.find({}, {"_id": 0}).to_list(100)
@@ -2424,7 +2424,7 @@ Provide a clear, concise analysis with specific numbers and actionable insights.
 
 @api_router.get("/master/banks")
 async def get_master_banks(current_user: User = Depends(get_current_user)):
-    banks = await db.master_banks.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    banks = await db.master_banks.find({}, {"_id": 0}).sort("name", 1).to_list(None)
     return banks
 
 @api_router.post("/master/banks")
@@ -2560,7 +2560,7 @@ async def import_master_excel(file: UploadFile = File(...), section: str = Form(
 
 @api_router.get("/master/agents")
 async def get_master_agents(current_user: User = Depends(get_current_user)):
-    agents = await db.master_agents.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    agents = await db.master_agents.find({}, {"_id": 0}).sort("name", 1).to_list(None)
     return agents
 
 @api_router.post("/master/agents")
@@ -2603,7 +2603,7 @@ async def delete_master_agent(agent_id: str, current_user: User = Depends(get_cu
 # --- Master Companies ---
 @api_router.get("/master/companies")
 async def get_master_companies(current_user: User = Depends(get_current_user)):
-    return await db.master_companies.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_companies.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/companies")
 async def add_master_company(request: Request, current_user: User = Depends(get_current_user)):
@@ -2645,7 +2645,7 @@ async def delete_master_company(item_id: str, current_user: User = Depends(get_c
 # --- Master Branches ---
 @api_router.get("/master/branches")
 async def get_master_branches(current_user: User = Depends(get_current_user)):
-    return await db.master_branches.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_branches.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/branches")
 async def add_master_branch(request: Request, current_user: User = Depends(get_current_user)):
@@ -2688,7 +2688,7 @@ async def delete_master_branch(item_id: str, current_user: User = Depends(get_cu
 # --- Master Locations ---
 @api_router.get("/master/locations")
 async def get_master_locations(current_user: User = Depends(get_current_user)):
-    return await db.master_locations.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_locations.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/locations")
 async def add_master_location(request: Request, current_user: User = Depends(get_current_user)):
@@ -2731,7 +2731,7 @@ async def delete_master_location(item_id: str, current_user: User = Depends(get_
 # --- Master Categories ---
 @api_router.get("/master/categories")
 async def get_master_categories(current_user: User = Depends(get_current_user)):
-    return await db.master_categories.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_categories.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/categories")
 async def add_master_category(request: Request, current_user: User = Depends(get_current_user)):
@@ -2774,7 +2774,7 @@ async def delete_master_category(item_id: str, current_user: User = Depends(get_
 # --- Master Products ---
 @api_router.get("/master/products")
 async def get_master_products(current_user: User = Depends(get_current_user)):
-    return await db.master_products.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_products.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/products")
 async def add_master_product(request: Request, current_user: User = Depends(get_current_user)):
@@ -2817,7 +2817,7 @@ async def delete_master_product(item_id: str, current_user: User = Depends(get_c
 # --- Master Customers (with contact_no) ---
 @api_router.get("/master/customers")
 async def get_master_customers(current_user: User = Depends(get_current_user)):
-    docs = await db.master_customers.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    docs = await db.master_customers.find({}, {"_id": 0}).sort("name", 1).to_list(None)
     for doc in docs:
         if "contact_no" not in doc:
             doc["contact_no"] = ""
@@ -2865,7 +2865,7 @@ async def delete_master_customer(item_id: str, current_user: User = Depends(get_
 # --- Master Executives ---
 @api_router.get("/master/executives")
 async def get_master_executives(current_user: User = Depends(get_current_user)):
-    return await db.master_executives.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_executives.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/executives")
 async def add_master_executive(request: Request, current_user: User = Depends(get_current_user)):
@@ -2907,7 +2907,7 @@ async def delete_master_executive(item_id: str, current_user: User = Depends(get
 # --- Master Managers ---
 @api_router.get("/master/managers")
 async def get_master_managers(current_user: User = Depends(get_current_user)):
-    return await db.master_managers.find({}, {"_id": 0}).sort("name", 1).to_list(1000)
+    return await db.master_managers.find({}, {"_id": 0}).sort("name", 1).to_list(None)
 
 @api_router.post("/master/managers")
 async def add_master_manager(request: Request, current_user: User = Depends(get_current_user)):
