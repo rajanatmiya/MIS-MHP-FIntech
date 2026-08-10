@@ -2606,7 +2606,6 @@ async def get_master_companies(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/master/companies")
 async def add_master_company(request: Request, current_user: User = Depends(get_current_user)):
-    check_admin(current_user)
     data = await request.json()
     name = data.get("name", "").strip()
     if not name:
@@ -2825,7 +2824,6 @@ async def get_master_customers(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/master/customers")
 async def add_master_customer(request: Request, current_user: User = Depends(get_current_user)):
-    check_admin(current_user)
     data = await request.json()
     name = data.get("name", "").strip()
     contact_no = data.get("contact_no", "").strip()
@@ -2870,7 +2868,6 @@ async def get_master_executives(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/master/executives")
 async def add_master_executive(request: Request, current_user: User = Depends(get_current_user)):
-    check_admin(current_user)
     data = await request.json()
     name = data.get("name", "").strip()
     if not name:
@@ -2913,7 +2910,6 @@ async def get_master_managers(current_user: User = Depends(get_current_user)):
 
 @api_router.post("/master/managers")
 async def add_master_manager(request: Request, current_user: User = Depends(get_current_user)):
-    check_admin(current_user)
     data = await request.json()
     name = data.get("name", "").strip()
     if not name:

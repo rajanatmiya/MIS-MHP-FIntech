@@ -1,0 +1,25 @@
+{
+  "summary": "Verified fix allowing non-admin users to add master names. Backend: 32 pytest cases across /api/master/{customers,companies,executives,managers} - manager & agent POST return 200 with persisted data visible to admin; PUT/DELETE return 403 for manager; unauthenticated POST rejected; duplicate/empty name return 400; admin PUT/DELETE still work. Frontend: logged in as manager, opened Month MIS -> Apr-2026 group -> Add Entry, used '+' inline add for Customer (TestMgrCustQA7X / 9990001111), Executive, Team Manager - all saved with success toast, dialog closed, value auto-selected in the Select trigger, contact auto-filled, and new customer present in dropdown options. Logged in as admin -> Master File shows all three names in Customer Names, Executive Names, Team Managers. Test data cleaned up.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Month MIS Add New Entry dialog", "issues": ["Date / Login Date / Disbursed Date use native browser date inputs (mm/dd/yyyy) instead of the shadcn calendar component - pre-existing, not part of this fix"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_master_nonadmin_add.py", "/app/backend/tests/cleanup_master_qa.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "POST /api/master/companies is now open to all roles, but the MIS Add/Edit form has no inline '+' next to 'Company Name *' - non-admins still cannot add a company from the MIS page even though the API allows it. Consider adding the inline add button for company for consistency.",
+    "Master POST endpoints read raw request bodies via `await request.json()` instead of Pydantic models; a non-string 'name' (e.g. {\"name\": 123}) would raise AttributeError -> 500. Low risk from the UI but worth tightening with a Pydantic model."
+  ],
+  "updated_files": ["/app/backend/tests/test_master_nonadmin_add.py", "/app/backend/tests/cleanup_master_qa.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Created TestMgr*/TestAgent* master names during testing; all removed afterwards along with developer's MgrTestCustomer/MgrTestCompany/MgrTestExec/MgrTestMgr via /app/backend/tests/cleanup_master_qa.py",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123, manager@mhpfintech.com / Admin@123, agent@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Month MIS groups are collapsed by default; click [data-testid^='month-header-'] then [data-testid^='add-entry-']. Inline add flow testids: inline-add-{customer|executive|manager}-btn, inline-add-name-input, inline-add-contact-input, inline-add-save-btn. Navigating to /login while a session exists redirects to '/' - clear localStorage before switching users. Regression suite: /app/backend/tests/test_master_nonadmin_add.py (32 tests, all passing).",
+  "rca_of_the_issue": "Original bug: POST master endpoints called check_admin, causing 403 for Manager/Agent from the MIS inline add. Fix (check_admin removed from the 4 POST handlers) is confirmed correct; PUT/DELETE retain check_admin so edit/delete stay admin-only."
+}
