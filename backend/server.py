@@ -853,8 +853,9 @@ async def _sync_loan_to_master(loan_dict: dict, user_id: str):
                 doc["contact_no"] = str(loan_dict.get("contact_no", "") or "").strip()
             try:
                 await db[collection].insert_one(doc)
-            except Exception:
-                pass
+                logger.info(f"Master sync: added '{name}' to {collection}")
+            except Exception as e:
+                logger.error(f"Master sync failed for '{name}' in {collection}: {str(e)}")
 
 @api_router.post("/loans", response_model=LoanApplication)
 async def create_loan(loan_data: LoanApplicationCreate, current_user: User = Depends(get_current_user)):
