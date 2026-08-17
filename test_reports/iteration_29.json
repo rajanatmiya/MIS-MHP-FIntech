@@ -1,0 +1,26 @@
+{
+  "summary": "Frontend-only verification of the MIS filter-totals bug fix (mergeOptions union of loan values + master names). Seeded 4 known-amount loans in Apr-2026 via API, then ran two Playwright suites as admin. Verified: unfiltered Apr-2026 totals (Sanctioned 2,00,00,000 / Disbursed 99,00,000, 12 entries) match API data; Bank filter (HDFC Bank) shows only HDFC rows and header+footer totals become 30,00,000/24,00,000; collapsed month header totals also update; Status=Disbursed -> 40,00,000/34,00,000; Company/Manager/Executive filters each produce correct filtered totals; multi-filter intersection (Bank=HDFC + Status=Hold) -> 20,00,000/15,00,000 with a single row; multi-value bank selection (HDFC+ICICI) -> 60,00,000/49,00,000; search 'HDFC' and 'ICICI' totals exactly equal the equivalent bank-filter totals; 'Clear all' restores baseline totals. Critically, the bank filter dropdown now contains actual loan-only values not present in master (e.g. TEST_Replace_Bank_1) and filtering on it returns 1 row with correct totals 1,00,00,000/50,00,000 - confirming the reported bug is fixed. Footer TOTAL (n) count always matched visible row count. All seeded loans and auto-synced master names cleaned up.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/seed_mis_filter_totals.py", "/app/backend/tests/cleanup_mis_filter_qa.py"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Month header Sanctioned/Disbursed summary is rendered only when the group is collapsed (line ~1273 `!isExpanded`). When expanded the user must scroll to the footer TOTAL row - consider always showing the header summary.",
+    "uniqueCaseFrom / uniqueBranches / uniqueLocations still derive options from loan data only (no master merge). That is functionally safe for filtering, but inconsistent with bank/company/manager/executive which now merge master names.",
+    "Category, Product and Status filters still use master lists only (masterCategories/masterProducts/statuses). If loan rows hold legacy category/product/status strings absent from master, the same original bug will reappear for those three filters - recommend applying mergeOptions there too.",
+    "Table data rows had no data-testid; added data-testid={`mis-row-${loan.id}`} on the row <tr> for testability (only change made).",
+    "Pre-existing lint: MonthlyMIS.jsx:1429 react/no-unescaped-entities (2 errors)."
+  ],
+  "updated_files": ["/app/frontend/src/pages/MonthlyMIS.jsx (added data-testid on MIS table rows only)"],
+  "success_rate": {"backend": "not tested (skipped per request)", "frontend": "100%"},
+  "seed_data_creation": "4 loans TEST_QA_A..D (Apr-2026, banks HDFC Bank/ICICI/SBI, companies TEST_QA_Co1/2, managers TEST_QA_Mgr1/2, execs TEST_QA_Exec1/2, known sanction/disbursed amounts) - all deleted after testing along with auto-synced master names (TEST_QA_*, QA Agent).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Apr-2026 group is collapsed by default; click [data-testid='month-header-Apr-2026'] to expand. Totals testids: mis-total-Apr-2026-sanction / -disbursed / -month (TOTAL (n)). Rows: [data-testid^='mis-row-']. MultiCheckFilter: click `[data-testid=\"filter-bank\"] button`, then the label containing the option text and its checkbox; close by clicking [data-testid='quick-filters'] at position 5,5. Reusable seeder: `python /app/backend/tests/seed_mis_filter_totals.py` and `... cleanup`. Note existing production-ish loans in Apr-2026 mostly have blank sanction/disbursed, so seeding is required for meaningful totals math.",
+  "rca_of_the_issue": "Original bug: filter dropdown options were built from master collections only, so loan rows carrying non-standardized values could never be matched by the exact-match filter (filterBanks.includes(loan.bank)), producing empty/incorrect filtered sets and totals. Fix (mergeOptions union of loan values + master names) verified working for bank/company/manager/executive; category/product/status filters still master-only and remain theoretically exposed."
+}

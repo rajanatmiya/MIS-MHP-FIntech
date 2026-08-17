@@ -779,11 +779,20 @@ const MonthlyMIS = () => {
     return matchesSearch && matchesFilters;
   });
 
-  // Build unique option lists for filters from actual loan data
-  const uniqueCompanies = [...new Set(loans.map(l => l.company_name).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
+  // Build unique option lists for filters from actual loan data + master data merged
+  const mergeOptions = (loanValues, masterList) => {
+    const names = new Set(loanValues);
+    masterList.forEach(m => names.add(m.name));
+    return [...names].filter(Boolean).sort().map(n => ({ id: n, name: n }));
+  };
+  const uniqueCategories = mergeOptions(loans.map(l => l.category), masterCategories);
+  const uniqueProducts = mergeOptions(loans.map(l => l.product), masterProducts);
+  const uniqueStatuses = mergeOptions(loans.map(l => l.status), statuses);
+  const uniqueCompanies = mergeOptions(loans.map(l => l.company_name), masterCompanies);
   const uniqueCaseFrom = [...new Set(loans.map(l => l.case_from).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
-  const uniqueManagers = [...new Set(loans.map(l => l.team_manager).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
-  const uniqueExecutives = [...new Set(loans.map(l => l.executive_name).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
+  const uniqueManagers = mergeOptions(loans.map(l => l.team_manager), masterManagers);
+  const uniqueExecutives = mergeOptions(loans.map(l => l.executive_name), masterExecutives);
+  const uniqueBanks = mergeOptions(loans.map(l => l.bank), masterBanks);
   const uniqueBranches = [...new Set(loans.map(l => l.branch).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
   const uniqueLocations = [...new Set(loans.map(l => l.location).filter(Boolean))].sort().map(n => ({ id: n, name: n }));
 
@@ -1095,14 +1104,14 @@ const MonthlyMIS = () => {
       {/* Multi-Checkbox Filters */}
       {showQuickFilters && (
       <div className="flex flex-wrap items-center gap-2" data-testid="quick-filters">
-        <MultiCheckFilter label="Category" options={masterCategories} selected={filterCategories} onChange={setFilterCategories} testId="filter-category" />
-        <MultiCheckFilter label="Product" options={masterProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
-        <MultiCheckFilter label="Bank" options={masterBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
-        <MultiCheckFilter label="Status" options={statuses.map(s => ({ id: s.id || s.name, name: s.name }))} selected={filterStatuses} onChange={setFilterStatuses} testId="filter-status" />
-        <MultiCheckFilter label="Company" options={masterCompanies.length > 0 ? masterCompanies : uniqueCompanies} selected={filterCompanies} onChange={setFilterCompanies} testId="filter-company" />
+        <MultiCheckFilter label="Category" options={uniqueCategories} selected={filterCategories} onChange={setFilterCategories} testId="filter-category" />
+        <MultiCheckFilter label="Product" options={uniqueProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
+        <MultiCheckFilter label="Bank" options={uniqueBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
+        <MultiCheckFilter label="Status" options={uniqueStatuses} selected={filterStatuses} onChange={setFilterStatuses} testId="filter-status" />
+        <MultiCheckFilter label="Company" options={uniqueCompanies} selected={filterCompanies} onChange={setFilterCompanies} testId="filter-company" />
         <MultiCheckFilter label="Case From" options={uniqueCaseFrom} selected={filterCaseFrom} onChange={setFilterCaseFrom} testId="filter-casefrom" />
-        <MultiCheckFilter label="Manager" options={masterManagers.length > 0 ? masterManagers : uniqueManagers} selected={filterManagers} onChange={setFilterManagers} testId="filter-manager" />
-        <MultiCheckFilter label="Executive" options={masterExecutives.length > 0 ? masterExecutives : uniqueExecutives} selected={filterExecutives} onChange={setFilterExecutives} testId="filter-executive" />
+        <MultiCheckFilter label="Manager" options={uniqueManagers} selected={filterManagers} onChange={setFilterManagers} testId="filter-manager" />
+        <MultiCheckFilter label="Executive" options={uniqueExecutives} selected={filterExecutives} onChange={setFilterExecutives} testId="filter-executive" />
         <MultiCheckFilter label="Branch" options={uniqueBranches} selected={filterBranches} onChange={setFilterBranches} testId="filter-branch" />
         <MultiCheckFilter label="Location" options={uniqueLocations} selected={filterLocations} onChange={setFilterLocations} testId="filter-location" />
         {(filterCategories.length > 0 || filterProducts.length > 0 || filterBanks.length > 0 || filterStatuses.length > 0 || filterCompanies.length > 0 || filterCaseFrom.length > 0 || filterManagers.length > 0 || filterExecutives.length > 0 || filterBranches.length > 0 || filterLocations.length > 0) && (
@@ -1327,7 +1336,7 @@ const MonthlyMIS = () => {
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {monthLoans.map(loan => (
-                        <tr key={loan.id} className={`transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : 'hover:bg-slate-50/50'}`}>
+                        <tr key={loan.id} data-testid={`mis-row-${loan.id}`} className={`transition-colors ${selectedIds.has(loan.id) ? 'bg-blue-50/60' : 'hover:bg-slate-50/50'}`}>
                           {showBulkSelect && (
                           <td className="px-2 py-1 bg-white" style={{ position: 'sticky', left: 0, zIndex: 10, width: `${CHECKBOX_COL_W}px`, minWidth: `${CHECKBOX_COL_W}px` }}>
                             <input
