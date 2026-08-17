@@ -3273,17 +3273,8 @@ async def create_default_admin():
                 # Ensure all standard bank names exist in master_banks
                 standard_banks = ["Kotak Bank", "Deutsche", "SMFG", "ICICI", "IDFC", "Indusind", "L&T", "Piramal", "Yes Bank", "SBI", "HDFC Bank"]
                 for bname in standard_banks:
-                    existing = await db.master_banks.find_one({"name": bname})
-                    if not existing:
-                        try:
-                            await db.master_banks.insert_one({"id": str(uuid.uuid4()), "name": bname, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"})
-                        except Exception:
-                            pass
-                # Remove old/duplicate bank names that were renamed
-                old_names_to_remove = ["kotak", "db", "fullerton", "icici bank", "idfc first", "indusind bank", "L&T Finance", "Piramal finance", "yes", "l&t finance", "piramal finance"]
-                for old in old_names_to_remove:
-                    await db.master_banks.delete_many({"name": {"$regex": f"^{old}$", "$options": "i"}})
-                await db.migrations.insert_one({"_id": BANK_SEED_VER, "applied_at": datetime.now(timezone.utc).isoformat()})
+                    await db.master_banks.update_one({"name": bname}, {"$setOnInsert": {"id": str(uuid.uuid4()), "name": bname, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": "system"}}, upsert=True)
+                await db.migrations.update_one({"_id": BANK_SEED_VER}, {"$set": {"_id": BANK_SEED_VER, "applied_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
                 logger.info(f"Bank migration {BANK_SEED_VER}: {total_renamed} records renamed, standard banks ensured")
         except Exception as e:
             logger.error(f"Bank rename migration error: {str(e)}")
@@ -3319,23 +3310,23 @@ async def create_default_admin():
         except Exception as e:
             logger.error(f"Customer sync error: {str(e)}")
 
-        # Versioned seed: clean-replace managers & executives from Excel (v2)
+        # Versioned seed: ensure managers & executives from Excel exist (idempotent upsert)
         try:
             SEED_VERSION = "v3_excel_managers_executives"
             seed_done = await db.migrations.find_one({"_id": SEED_VERSION})
             if not seed_done:
                 seed_managers = ["Hiren Parmar","Priya Mistry","Bhavesh Lakhotiya","Komal Gupta","Ankit Shah","Karan Mehta","Sumeet Gosavi","Kunal Trivedi","Akash Parmar"]
                 seed_executives = ["Hiren Parmar","Priya Mistry","Bhavesh Lakhotiya","Komal Gupta","Ankit Shah","Karan Mehta","Sumeet Gosavi","Kunal Trivedi","Akash Parmar","Riya Vartak","Vishakha Solanki","Rohit Trilotkar","Puneet Sharma","Khushboo Kori","Hiral Gangar","Sonal Padhariya","Shashi Dubey","Deepa Patel","Kajal Yadav","Jayshree Sonar","Seema Shah","Diya Gandhi","Manav Mehta","Kashish Vaish","Krusha Gala","Rohan Shelar","Mahendra Mewada","Mahi Priya","Revati Vallamdas","Sagar Yadav","Jinal Gada","Mayuri Halpati","Bharti Patel","Soni Jayswal","Mayuri Singh","Kiran Pathak","Deepika Singh","Mohini Jadhav","Divesh Kantelia","Firoz Khan","Vikas Talreja","Dimple Solanki","Manoj Gupta","Kamlesh Mahajan","Hiren Mehta","Ravish Chitrigemath","Nitin Menon","Am Capital","Abaj Capital","Leonard","Navnit Singh","Pratik Rathod","Aarchi Patel","Hetal Bhanushali","Ravathi Nair","Lovely Singh","Jyoti Pandey","Rimi Chaudhary","Suraj Behra","Dhaval Shah","Dhaval K Shah","Dipti Chawda","Rushabh Bagadia","Ranveer Sethi","Khushal","Mb Capital","Ketan Verma","Kalpesh Shah","Kalpit Jain","Dhanraj Shetty","Abhay Deo","Nidhi Lodha","Koyal Rana","Sanjay Parmar","Satish Gupta","Jayesh Patekar","Sagar Hase","Amit Routela","Deepak More","True Finance","Shamim","Sarfaraz Khan","Raj Thakkar","Virendra"]
-                # Clear old data and insert fresh
-                await db.master_managers.delete_many({})
-                await db.master_executives.delete_many({})
                 now = datetime.now(timezone.utc).isoformat()
+                sm, se = 0, 0
                 for name in seed_managers:
-                    await db.master_managers.insert_one({"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": "system"})
+                    await db.master_managers.update_one({"name": name}, {"$setOnInsert": {"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": "system"}}, upsert=True)
+                    sm += 1
                 for name in seed_executives:
-                    await db.master_executives.insert_one({"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": "system"})
-                await db.migrations.insert_one({"_id": SEED_VERSION, "applied_at": now})
-                logger.info(f"Seed migration {SEED_VERSION}: {len(seed_managers)} managers, {len(seed_executives)} executives inserted")
+                    await db.master_executives.update_one({"name": name}, {"$setOnInsert": {"id": str(uuid.uuid4()), "name": name, "created_at": now, "created_by": "system"}}, upsert=True)
+                    se += 1
+                await db.migrations.update_one({"_id": SEED_VERSION}, {"$set": {"_id": SEED_VERSION, "applied_at": now}}, upsert=True)
+                logger.info(f"Seed migration {SEED_VERSION}: {sm} managers, {se} executives ensured")
         except Exception as e:
             logger.error(f"Seed migration error: {str(e)}")
         
