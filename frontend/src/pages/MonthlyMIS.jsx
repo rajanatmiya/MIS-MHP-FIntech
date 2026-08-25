@@ -336,6 +336,15 @@ const MonthlyMIS = () => {
     fetchSchemes();
     fetchStatuses();
     fetchMasterData();
+
+    // Auto-refresh master data when user switches back to this tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchMasterData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
   
   const fetchMasterData = async () => {
@@ -566,6 +575,7 @@ const MonthlyMIS = () => {
   };
 
   const handleEditOpen = (loan) => {
+    fetchMasterData();
     setEditingLoan(loan);
     setEditFormData({ ...loan });
     const m = loan.month || '';
@@ -1169,7 +1179,7 @@ const MonthlyMIS = () => {
                     <Download className="w-3 h-3" /> Export
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); setAddEntryForMonth(month); setMonthInputValue(getDefaultDateForMonth(month)); setNewLoanData({ month: (() => { const r = getMonthDateRange(month); if (r.min) { const [y,m,d] = r.min.split('-'); return `${d}-${m}-${y}`; } return ''; })() }); setShowAddForm(true); }}
+                    onClick={(e) => { e.stopPropagation(); fetchMasterData(); setAddEntryForMonth(month); setMonthInputValue(getDefaultDateForMonth(month)); setNewLoanData({ month: (() => { const r = getMonthDateRange(month); if (r.min) { const [y,m,d] = r.min.split('-'); return `${d}-${m}-${y}`; } return ''; })() }); setShowAddForm(true); }}
                     className="flex items-center gap-0.5 h-6 px-2 text-[10px] font-medium text-[#2c587a] bg-[#2c587a]/10 hover:bg-[#2c587a]/20 rounded transition-colors"
                     data-testid={`add-entry-${month}`}
                   >
