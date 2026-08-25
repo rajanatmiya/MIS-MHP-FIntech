@@ -1,0 +1,37 @@
+{
+  "summary": "Verified two changes: (1) removal of inline '+' add buttons and '+ Add New' dropdown options from Customer/Executive/Manager fields in MIS Add & Edit forms, and (2) agent RBAC filter ($or created_by / agent_name). Backend: created /app/backend/tests/test_agent_rbac_agentname.py with 11 tests - all 11 PASS (agent sees own-name loans, does NOT see other agents' loans, search preserves RBAC, GET /loans/{id} of another agent's loan returns 403, admin sees all, analytics/overview + by-agent scoped correctly). Frontend (Playwright, admin + agent logins on preview URL): Add dialog and Edit dialog both contain ZERO lucide-plus/'+' buttons and ZERO '+ Add New' options; dropdowns show only master data (customers 18, executives 86, managers 11). Inline-add dialog never rendered. Agent MIS view shows exactly 5 rows, all matching created_by=agent-id OR agent_name='Test Agent' (verified against MongoDB), no leakage.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /api/loans (agent role)", "issue": "RBAC matches on agent_name string. Two users with the same display name would see each other's loans, and renaming a user silently changes their visible data. Consider matching on agent user_id instead of free-text agent_name."},
+      {"endpoint": "DELETE /api/loans/{id} (agent role)", "issue": "Agent cannot delete a loan they created themselves (403). Expected per design? Flagging for confirmation - it left QA test data behind that had to be cleaned via admin/DB."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS Edit dialog - Company Name Select", "issue": "When the loan's existing company (e.g. 'TestCo') is not in master_companies the Select renders blank (no '(current)' fallback item), unlike Customer/Executive/Manager which do have the fallback. Value is preserved on save but the field looks empty/lost to the user.", "selector": "[role='dialog'] >> text=Company Name", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MIS Add/Edit dialogs", "issues": ["Date, Login Date and Disbursed Date use native browser date inputs (mm/dd/yyyy) instead of the shadcn Calendar/Popover used elsewhere - inconsistent and locale-dependent display (pre-existing)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_agent_rbac_agentname.py", "/app/test_reports/pytest/pytest_agent_rbac.xml"],
+  "action_items": [
+    "Optional: add '(current)' fallback SelectItem for Company Name in the Edit dialog for parity with Customer/Executive/Manager.",
+    "Confirm intended behaviour of agent DELETE /api/loans/{id} returning 403 for own loans.",
+    "Consider agent RBAC keyed on user id rather than agent_name string to avoid duplicate-name collisions."
+  ],
+  "critical_code_review_comments": [
+    "build_rbac_filter injects a top-level $or; GET /api/loans correctly merges it with search via $and, but any future filter that also uses $or on this query must follow the same pattern or it will silently overwrite the RBAC clause. Consider always wrapping RBAC in $and.",
+    "POST /api/loans auto-creates master_customers/master_companies entries, so master data can still grow from the MIS form even though the explicit '+ Add New' UI was removed - confirm this is intended."
+  ],
+  "updated_files": ["/app/backend/tests/test_agent_rbac_agentname.py"],
+  "success_rate": {"backend": "100% (11/11)", "frontend": "100% (all requested checks passed)"},
+  "seed_data_creation": "Created TEST_* loans/customers during pytest; all removed afterwards. Loan count restored to original 8. Note: 4 pre-existing 'TEST_*' master customers from earlier QA iterations were also purged (master customers now 16).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123, agent@mhpfintech.com / Admin@123 (agent display name = 'Test Agent')",
+  "context_for_next_testing_agent": "Use data-testids: add-entry-{month}, month-header-{month}, mis-edit-{loanId}, add-/edit-customer-select, add-/edit-executive-select, add-/edit-manager-select. Sidebar link is 'Month MIS' (not 'Monthly MIS'); month groups are collapsed by default and the per-month add button is labelled '+ Add'. RBAC regression suite: /app/backend/tests/test_agent_rbac_agentname.py. Two legacy loans have agent_name 'Agent User' but created_by = Test Agent's id, so they legitimately appear in the agent view.",
+  "rca_of_the_issue": "N/A - both reported changes verified working; only minor/cosmetic observations remain."
+}

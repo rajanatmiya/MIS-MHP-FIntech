@@ -332,17 +332,15 @@ async def get_accessible_user_ids(user: User) -> List[str]:
         return [user.id]
 
 def build_rbac_filter(current_user: User, accessible_ids):
-    """Build RBAC query filter. Agents always see their own loans. Managers see all team loans."""
+    """Build RBAC query filter. Agents see only their own loans (by created_by OR agent_name). Managers see all team loans."""
     if current_user.role == 'admin' or accessible_ids is None:
         return {}
     
-    # Agent: only own loans, no bank/cat/prod filtering needed
-    # (agent always sees everything they created)
+    # Agent: own loans by created_by OR agent_name matching their name
     if current_user.role == 'agent':
-        return {"created_by": current_user.id}
+        return {"$or": [{"created_by": current_user.id}, {"agent_name": current_user.name}]}
     
     # Manager: see all team loans without bank/cat/prod restriction
-    # Team visibility is controlled by manager_id assignment, not bank names
     return {"created_by": {"$in": accessible_ids}}
 
 # Auth routes
