@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight, Copy, MoveRight } from 'lucide-react';
+import { Plus, ChevronDown, ChevronRight, Search, Download, Filter, Sparkles, X, TrendingUp, Upload, FileSpreadsheet, Edit, Trash2, CheckSquare, Square, Columns, ToggleLeft, ToggleRight, Copy, MoveRight, RefreshCw } from 'lucide-react';
 
 // Month format helpers
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -337,14 +337,17 @@ const MonthlyMIS = () => {
     fetchStatuses();
     fetchMasterData();
 
-    // Auto-refresh master data when user switches back to this tab
+    // Auto-refresh master data when user switches back to this tab/window
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        fetchMasterData();
-      }
+      if (document.visibilityState === 'visible') fetchMasterData();
     };
+    const handleFocus = () => fetchMasterData();
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
   }, []);
   
   const fetchMasterData = async () => {
@@ -995,6 +998,14 @@ const MonthlyMIS = () => {
       {/* Multi-Checkbox Filters */}
       {showQuickFilters && (
       <div className="flex flex-wrap items-center gap-2" data-testid="quick-filters">
+        <button
+          onClick={() => { fetchMasterData(); fetchLoans(); toast.success('Data refreshed'); }}
+          className="flex items-center gap-1 h-7 px-2.5 text-[11px] border border-slate-200 rounded-md text-slate-600 hover:border-[#2c587a] hover:bg-[#2c587a]/5 hover:text-[#2c587a] transition-colors"
+          data-testid="refresh-data-btn"
+          title="Refresh master data & loans"
+        >
+          <RefreshCw className="w-3 h-3" /> Refresh
+        </button>
         <MultiCheckFilter label="Category" options={uniqueCategories} selected={filterCategories} onChange={setFilterCategories} testId="filter-category" />
         <MultiCheckFilter label="Product" options={uniqueProducts} selected={filterProducts} onChange={setFilterProducts} testId="filter-product" />
         <MultiCheckFilter label="Bank" options={uniqueBanks} selected={filterBanks} onChange={setFilterBanks} testId="filter-bank" />
