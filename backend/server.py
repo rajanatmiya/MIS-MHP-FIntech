@@ -981,7 +981,7 @@ async def delete_loans_by_date(date_str: str, current_user: User = Depends(get_c
             try:
                 target_date = datetime.strptime(date_str, fmt).date()
                 break
-            except:
+            except Exception:
                 continue
         
         if not target_date:
@@ -1406,13 +1406,13 @@ async def get_overview(current_user: User = Depends(get_current_user)):
         try:
             sanction_amt = float(str(sanction_str).replace(',', '')) if sanction_str else 0
             total_sanction_amount += sanction_amt
-        except:
+        except Exception:
             pass
         
         try:
             disbursed_amt = float(str(disbursed_str).replace(',', '')) if disbursed_str else 0
             total_disbursed_amount += disbursed_amt
-        except:
+        except Exception:
             pass
         
         if status == 'Disbursed':
@@ -1479,10 +1479,10 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
         dis = 0
         try:
             san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         try:
             dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         monthly_data[month]["sanction_amount"] += san
         monthly_data[month]["disbursed_amount"] += dis
         
@@ -1541,9 +1541,9 @@ async def get_by_bank(month: Optional[str] = None, current_user: User = Depends(
         san = 0
         dis = 0
         try: san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         try: dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         
         bank_stats[bank]["total"] += 1
         bank_stats[bank]["sanction_amt"] += san
@@ -1598,9 +1598,9 @@ async def get_by_agent(month: Optional[str] = None, current_user: User = Depends
         san = 0
         dis = 0
         try: san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         try: dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         
         agent_stats[agent]["total"] += 1
         agent_stats[agent]["sanction_amt"] += san
@@ -1683,9 +1683,9 @@ async def get_deep_analytics(month: Optional[str] = None, current_user: User = D
         san = 0
         dis = 0
         try: san = float(str(loan.get('sanction', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         try: dis = float(str(loan.get('disbursed', '') or '0').replace(',', ''))
-        except: pass
+        except Exception: pass
         
         total_sanction += san
         total_disbursed += dis
@@ -2096,7 +2096,7 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
     )
 
 @api_router.post("/import/loans-excel")
-async def import_loans_from_excel(file: UploadFile = File(...), current_user: User = Depends(get_current_user)):
+async def import_loans_from_excel(file: UploadFile = File(...), month: str = Form(None), current_user: User = Depends(get_current_user)):
     """Import loans from Excel file"""
     check_admin(current_user)
     
@@ -2192,7 +2192,8 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                 detail=f"Missing required columns: {', '.join(missing_fields)}"
             )
         
-        # Auto-generate month if not present (use current month)
+        # Auto-generate month if not present (use selected month or current month)
+        selected_month = month.strip() if month else None
         current_month = datetime.now().strftime("%b'%y")  # e.g., "Jan'25"
         
         # Import loans with duplicate detection
@@ -2250,7 +2251,7 @@ async def import_loans_from_excel(file: UploadFile = File(...), current_user: Us
                     "tenure": str(row.get('tenure', '')).strip() if pd.notna(row.get('tenure')) else '',
                     "subvention": str(row.get('subvention', '')).strip() if pd.notna(row.get('subvention')) else '',
                     "brokerage_subvention": str(row.get('brokerage_subvention', '')).strip() if pd.notna(row.get('brokerage_subvention')) else '',
-                    "month": str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month,
+                    "month": str(row.get('month', selected_month or current_month)).strip() if pd.notna(row.get('month')) else (selected_month or current_month),
                     "created_by": current_user.id,
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
@@ -2319,7 +2320,7 @@ If no specific filters can be extracted, return an empty object: {}"""
         # Parse JSON response
         try:
             filters = json.loads(response)
-        except:
+        except Exception:
             filters = {}
         
         return {"filters": filters, "query": request.query}
@@ -2374,12 +2375,12 @@ async def ai_data_analysis(request: AIAnalysisRequest, current_user: User = Depe
             try:
                 if loan.get('sanction'):
                     total_sanction += float(str(loan.get('sanction', 0)).replace(',', ''))
-            except:
+            except Exception:
                 pass
             try:
                 if loan.get('disbursed'):
                     total_disbursed += float(str(loan.get('disbursed', 0)).replace(',', ''))
-            except:
+            except Exception:
                 pass
         
         data_summary = {
@@ -3173,7 +3174,7 @@ async def create_default_admin():
                     "name": scheme_data["name"],
                     "description": scheme_data["description"],
                     "created_at": datetime.now(timezone.utc).isoformat(),
-                    "created_by": admin_id
+                    "created_by": "system"
                 }
                 await db.schemes.insert_one(scheme)
                 logger.info(f"Created default scheme: {scheme_data['name']}")
@@ -3205,7 +3206,7 @@ async def create_default_admin():
                     "color": status_data["color"],
                     "order": status_data["order"],
                     "created_at": datetime.now(timezone.utc).isoformat(),
-                    "created_by": admin_id
+                    "created_by": "system"
                 }
                 await db.statuses.insert_one(status)
                 logger.info(f"Created default status: {status_data['name']}")

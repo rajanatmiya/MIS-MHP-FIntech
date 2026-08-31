@@ -85,7 +85,7 @@ def test_loans(admin_token):
     for loan_id in loan_ids:
         try:
             requests.delete(f"{BASE_URL}/api/loans/{loan_id}", headers=headers)
-        except:
+        except Exception:
             pass
 
 

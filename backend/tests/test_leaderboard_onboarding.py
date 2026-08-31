@@ -134,7 +134,7 @@ class TestAgentOnboarding:
         for user_id in self.created_user_ids:
             try:
                 requests.delete(f"{BASE_URL}/api/users/{user_id}", headers=self.admin_headers)
-            except:
+            except Exception:
                 pass
     
     def test_register_basic_agent(self):

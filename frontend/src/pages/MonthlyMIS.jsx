@@ -140,6 +140,7 @@ const MonthlyMIS = () => {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
+  const [importMonth, setImportMonth] = useState('');
   const [editingLoan, setEditingLoan] = useState(null);
   const [showEditForm, setShowEditForm] = useState(false);
   const [editFormData, setEditFormData] = useState({});
@@ -723,6 +724,7 @@ const MonthlyMIS = () => {
     setImporting(true);
     const formData = new FormData();
     formData.append('file', importFile);
+    if (importMonth) formData.append('month', importMonth);
 
     try {
       const response = await axios.post(`${API}/import/loans-excel`, formData, {
@@ -743,6 +745,7 @@ const MonthlyMIS = () => {
 
       setShowImportDialog(false);
       setImportFile(null);
+      setImportMonth('');
       fetchLoans(); // Refresh data
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Import failed');
@@ -1876,8 +1879,19 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <div className="space-y-3">
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] text-slate-600">
-              <p><strong>Required:</strong> Customer Name, Status, Bank, Month</p>
-              <p className="mt-0.5"><strong>Optional:</strong> Company, Contact, Location, Executive, Sanction, Disbursed, etc.</p>
+              <p><strong>Required:</strong> Customer Name, Status</p>
+              <p className="mt-0.5"><strong>Optional:</strong> Bank, Company, Contact, Location, Executive, Manager, Sanction, Disbursed, etc.</p>
+            </div>
+            <div>
+              <Label className="text-[11px]">Month *</Label>
+              <Select value={importMonth} onValueChange={setImportMonth}>
+                <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select month for import" /></SelectTrigger>
+                <SelectContent>
+                  {months.map(m => <SelectItem key={m} value={m} className="text-[11px]">{m}</SelectItem>)}
+                  {emptyMonthGroups.filter(m => !months.includes(m)).map(m => <SelectItem key={m} value={m} className="text-[11px]">{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <p className="text-[9px] text-slate-400 mt-0.5">All imported entries will be added to this month (unless Excel has a Month column)</p>
             </div>
             <div>
               <Label className="text-[11px]">Excel File (.xlsx/.xls)</Label>
@@ -1885,7 +1899,7 @@ const MonthlyMIS = () => {
               {importFile && <p className="text-[10px] text-emerald-600 mt-0.5">Selected: {importFile.name}</p>}
             </div>
             <div className="flex gap-2 justify-end">
-              <Button variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); }} className="h-7 text-[11px]">Cancel</Button>
+              <Button variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); setImportMonth(''); }} className="h-7 text-[11px]">Cancel</Button>
               <Button onClick={handleImportExcel} disabled={importing || !importFile} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">
                 <Upload className="w-3 h-3 mr-1" />
                 {importing ? 'Importing...' : 'Import'}
