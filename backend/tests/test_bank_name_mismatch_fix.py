@@ -63,7 +63,7 @@ class TestBankNameMismatchFix:
                         f"{BASE_URL}/api/loans/{loan_id}",
                         headers={"Authorization": f"Bearer {admin_token}"}
                     )
-                except:
+                except Exception:
                     pass
     
     def _login(self, email, password):
