@@ -1,0 +1,61 @@
+{
+  "summary": "Tested master-file rename propagation into loan_applications (Month MIS) for all 6 master types, backend (16 pytest cases) + UI e2e. Core propagation works for exact-match names (verified via API for customers/executives/managers/banks/agents/companies and via UI by renaming 'TestClient' -> 'TestClient QA', which immediately appeared in MIS Apr-2026 and was reverted). BUG FOUND: propagation uses exact string equality, so real preview data whose loan value contains surrounding whitespace (customer 'Vishwa ' in loan vs master 'Vishwa') is NOT updated - the exact scenario in the request failed in the UI. All test renames reverted; test data cleaned.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "PUT /api/master/{customers,executives,managers,banks,agents,companies}/{id}",
+        "issue": "Propagation uses exact match: db.loan_applications.update_many({field: old_name}, ...). Loans imported with trailing/leading spaces or different casing (e.g. customer_name = 'Vishwa ' while master name = 'Vishwa') are silently NOT updated, so MIS still shows the old name. Reproduced by pytest test_rename_propagates_when_loan_value_has_whitespace and by UI (renaming 'Vishwa' -> 'Vishwa Updated' did not change the MIS row). Fix: match with a case-insensitive, trimmed regex e.g. {field: {'$regex': f'^\\\\s*{re.escape(old_name)}\\\\s*$', '$options': 'i'}} (escape the name) and/or trim values on loan create/import.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "PUT /api/master/customers/{id}",
+        "issue": "contact_no propagation block runs update_many({customer_name: new_name, contact_no: old_contact}) - it silently no-ops when the loan's stored contact differs, and does not report how many loans were touched. Endpoint responses also never return matched/modified counts, so the UI cannot show 'N loans updated'."
+      },
+      {
+        "endpoint": "POST /api/loans / master sync",
+        "issue": "_sync_loan_to_master does not trim (it does .strip() on the name, but the loan document keeps the raw untrimmed value), which is the source of the master/loan mismatch. agent_name is intentionally not synced to master_agents - confirmed by code, so master agents must be created manually before rename propagation applies."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Master File rename -> Month MIS propagation",
+        "issue": "Renaming customer 'Vishwa' to 'Vishwa Updated' saved successfully in Master File (no error) but the Apr-2026 MIS row still displayed 'Vishwa' (loan value has a trailing space). No user feedback that 0 loans were updated.",
+        "affected_selectors": ["edit-master-425b02de-92b7-493e-a97c-b5158c229d3a", "mis-th-Apr-2026-customer_name"]
+      }
+    ],
+    "design_issues": [
+      {
+        "screen": "Month MIS Apr-2026",
+        "issues": ["Row 2 (Vishwa) shows bank 'TEST_Replace_Bank_1' - leftover QA data inside a real-looking loan record", "master_banks contains leftover QA entries TEST_Detail_Bank, TEST_Replace_Bank_1, TEST_UI_Bank_1 from earlier iterations"]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_master_rename_propagation.py",
+    "/app/backend/tests/cleanup_master_rename_qa.py",
+    "/app/test_reports/pytest/pytest_master_rename.xml"
+  ],
+  "action_items": [
+    "Make rename propagation whitespace/case tolerant (regex ^\\s*name\\s*$ case-insensitive, with re.escape) across all 6 master PUT endpoints; also trim name fields when creating/importing loans and add a one-time migration to trim existing loan_applications name fields.",
+    "Return matched/modified loan counts from master PUT endpoints and surface it in the Master File toast.",
+    "Clean leftover QA data: master_banks TEST_Detail_Bank / TEST_Replace_Bank_1 / TEST_UI_Bank_1 and loan 1b7600b1-ef70-4aeb-a0cd-605c05da6e58 whose bank is TEST_Replace_Bank_1."
+  ],
+  "critical_code_review_comments": [
+    "old_name interpolated directly into $regex in duplicate-name checks (master banks/companies/customers/executives/managers) without re.escape - names containing regex metacharacters can break the uniqueness check or match unintended docs.",
+    "Propagation is duplicated 6x with identical logic; extract a helper propagate_master_rename(collection, loan_field, old, new).",
+    "`result = await db....update_one(...)` assigned but unused in all 6 PUT endpoints (dead variable); 404 for unknown id is raised only after the duplicate-name check, so a duplicate name on a non-existent id returns 400 instead of 404."
+  ],
+  "updated_files": ["/app/backend/tests/test_master_rename_propagation.py", "/app/backend/tests/cleanup_master_rename_qa.py"],
+  "success_rate": {"backend": "94% (15/16 pytest cases pass; 1 intentional bug-repro fails)", "frontend": "50% (clean-name rename propagates; whitespace-name rename does not)"},
+  "seed_data_creation": "Created and deleted one Apr-2026 loan plus TEST_* master entries (customers/executives/managers/banks/agents/companies) per run; all removed in fixtures. Renamed 'TestClient' and 'Vishwa' in UI and reverted both to originals.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Run `pytest /app/backend/tests/test_master_rename_propagation.py -v`. 15 cases must pass; test_rename_propagates_when_loan_value_has_whitespace is the bug-repro and should pass only after the trim/case-insensitive fix. Loan 1b7600b1-ef70-4aeb-a0cd-605c05da6e58 has customer_name 'Vishwa ' (trailing space) - use it to verify the fix from the UI (Master File -> edit Vishwa -> check Apr-2026 MIS). Month groups are collapsed by default; click [data-testid=month-header-Apr-2026].",
+  "rca_of_the_issue": "All 6 master PUT endpoints propagate renames with db.loan_applications.update_many({field: old_name}, {'$set': {field: new_name}}). MongoDB equality is exact and case/whitespace sensitive. Preview loans imported from Excel retain untrimmed values ('Vishwa ') while master collections store trimmed names ('Vishwa'), so the filter matches 0 documents and the MIS row keeps the stale name while the master shows the new one."
+}

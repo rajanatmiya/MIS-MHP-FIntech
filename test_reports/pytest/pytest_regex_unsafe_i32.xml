@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="10" time="2.131" timestamp="2026-09-02T09:07:18.163747+00:00" hostname="agent-env-c624cea2-b425-4dfd-b556-06acd1b6f60c"><testcase classname="tests.test_master_regex_unsafe_names" name="test_rename_to_regex_unsafe_name_no_500[TEST_Unbalanced(Paren]" time="0.616"><failure message="AssertionError: 500 on rename to regex-unsafe name 'TEST_Unbalanced(Paren_315415': Internal Server Error&#10;assert 500 != 500&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:58: in test_rename_to_regex_unsafe_name_no_500
+    assert pr.status_code != 500, (
+E   AssertionError: 500 on rename to regex-unsafe name 'TEST_Unbalanced(Paren_315415': Internal Server Error
+E   assert 500 != 500
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_master_regex_unsafe_names" name="test_rename_to_regex_unsafe_name_no_500[TEST_Unbalanced[Bracket]" time="0.179"><failure message="AssertionError: 500 on rename to regex-unsafe name 'TEST_Unbalanced[Bracket_315415': Internal Server Error&#10;assert 500 != 500&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:58: in test_rename_to_regex_unsafe_name_no_500
+    assert pr.status_code != 500, (
+E   AssertionError: 500 on rename to regex-unsafe name 'TEST_Unbalanced[Bracket_315415': Internal Server Error
+E   assert 500 != 500
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_master_regex_unsafe_names" name="test_rename_to_regex_unsafe_name_no_500[TEST_Star*Name]" time="0.197" /><testcase classname="tests.test_master_regex_unsafe_names" name="test_rename_to_regex_unsafe_name_no_500[TEST_Plus+Name]" time="0.187" /><testcase classname="tests.test_master_regex_unsafe_names" name="test_rename_to_regex_unsafe_name_no_500[TEST_Backslash\\Name]" time="0.197" /><testcase classname="tests.test_master_regex_unsafe_names" name="test_create_regex_unsafe_name_no_500[TEST_Unbalanced(Paren]" time="0.061"><failure message="AssertionError: 500 creating 'TEST_Unbalanced(Paren_c_315415': Internal Server Error&#10;assert 500 != 500&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:73: in test_create_regex_unsafe_name_no_500
+    assert r.status_code != 500, f"500 creating {target!r}: {r.text[:300]}"
+E   AssertionError: 500 creating 'TEST_Unbalanced(Paren_c_315415': Internal Server Error
+E   assert 500 != 500
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_master_regex_unsafe_names" name="test_create_regex_unsafe_name_no_500[TEST_Unbalanced[Bracket]" time="0.059"><failure message="AssertionError: 500 creating 'TEST_Unbalanced[Bracket_c_315415': Internal Server Error&#10;assert 500 != 500&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:73: in test_create_regex_unsafe_name_no_500
+    assert r.status_code != 500, f"500 creating {target!r}: {r.text[:300]}"
+E   AssertionError: 500 creating 'TEST_Unbalanced[Bracket_c_315415': Internal Server Error
+E   assert 500 != 500
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_master_regex_unsafe_names" name="test_create_regex_unsafe_name_no_500[TEST_Star*Name]" time="0.183"><failure message="AssertionError: duplicate 'TEST_Star*Name_c_315415' not rejected: 500 Internal Server Error&#10;assert 500 == 400&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:78: in test_create_regex_unsafe_name_no_500
+    assert r2.status_code == 400, (
+E   AssertionError: duplicate 'TEST_Star*Name_c_315415' not rejected: 500 Internal Server Error
+E   assert 500 == 400
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_master_regex_unsafe_names" name="test_create_regex_unsafe_name_no_500[TEST_Plus+Name]" time="0.187"><failure message="AssertionError: duplicate 'TEST_Plus+Name_c_315415' not rejected: 500 Internal Server Error&#10;assert 500 == 400&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:78: in test_create_regex_unsafe_name_no_500
+    assert r2.status_code == 400, (
+E   AssertionError: duplicate 'TEST_Plus+Name_c_315415' not rejected: 500 Internal Server Error
+E   assert 500 == 400
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase><testcase classname="tests.test_master_regex_unsafe_names" name="test_create_regex_unsafe_name_no_500[TEST_Backslash\\Name]" time="0.186"><failure message="AssertionError: duplicate 'TEST_Backslash\\Name_c_315415' not rejected: 500 Internal Server Error&#10;assert 500 == 400&#10; +  where 500 = &lt;Response [500]&gt;.status_code">tests/test_master_regex_unsafe_names.py:78: in test_create_regex_unsafe_name_no_500
+    assert r2.status_code == 400, (
+E   AssertionError: duplicate 'TEST_Backslash\\Name_c_315415' not rejected: 500 Internal Server Error
+E   assert 500 == 400
+E    +  where 500 = &lt;Response [500]&gt;.status_code</failure></testcase></testsuite></testsuites>

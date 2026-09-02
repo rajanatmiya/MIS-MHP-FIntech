@@ -1,0 +1,79 @@
+{
+  "summary": "Re-verified master-file rename propagation (iteration_31 bug fix) across backend + UI. The whitespace/case bug is FIXED: _propagate_master_rename() now uses an escaped, case-insensitive '^\\s*name\\s*$' regex and all 6 PUT endpoints call it. 25/25 rename pytest cases pass (16 existing + 9 new edge cases covering leading/trailing whitespace + case mismatch for all 6 master types, regex-metacharacter names, prefix-match safety, and a trim-migration assertion). Trim migration 'v1_trim_loan_fields' is recorded and 0 of 8 loans retain untrimmed values in any of the 9 text fields. UI e2e confirmed: admin login -> Master File -> rename customer 'Vishwa' -> 'Vishwa Renamed' -> Month MIS -> expand Apr-2026 -> row shows 'Vishwa Renamed' -> reverted to 'Vishwa' (verified in DB). NEW BUG FOUND (pre-existing, unrelated to propagation): all master POST/PUT duplicate-name checks interpolate the raw name into $regex without re.escape, so names containing '(' or '[' return HTTP 500, and names with '*'/'+'/'\\' bypass the duplicate check and then 500 on the unique-index DuplicateKeyError.",
+  "backend_issues": {
+    "critical": [
+      {
+        "endpoint": "POST|PUT /api/master/{banks,companies,branches,locations,categories,products,customers,executives,managers,agents}",
+        "issue": "Duplicate-name check does {'name': {'$regex': f'^{name}$', '$options': 'i'}} with the raw user-supplied name (19 occurrences: server.py lines 2448, 2468, 2501, 2506, 2559, 2633, 2648, 2680, 2695, 2723, 2738, 2766, 2781, 2809, 2824, 2856, 2872, 2908, 2923, 2954, 2969). Two failure modes reproduced: (1) name containing '(' or '[' -> pymongo OperationFailure 'Regular expression is invalid: missing closing parenthesis / missing terminating ] for character class' -> HTTP 500 on both create and rename (e.g. a realistic name like 'Ravi (Delhi)'); (2) name containing '*', '+' or '\\\\' -> regex is valid but does not match the literal string, so the duplicate check passes and the unique index name_1 raises an unhandled DuplicateKeyError -> HTTP 500 instead of 400. Fix: wrap with re.escape(name) everywhere (as already done correctly in _propagate_master_rename and the bank migration) and catch DuplicateKeyError -> 400.",
+        "priority": "HIGH"
+      }
+    ],
+    "minor": [
+      {
+        "endpoint": "PUT /api/master/{all 6}/{id}",
+        "issue": "Endpoints still return only {'id', 'name'} and never the propagation count, so the UI cannot tell the user how many loans were updated (toast just says 'Updated' even when 0 loans matched). _propagate_master_rename already returns modified_count - surface it."
+      },
+      {
+        "endpoint": "PUT /api/master/banks/{id} + all 6",
+        "issue": "Dead variables: `result = await db.master_*.update_one(...)` is assigned but never used in all 6 PUT endpoints, and `updated = await _propagate_master_rename(...)` at line 2477 is unused."
+      },
+      {
+        "endpoint": "PUT /api/master/customers/{id}",
+        "issue": "The contact_no propagation still uses exact equality: update_many({'customer_name': name}, ...). It runs AFTER the rename so it matches the new name, but it is not whitespace/case tolerant like the name propagation - inconsistent with the fix."
+      },
+      {
+        "endpoint": "PUT /api/master/{all 6}/{id}",
+        "issue": "Ordering: the duplicate-name 400 check runs before the existence lookup, so a duplicate name submitted against a non-existent id returns 400 instead of 404."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Month MIS Apr-2026",
+        "issues": [
+          "Leftover QA data still present (reported in iteration_31, NOT cleaned): loan 1b7600b1-ef70-4aeb-a0cd-605c05da6e58 (customer 'Vishwa') has bank 'TEST_Replace_Bank_1'; master_banks still contains TEST_Detail_Bank, TEST_Replace_Bank_1, TEST_UI_Bank_1 and master_companies contains TEST_Co",
+          "BANK column is truncated ('TEST_Replac...') with no tooltip/title attribute, so the full value is unreadable"
+        ]
+      }
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_master_rename_propagation.py",
+    "/app/backend/tests/test_master_rename_edge_cases.py",
+    "/app/backend/tests/test_master_regex_unsafe_names.py",
+    "/app/test_reports/pytest/pytest_rename_all_i32.xml",
+    "/app/test_reports/pytest/pytest_regex_unsafe_i32.xml"
+  ],
+  "action_items": [
+    "Apply re.escape() to the name in all 19 master duplicate-name $regex checks (server.py lines listed above) - currently names with '(' or '[' cause HTTP 500 on master create AND rename.",
+    "Catch pymongo.errors.DuplicateKeyError in master create/update handlers and return HTTP 400 'name already exists' instead of a 500.",
+    "Return the propagated loan count from the 6 master PUT endpoints and show it in the Master File toast (e.g. 'Updated - 3 loans renamed') so a 0-match rename is visible to the user.",
+    "Make the customer contact_no propagation whitespace/case tolerant for consistency with _propagate_master_rename.",
+    "Remove the dead `result =` / `updated =` assignments in the 6 master PUT endpoints.",
+    "Clean leftover QA data: master_banks TEST_Detail_Bank / TEST_Replace_Bank_1 / TEST_UI_Bank_1, master_companies TEST_Co, and fix loan 1b7600b1-ef70-4aeb-a0cd-605c05da6e58 whose bank is TEST_Replace_Bank_1.",
+    "server.py is 3397 lines - split master-file, loans and MIS routers into separate modules."
+  ],
+  "critical_code_review_comments": [
+    "_propagate_master_rename() is implemented correctly (re.escape + '^\\\\s*name\\\\s*$' + case-insensitive) and is reused by all 6 PUT endpoints - the DRY duplication flagged in iteration_31 is resolved.",
+    "The same re.escape hygiene applied inside _propagate_master_rename and the bank migration was NOT applied to the duplicate-name checks - that inconsistency is now a live 500.",
+    "The trim migration only normalises loan_applications; master_* collections and the Excel import path are not trimmed, so a future import can reintroduce untrimmed loan values. The regex matching makes renames tolerant, but the MIS grid will display the raw untrimmed value. Consider trimming in the import/create path too.",
+    "_sync_loan_to_master() does not sync agent_name to master_agents, so agent renames only propagate when the master agent was created manually (confirmed by test: the agents edge-case test had to create the master entry explicitly)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_master_rename_edge_cases.py",
+    "/app/backend/tests/test_master_regex_unsafe_names.py"
+  ],
+  "success_rate": {
+    "backend": "100% on rename propagation (25/25); 30% on regex-unsafe master names (3/10) - separate pre-existing bug",
+    "frontend": "100% (rename -> MIS propagation -> revert all verified)"
+  },
+  "seed_data_creation": "Per-test loans + TEST_* master entries created and removed in finally blocks; verified loan count back to 8 and no TEST_ residue from this iteration. 'Vishwa' renamed in UI and reverted (DB confirmed name='Vishwa', loan customer_name='Vishwa').",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Rename propagation is FIXED and fully covered - run `pytest /app/backend/tests/test_master_rename_propagation.py /app/backend/tests/test_master_rename_edge_cases.py -v` (25 must pass). The open bug is regex escaping: `pytest /app/backend/tests/test_master_regex_unsafe_names.py -v` currently has 7/10 failures (HTTP 500) and should be all-green after re.escape + DuplicateKeyError handling. UI: nav links are 'Month MIS' and 'Master File' (use get_by_role('link', name=..., exact=True)); do NOT use text=MIS, it matches the sidebar 'MIS Dashboard' header and silently does not navigate. Month groups are collapsed by default - click [data-testid=month-header-Apr-2026]. Vishwa customer id 425b02de-92b7-493e-a97c-b5158c229d3a, edit button [data-testid=edit-master-<id>], dialog has a Save button.",
+  "rca_of_the_issue": "Original whitespace bug: RESOLVED. _propagate_master_rename() matches loans with {field: {'$regex': '^\\\\s*'+re.escape(old)+'\\\\s*$', '$options':'i'}} so Excel-imported values with surrounding whitespace or different casing are now updated, and the one-time 'v1_trim_loan_fields' migration normalised existing rows (verified: 0 untrimmed across 9 fields in 8 loans). New 500 bug RCA: the master create/update duplicate-name checks build the case-insensitive regex by f-string interpolating the raw name. MongoDB compiles that server-side, so '(' or '[' produces an invalid-regex OperationFailure (code 51091) surfacing as HTTP 500; '*', '+' and '\\' produce a syntactically valid but semantically wrong pattern that fails to match the literal name, letting the insert through to the unique name_1 index which raises an uncaught DuplicateKeyError, also a 500. Reproduce: POST /api/master/customers {'name': 'Ravi (Delhi)'}."
+}

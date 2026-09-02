@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, UploadFile, File, Form, Response, Request, Body
+import re
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import FileResponse, StreamingResponse
 from dotenv import load_dotenv
@@ -830,6 +831,18 @@ async def get_loans(
         "total_pages": (total + limit - 1) // limit
     }
 
+async def _propagate_master_rename(collection_field: str, old_name: str, new_name: str):
+    """Propagate a master rename to loan_applications using whitespace/case-tolerant matching"""
+    # re already imported at top
+    escaped = re.escape(old_name)
+    result = await db.loan_applications.update_many(
+        {collection_field: {"$regex": f"^\\s*{escaped}\\s*$", "$options": "i"}},
+        {"$set": {collection_field: new_name}}
+    )
+    if result.modified_count > 0:
+        logger.info(f"Master rename: {collection_field} '{old_name}' -> '{new_name}' ({result.modified_count} loans updated)")
+    return result.modified_count
+
 async def _sync_loan_to_master(loan_dict: dict, user_id: str):
     """Auto-add new customer/company/executive/manager/bank to master collections"""
     now = datetime.now(timezone.utc).isoformat()
@@ -1039,7 +1052,6 @@ async def carry_forward_loans(data: dict = Body(...), current_user: User = Depen
         raise HTTPException(status_code=400, detail="to_month_key is required (e.g., Apr-2026)")
     
     try:
-        import re
         MONTH_NAMES_CF = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
         
         # Parse target month
@@ -1125,7 +1137,6 @@ async def delete_month_group(data: dict = Body(...), current_user: User = Depend
         raise HTTPException(status_code=400, detail="month_key is required")
     
     try:
-        import re
         MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
         
         # Parse month_key (e.g., "Apr-2026") to find matching loans
@@ -1226,7 +1237,6 @@ async def delete_archived_month(archive_id: str, current_user: User = Depends(ge
 @api_router.get("/backup/export-month/{month_key}")
 async def export_month_loans(month_key: str, current_user: User = Depends(get_current_user)):
     """Export loans for a specific month as Excel"""
-    import re
     MONTH_NAMES_EXP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     
     match = re.match(r'^([A-Za-z]{3})-(\d{2,4})$', month_key)
@@ -1309,7 +1319,6 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
     
     try:
-        import re
         
         # Mapping of month names
         month_map = {
@@ -1449,7 +1458,6 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
         val = loan.get('month', '')
         if not val:
             return 'Unknown'
-        import re
         if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
             return val
         parts = val.split('-')
@@ -1494,7 +1502,6 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
             monthly_data[month]["pending"] += 1
     
     def sort_key(item):
-        import re
         m = re.match(r'^([A-Za-z]{3})-(\d{4})$', item.get('month', ''))
         if m and m.group(1) in MONTH_NAMES_T:
             return f"{m.group(2)}-{str(MONTH_NAMES_T.index(m.group(1))).zfill(2)}"
@@ -1517,7 +1524,6 @@ async def get_by_bank(month: Optional[str] = None, current_user: User = Depends(
         if gm: return gm
         val = loan.get('month', '')
         if not val: return 'Unknown'
-        import re
         if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
         parts = val.split('-')
         if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
@@ -1575,7 +1581,6 @@ async def get_by_agent(month: Optional[str] = None, current_user: User = Depends
         if gm: return gm
         val = loan.get('month', '')
         if not val: return 'Unknown'
-        import re
         if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
         parts = val.split('-')
         if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
@@ -1652,7 +1657,6 @@ async def get_deep_analytics(month: Optional[str] = None, current_user: User = D
             if gm: return gm
             val = loan.get('month', '')
             if not val: return 'Unknown'
-            import re
             if re.match(r'^[A-Za-z]{3}-\d{4}$', val): return val
             parts = val.split('-')
             if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
@@ -1741,7 +1745,6 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
         val = loan.get('month', '')
         if not val:
             return None
-        import re
         if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
             return val
         parts = val.split('-')
@@ -1775,7 +1778,6 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
             schemes.add(loan['scheme'])
     
     def month_sort_key(m):
-        import re
         match = re.match(r'^([A-Za-z]{3})-(\d{4})$', m)
         if match and match.group(1) in MONTH_NAMES_UV:
             return f"{match.group(2)}-{str(MONTH_NAMES_UV.index(match.group(1))).zfill(2)}"
@@ -1927,7 +1929,6 @@ async def export_loans(
     
     # Filter by month using group_month / date-to-month conversion
     if month and month != 'all':
-        import re
         MONTH_NAMES_EX = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
         def to_mk(loan):
             gm = loan.get('group_month', '')
@@ -2433,7 +2434,7 @@ async def add_master_bank(request: Request, current_user: User = Depends(get_cur
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Bank name is required")
-    existing = await db.master_banks.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_banks.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Bank name already exists")
     bank = {
@@ -2453,12 +2454,16 @@ async def update_master_bank(bank_id: str, request: Request, current_user: User 
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Bank name is required")
-    existing = await db.master_banks.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": bank_id}})
+    existing = await db.master_banks.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": bank_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Bank name already exists")
-    result = await db.master_banks.update_one({"id": bank_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    if result.matched_count == 0:
+    old_doc = await db.master_banks.find_one({"id": bank_id}, {"_id": 0})
+    if not old_doc:
         raise HTTPException(status_code=404, detail="Bank not found")
+    old_name = old_doc.get("name", "")
+    result = await db.master_banks.update_one({"id": bank_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if old_name and old_name != name:
+        updated = await _propagate_master_rename("bank", old_name, name)
     return {"id": bank_id, "name": name}
 
 @api_router.delete("/master/banks/{bank_id}")
@@ -2540,7 +2545,7 @@ async def import_master_excel(file: UploadFile = File(...), section: str = Form(
         name = str(row[name_col]).strip() if pd.notna(row[name_col]) else ""
         if not name or name.lower() == "nan":
             continue
-        existing = await db[collection_name].find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+        existing = await db[collection_name].find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
         if existing:
             skipped += 1
             continue
@@ -2586,9 +2591,13 @@ async def update_master_agent(agent_id: str, request: Request, current_user: Use
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Agent name is required")
-    result = await db.master_agents.update_one({"id": agent_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    if result.matched_count == 0:
+    old_doc = await db.master_agents.find_one({"id": agent_id}, {"_id": 0})
+    if not old_doc:
         raise HTTPException(status_code=404, detail="Agent not found")
+    old_name = old_doc.get("name", "")
+    result = await db.master_agents.update_one({"id": agent_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if old_name and old_name != name:
+        await _propagate_master_rename("agent_name", old_name, name)
     return {"id": agent_id, "name": name}
 
 @api_router.delete("/master/agents/{agent_id}")
@@ -2610,7 +2619,7 @@ async def add_master_company(request: Request, current_user: User = Depends(get_
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Company name is required")
-    existing = await db.master_companies.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_companies.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Company name already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2625,12 +2634,16 @@ async def update_master_company(item_id: str, request: Request, current_user: Us
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Company name is required")
-    existing = await db.master_companies.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_companies.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Company name already exists")
-    result = await db.master_companies.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    if result.matched_count == 0:
+    old_doc = await db.master_companies.find_one({"id": item_id}, {"_id": 0})
+    if not old_doc:
         raise HTTPException(status_code=404, detail="Company not found")
+    old_name = old_doc.get("name", "")
+    result = await db.master_companies.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if old_name and old_name != name:
+        await _propagate_master_rename("company_name", old_name, name)
     return {"id": item_id, "name": name}
 
 @api_router.delete("/master/companies/{item_id}")
@@ -2653,7 +2666,7 @@ async def add_master_branch(request: Request, current_user: User = Depends(get_c
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Branch name is required")
-    existing = await db.master_branches.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_branches.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Branch name already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2668,7 +2681,7 @@ async def update_master_branch(item_id: str, request: Request, current_user: Use
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Branch name is required")
-    existing = await db.master_branches.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_branches.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Branch name already exists")
     result = await db.master_branches.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
@@ -2696,7 +2709,7 @@ async def add_master_location(request: Request, current_user: User = Depends(get
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Location name is required")
-    existing = await db.master_locations.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_locations.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Location already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2711,7 +2724,7 @@ async def update_master_location(item_id: str, request: Request, current_user: U
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Location name is required")
-    existing = await db.master_locations.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_locations.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Location already exists")
     result = await db.master_locations.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
@@ -2739,7 +2752,7 @@ async def add_master_category(request: Request, current_user: User = Depends(get
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Category name is required")
-    existing = await db.master_categories.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_categories.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Category already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2754,7 +2767,7 @@ async def update_master_category(item_id: str, request: Request, current_user: U
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Category name is required")
-    existing = await db.master_categories.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_categories.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Category already exists")
     result = await db.master_categories.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
@@ -2782,7 +2795,7 @@ async def add_master_product(request: Request, current_user: User = Depends(get_
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Product name is required")
-    existing = await db.master_products.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_products.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Product already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2797,7 +2810,7 @@ async def update_master_product(item_id: str, request: Request, current_user: Us
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Product name is required")
-    existing = await db.master_products.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_products.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Product already exists")
     result = await db.master_products.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
@@ -2829,7 +2842,7 @@ async def add_master_customer(request: Request, current_user: User = Depends(get
     contact_no = data.get("contact_no", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Customer name is required")
-    existing = await db.master_customers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_customers.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Customer name already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "contact_no": contact_no, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2845,12 +2858,21 @@ async def update_master_customer(item_id: str, request: Request, current_user: U
     contact_no = data.get("contact_no", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Customer name is required")
-    existing = await db.master_customers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_customers.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Customer name already exists")
-    result = await db.master_customers.update_one({"id": item_id}, {"$set": {"name": name, "contact_no": contact_no, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    if result.matched_count == 0:
+    # Get old name before updating
+    old_doc = await db.master_customers.find_one({"id": item_id}, {"_id": 0})
+    if not old_doc:
         raise HTTPException(status_code=404, detail="Customer not found")
+    old_name = old_doc.get("name", "")
+    result = await db.master_customers.update_one({"id": item_id}, {"$set": {"name": name, "contact_no": contact_no, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    # Propagate name change to loan records
+    if old_name and old_name != name:
+        await _propagate_master_rename("customer_name", old_name, name)
+        logger.info(f"Master rename: customer '{old_name}' -> '{name}' in loans")
+    if contact_no:
+        await db.loan_applications.update_many({"customer_name": name}, {"$set": {"contact_no": contact_no}})
     return {"id": item_id, "name": name, "contact_no": contact_no}
 
 @api_router.delete("/master/customers/{item_id}")
@@ -2872,7 +2894,7 @@ async def add_master_executive(request: Request, current_user: User = Depends(ge
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Executive name is required")
-    existing = await db.master_executives.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_executives.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Executive name already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2887,12 +2909,16 @@ async def update_master_executive(item_id: str, request: Request, current_user: 
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Executive name is required")
-    existing = await db.master_executives.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_executives.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Executive name already exists")
-    result = await db.master_executives.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    if result.matched_count == 0:
+    old_doc = await db.master_executives.find_one({"id": item_id}, {"_id": 0})
+    if not old_doc:
         raise HTTPException(status_code=404, detail="Executive not found")
+    old_name = old_doc.get("name", "")
+    result = await db.master_executives.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if old_name and old_name != name:
+        await _propagate_master_rename("executive_name", old_name, name)
     return {"id": item_id, "name": name}
 
 @api_router.delete("/master/executives/{item_id}")
@@ -2914,7 +2940,7 @@ async def add_master_manager(request: Request, current_user: User = Depends(get_
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Manager name is required")
-    existing = await db.master_managers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}})
+    existing = await db.master_managers.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
     if existing:
         raise HTTPException(status_code=400, detail="Manager name already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
@@ -2929,12 +2955,16 @@ async def update_master_manager(item_id: str, request: Request, current_user: Us
     name = data.get("name", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Manager name is required")
-    existing = await db.master_managers.find_one({"name": {"$regex": f"^{name}$", "$options": "i"}, "id": {"$ne": item_id}})
+    existing = await db.master_managers.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
     if existing:
         raise HTTPException(status_code=400, detail="Manager name already exists")
-    result = await db.master_managers.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
-    if result.matched_count == 0:
+    old_doc = await db.master_managers.find_one({"id": item_id}, {"_id": 0})
+    if not old_doc:
         raise HTTPException(status_code=404, detail="Manager not found")
+    old_name = old_doc.get("name", "")
+    result = await db.master_managers.update_one({"id": item_id}, {"$set": {"name": name, "updated_at": datetime.now(timezone.utc).isoformat()}})
+    if old_name and old_name != name:
+        await _propagate_master_rename("team_manager", old_name, name)
     return {"id": item_id, "name": name}
 
 @api_router.delete("/master/managers/{item_id}")
@@ -3245,7 +3275,7 @@ async def create_default_admin():
             BANK_SEED_VER = "v4_bank_rename_exact"
             bank_seed_done = await db.migrations.find_one({"_id": BANK_SEED_VER})
             if not bank_seed_done:
-                import re as re_module
+                # re already imported at top
                 bank_renames = [
                     ("kotak", "Kotak Bank"),
                     ("db", "Deutsche"),
@@ -3259,7 +3289,7 @@ async def create_default_admin():
                 ]
                 total_renamed = 0
                 for old_name, new_name in bank_renames:
-                    escaped = re_module.escape(old_name)
+                    escaped = re.escape(old_name)
                     r1 = await db.master_banks.update_many(
                         {"name": {"$regex": f"^{escaped}$", "$options": "i"}},
                         {"$set": {"name": new_name, "updated_at": datetime.now(timezone.utc).isoformat()}}
@@ -3279,6 +3309,26 @@ async def create_default_admin():
             logger.error(f"Bank rename migration error: {str(e)}")
 
         # Auto-sync existing loan customer_name + contact_no into master_customers (idempotent)
+        try:
+            # First, trim whitespace from all loan text fields (one-time fix for Excel imports)
+            trim_ver = "v1_trim_loan_fields"
+            if not await db.migrations.find_one({"_id": trim_ver}):
+                trim_fields = ["customer_name", "company_name", "bank", "executive_name", "team_manager", "agent_name", "contact_no", "branch", "location"]
+                for field in trim_fields:
+                    cursor = db.loan_applications.find({field: {"$regex": "^\\s+|\\s+$"}}, {"_id": 1, field: 1})
+                    count = 0
+                    async for doc in cursor:
+                        val = doc.get(field, "")
+                        if isinstance(val, str) and val != val.strip():
+                            await db.loan_applications.update_one({"_id": doc["_id"]}, {"$set": {field: val.strip()}})
+                            count += 1
+                    if count > 0:
+                        logger.info(f"Trimmed {count} loan records for field '{field}'")
+                await db.migrations.update_one({"_id": trim_ver}, {"$set": {"applied_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+                logger.info("Loan field trim migration complete")
+        except Exception as e:
+            logger.error(f"Trim migration error: {str(e)}")
+
         try:
             pipeline = [
                 {"$match": {"customer_name": {"$exists": True, "$ne": ""}}},
