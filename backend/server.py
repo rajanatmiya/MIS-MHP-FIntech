@@ -2214,18 +2214,6 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
                 contact_no = str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else ''
                 bank = str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else ''
                 
-                # Duplicate detection: check if same customer_name + contact_no + bank exists
-                dup_query = {"customer_name": customer_name}
-                if contact_no:
-                    dup_query["contact_no"] = contact_no
-                if bank:
-                    dup_query["bank"] = bank
-                
-                existing = await db.loan_applications.find_one(dup_query, {"_id": 0, "id": 1})
-                if existing:
-                    duplicate_count += 1
-                    continue
-                
                 # Prepare loan data
                 loan_data = {
                     "id": str(uuid.uuid4()),

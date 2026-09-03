@@ -1,0 +1,35 @@
+{
+  "summary": "Verified the duplicate-detection removal in POST /api/import/loans-excel. Backend: 3/3 pytest cases pass — first import of a 3-row Excel (TestDupA x2, TestDupB x1, Status=Pending, month=Sep-2026) returns imported=3 / skipped=0 / duplicates=0 / total_rows=3 / errors=[]; re-importing the SAME file again returns imported=3 / skipped=0 / duplicates=0 (no duplicate blocking); GET /api/loans then shows all 6 rows (4x TestDupA, 2x TestDupB) with month=group_month='Sep-2026', status='Pending' and no MongoDB _id leakage. UI: admin login -> Month MIS -> Add Month (Sep-2026) -> Import Excel -> Sep-2026 selected -> upload xlsx -> toast reads 'Import complete! Imported: 3, Skipped: 0' and the Sep-2026 group shows 3 rows (TestDupA, TestDupA, TestDupB) with TOTAL (3). Cleanup completed: all 9 QA loans (6 API + 3 UI) deleted; 0 remaining.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS month group header", "issue": "First click on a collapsed month header often does not expand it - a second click is required. Cause: fetchLoans() unconditionally does setExpandedMonths(new Set([data[0].month])) on every refetch, which overwrites the user's toggleMonth state (race after load/import). Also conflicts with the 'collapsed by default' intent.", "selector": "[data-testid=\"month-header-Sep-2026\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MIS Board dialogs", "issues": ["React a11y console warning on every dialog: 'Missing Description or aria-describedby={undefined} for DialogContent' (Import/Add Month dialogs)"]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_import_duplicates_allowed.py",
+    "/app/backend/tests/cleanup_dup_import_qa.py",
+    "/app/test_reports/pytest/import_dup.xml"
+  ],
+  "action_items": [
+    "Optional: stop resetting expandedMonths inside fetchLoans (only auto-expand on initial load) so the first header click expands reliably.",
+    "Optional: remove now-unused locals customer_name/contact_no/bank in import_loans_from_excel (dead code left after duplicate-detection removal).",
+    "Optional: 'Add Month' empty group is client-state only; after import it persists via loans, but an empty month group disappears on reload."
+  ],
+  "critical_code_review_comments": [
+    "import_loans_from_excel still returns 'duplicates' key hard-coded to 0 - keep for FE compatibility (FE reads response.data.duplicates) but consider documenting it.",
+    "server.py is very large (>2200 lines); consider splitting routers into modules."
+  ],
+  "updated_files": ["/app/backend/tests/test_import_duplicates_allowed.py", "/app/backend/tests/cleanup_dup_import_qa.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Temporary Sep-2026 loans (TestDupA x4, TestDupB x2 via API + 3 via UI) - all deleted after testing (verified 0 remaining).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Duplicate-name import fix verified end-to-end. Reusable pytest: /app/backend/tests/test_import_duplicates_allowed.py (self-cleaning). Note: month group headers may need two clicks to expand because fetchLoans resets expandedMonths; account for this in Playwright scripts.",
+  "rca_of_the_issue": "Original 'Imported: 0, Skipped: 17' was caused by the dup_query/find_one/continue block in import_loans_from_excel skipping every row that matched an existing customer. That block is now removed, so all rows with a non-empty customer_name are inserted; confirmed by importing the same file twice with imported=3 each time."
+}
