@@ -1343,8 +1343,8 @@ const MonthlyMIS = () => {
                 </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Contact Number *</Label>
-                <Input required value={newLoanData.contact_no || ''} onChange={(e) => setNewLoanData(prev => ({...prev, contact_no: e.target.value}))} className="h-8 text-[11px] mt-0.5" />
+                <Label className="text-[11px] text-slate-600">Contact Number</Label>
+                <Input value={newLoanData.contact_no || ''} onChange={(e) => setNewLoanData(prev => ({...prev, contact_no: e.target.value}))} className="h-8 text-[11px] mt-0.5" />
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Executive Name</Label>
@@ -1377,14 +1377,14 @@ const MonthlyMIS = () => {
                 </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Company Name *</Label>
+                <Label className="text-[11px] text-slate-600">Company Name</Label>
                 {masterCompanies.length > 0 ? (
                   <Select value={newLoanData.company_name || ''} onValueChange={(value) => setNewLoanData({...newLoanData, company_name: value})}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select company" /></SelectTrigger>
                     <SelectContent>{masterCompanies.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (
-                  <Input required value={newLoanData.company_name || ''} onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                  <Input value={newLoanData.company_name || ''} onChange={(e) => setNewLoanData({...newLoanData, company_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
                 )}
               </div>
               <div>
@@ -1558,7 +1558,7 @@ const MonthlyMIS = () => {
             </div>
             <div className="flex gap-2 justify-end pt-1">
               <Button type="button" variant="outline" size="sm" onClick={() => { setShowAddForm(false); setAddEntryForMonth(null); }} className="h-7 text-[11px]">Cancel</Button>
-              <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">Add Entry</Button>
+              <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="add-entry-submit-btn">Add Entry</Button>
             </div>
           </form>
         </DialogContent>
@@ -1589,8 +1589,8 @@ const MonthlyMIS = () => {
                   </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Contact Number *</Label>
-                <Input required value={editFormData.contact_no || ''} onChange={(e) => setEditFormData({...editFormData, contact_no: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                <Label className="text-[11px] text-slate-600">Contact Number</Label>
+                <Input value={editFormData.contact_no || ''} onChange={(e) => setEditFormData({...editFormData, contact_no: e.target.value})} className="h-8 text-[11px] mt-0.5" />
               </div>
               <div>
                 <Label className="text-[11px] text-slate-600">Executive Name</Label>
@@ -1623,14 +1623,14 @@ const MonthlyMIS = () => {
                   </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Company Name *</Label>
+                <Label className="text-[11px] text-slate-600">Company Name</Label>
                 {masterCompanies.length > 0 ? (
                   <Select value={editFormData.company_name || ''} onValueChange={(value) => setEditFormData({...editFormData, company_name: value})}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select company" /></SelectTrigger>
                     <SelectContent>{masterCompanies.map(c => <SelectItem key={c.id} value={c.name} className="text-[11px]">{c.name}</SelectItem>)}</SelectContent>
                   </Select>
                 ) : (
-                  <Input required value={editFormData.company_name || ''} onChange={(e) => setEditFormData({...editFormData, company_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
+                  <Input value={editFormData.company_name || ''} onChange={(e) => setEditFormData({...editFormData, company_name: e.target.value})} className="h-8 text-[11px] mt-0.5" />
                 )}
               </div>
               <div>
@@ -1803,7 +1803,7 @@ const MonthlyMIS = () => {
             </div>
             <div className="flex gap-2 justify-end pt-1">
               <Button type="button" variant="outline" size="sm" onClick={() => setShowEditForm(false)} className="h-7 text-[11px]">Cancel</Button>
-              <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]">Save Changes</Button>
+              <Button type="submit" size="sm" className="h-7 text-[11px] bg-[#2c587a] hover:bg-[#234a68]" data-testid="edit-save-btn">Save Changes</Button>
             </div>
           </form>
         </DialogContent>
@@ -1865,7 +1865,7 @@ const MonthlyMIS = () => {
             <div>
               <Label className="text-[11px]">Month *</Label>
               <Select value={importMonth} onValueChange={setImportMonth}>
-                <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select month for import" /></SelectTrigger>
+                <SelectTrigger className="h-8 text-[11px] mt-0.5" data-testid="import-month-select"><SelectValue placeholder="Select month for import" /></SelectTrigger>
                 <SelectContent>
                   {months.map(m => <SelectItem key={m} value={m} className="text-[11px]">{m}</SelectItem>)}
                   {emptyMonthGroups.filter(m => !months.includes(m)).map(m => <SelectItem key={m} value={m} className="text-[11px]">{m}</SelectItem>)}
@@ -1875,12 +1875,12 @@ const MonthlyMIS = () => {
             </div>
             <div>
               <Label className="text-[11px]">Excel File (.xlsx/.xls)</Label>
-              <Input type="file" accept=".xlsx,.xls" onChange={(e) => setImportFile(e.target.files[0])} className="h-8 text-[11px] mt-0.5 cursor-pointer" />
+              <Input type="file" accept=".xlsx,.xls" onChange={(e) => setImportFile(e.target.files[0])} className="h-8 text-[11px] mt-0.5 cursor-pointer" data-testid="import-file-input" />
               {importFile && <p className="text-[10px] text-emerald-600 mt-0.5">Selected: {importFile.name}</p>}
             </div>
             <div className="flex gap-2 justify-end">
               <Button variant="outline" size="sm" onClick={() => { setShowImportDialog(false); setImportFile(null); setImportMonth(''); }} className="h-7 text-[11px]">Cancel</Button>
-              <Button onClick={handleImportExcel} disabled={importing || !importFile} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700">
+              <Button onClick={handleImportExcel} disabled={importing || !importFile} size="sm" className="h-7 text-[11px] bg-emerald-600 hover:bg-emerald-700" data-testid="import-submit-btn">
                 <Upload className="w-3 h-3 mr-1" />
                 {importing ? 'Importing...' : 'Import'}
               </Button>

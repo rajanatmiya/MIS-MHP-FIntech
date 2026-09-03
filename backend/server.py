@@ -213,8 +213,8 @@ class LoanApplication(BaseModel):
 class LoanApplicationCreate(BaseModel):
     agent_name: str
     customer_name: str
-    company_name: str
-    contact_no: str
+    company_name: Optional[str] = ""
+    contact_no: Optional[str] = ""
     login_date: Optional[str] = ""
     status: str
     amount: Optional[str] = ""
@@ -2253,6 +2253,7 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
                     "subvention": str(row.get('subvention', '')).strip() if pd.notna(row.get('subvention')) else '',
                     "brokerage_subvention": str(row.get('brokerage_subvention', '')).strip() if pd.notna(row.get('brokerage_subvention')) else '',
                     "month": str(row.get('month', selected_month or current_month)).strip() if pd.notna(row.get('month')) else (selected_month or current_month),
+                    "group_month": selected_month or (str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month),
                     "created_by": current_user.id,
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
