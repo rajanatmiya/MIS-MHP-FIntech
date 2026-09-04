@@ -2887,9 +2887,6 @@ async def add_master_customer(request: Request, current_user: User = Depends(get
     contact_no = data.get("contact_no", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Customer name is required")
-    existing = await db.master_customers.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}})
-    if existing:
-        raise HTTPException(status_code=400, detail="Customer name already exists")
     doc = {"id": str(uuid.uuid4()), "name": name, "contact_no": contact_no, "created_at": datetime.now(timezone.utc).isoformat(), "created_by": current_user.id}
     await db.master_customers.insert_one(doc)
     del doc["_id"]
@@ -2903,9 +2900,6 @@ async def update_master_customer(item_id: str, request: Request, current_user: U
     contact_no = data.get("contact_no", "").strip()
     if not name:
         raise HTTPException(status_code=400, detail="Customer name is required")
-    existing = await db.master_customers.find_one({"name": {"$regex": f"^{re.escape(name)}$", "$options": "i"}, "id": {"$ne": item_id}})
-    if existing:
-        raise HTTPException(status_code=400, detail="Customer name already exists")
     # Get old name before updating
     old_doc = await db.master_customers.find_one({"id": item_id}, {"_id": 0})
     if not old_doc:
@@ -3305,7 +3299,12 @@ async def create_default_admin():
         await db.master_categories.create_index("name", unique=True)
         await db.master_products.create_index("name", unique=True)
         try:
-            await db.master_customers.create_index("name", unique=True)
+            # Drop unique index on master_customers (duplicates now allowed)
+            try:
+                await db.master_customers.drop_index("name_1")
+            except Exception:
+                pass
+            await db.master_customers.create_index("name")
             await db.master_executives.create_index("name", unique=True)
             await db.master_managers.create_index("name", unique=True)
         except Exception as idx_err:
