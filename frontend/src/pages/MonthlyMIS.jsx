@@ -549,10 +549,11 @@ const MonthlyMIS = () => {
 
   const handleAddLoan = async (e) => {
     e.preventDefault();
-    // Non-admin: customer_name and contact_no are required
+    // Non-admin: customer_name, contact_no, and company_name are required
     if (user?.role !== 'admin') {
       if (!newLoanData.customer_name?.trim()) { toast.error('Customer Name is required'); return; }
       if (!newLoanData.contact_no?.trim()) { toast.error('Contact Number is required'); return; }
+      if (!newLoanData.company_name?.trim()) { toast.error('Company Name is required'); return; }
     }
     try {
       const submitData = {...newLoanData};
@@ -593,6 +594,7 @@ const MonthlyMIS = () => {
     if (user?.role !== 'admin') {
       if (!editFormData.customer_name?.trim()) { toast.error('Customer Name is required'); return; }
       if (!editFormData.contact_no?.trim()) { toast.error('Contact Number is required'); return; }
+      if (!editFormData.company_name?.trim()) { toast.error('Company Name is required'); return; }
     }
     try {
       await axios.put(`${API}/loans/${editingLoan.id}`, editFormData);
@@ -1389,7 +1391,7 @@ const MonthlyMIS = () => {
                 </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Company Name</Label>
+                <Label className="text-[11px] text-slate-600">Company Name{user?.role !== 'admin' ? ' *' : ''}</Label>
                 {masterCompanies.length > 0 ? (
                   <Select value={newLoanData.company_name || ''} onValueChange={(value) => setNewLoanData({...newLoanData, company_name: value})}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select company" /></SelectTrigger>
@@ -1635,7 +1637,7 @@ const MonthlyMIS = () => {
                   </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Company Name</Label>
+                <Label className="text-[11px] text-slate-600">Company Name{user?.role !== 'admin' ? ' *' : ''}</Label>
                 {masterCompanies.length > 0 ? (
                   <Select value={editFormData.company_name || ''} onValueChange={(value) => setEditFormData({...editFormData, company_name: value})}>
                     <SelectTrigger className="h-8 text-[11px] mt-0.5"><SelectValue placeholder="Select company" /></SelectTrigger>
