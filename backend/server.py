@@ -2183,10 +2183,37 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
         # Normalize column names
         df.columns = df.columns.str.strip().str.lower()
         
-        # Rename columns
+        # Log detected columns for debugging
+        logger.info(f"Excel import: detected columns {list(df.columns)}")
+        
+        # Rename columns using mapping
+        renamed = {}
         for old_col, new_col in column_mapping.items():
-            if old_col in df.columns:
+            if old_col in df.columns and old_col != new_col:
                 df.rename(columns={old_col: new_col}, inplace=True)
+                renamed[old_col] = new_col
+        
+        # Fuzzy fallback: try to match any unmapped columns containing key words
+        fuzzy_map = {
+            'category': 'category', 'cat': 'category',
+            'product': 'product', 'prod': 'product',
+            'customer': 'customer_name', 'cust': 'customer_name', 'party': 'customer_name', 'applicant': 'customer_name', 'borrower': 'customer_name',
+            'company': 'company_name', 'firm': 'company_name', 'employer': 'company_name',
+            'contact': 'contact_no', 'phone': 'contact_no', 'mobile': 'contact_no',
+            'executive': 'executive_name', 'exec': 'executive_name',
+            'manager': 'team_manager',
+        }
+        for col in list(df.columns):
+            if col not in column_mapping.values() and col not in column_mapping:
+                for keyword, target in fuzzy_map.items():
+                    if keyword in col and target not in df.columns:
+                        df.rename(columns={col: target}, inplace=True)
+                        renamed[col] = target
+                        break
+        
+        if renamed:
+            logger.info(f"Excel import: column renames {renamed}")
+        logger.info(f"Excel import: final columns {list(df.columns)}")
         
         # Auto-generate month if not present (use selected month or current month)
         selected_month = month.strip() if month else None

@@ -1,0 +1,45 @@
+{
+  "summary": "Verified the Excel-import Category/Product column-mapping fix (backend + UI). Added a new pytest suite (7 new cases) covering the full column set ('Customer Name, Contact No, Bank, Category, Product, Status, Amount'), fuzzy headers ('Cat'/'Prod', 'Loan Cat Type'/'Prod Name'/'Cust Name'), blank cells and missing columns. Re-ran the existing category/product import suite. All 8 backend tests pass. Confirmed debug logs 'Excel import: detected columns', 'column renames' and 'final columns' are emitted with correct rename maps. UI: logged in as admin, imported the Excel from the MIS Board Import dialog, expanded the month group and confirmed CATEGORY (SECURED/UNSECURED) and PRODUCT (Home Loan/Personal Loan) columns render real values (not '—'), along with contact_no, bank, status and amount. Cleaned up all Sep-2026 / Sep'26 test loans (0 remaining).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/import/loans-excel", "issue": "When no month is supplied, group_month falls back to datetime.now().strftime(\"%b'%y\") => \"Sep'26\", which does not match the UI's canonical \"MMM-YYYY\" group key. Result: a second month group with label Sep'26 that the frontend month-sort regex (/^[A-Za-z]{3}-\\d{2,4}$/) cannot parse, so it sorts to the bottom. Recommend generating \"%b-%Y\" (Sep-2026)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "MIS Board -> Import Excel", "issue": "The 'Select month for import' dropdown only lists month groups that already exist (only 'Apr-2026' was available). A user importing a new month cannot pick it here and must first use 'Add Month'; otherwise the import silently lands in a backend-generated \"Sep'26\" group. This is likely how the user's original data ended up in an unexpected group.", "affected_selectors": ["[data-testid=\"import-month-select\"]", "[data-testid=\"import-submit-btn\"]"]}
+    ],
+    "design_issues": [
+      {"screen": "MIS Board month table", "issues": ["Month group labels are inconsistent: 'Apr-2026' vs \"Sep'26\" in the same list (normalize group_month display via toMonthKey)."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_import_fuzzy_cat_prod.py",
+    "/app/backend/tests/test_import_category_product.py",
+    "/app/backend/tests/cleanup_sep2026_qa.py"
+  ],
+  "action_items": [
+    "Change the no-month fallback in /api/import/loans-excel from \"%b'%y\" to \"%b-%Y\" so group_month matches the UI 'MMM-YYYY' key (or normalize in toMonthKey).",
+    "Allow selecting/typing an arbitrary month (or default to the current month in MMM-YYYY) in the import dialog month dropdown.",
+    "Optional hardening: the fuzzy matcher substring-matches 'cat' and 'prod', so an unmapped header like 'branch location' or 'product code' could be wrongly renamed to category/product. Prefer token/prefix matching."
+  ],
+  "critical_code_review_comments": [
+    "server.py fuzzy_map uses `keyword in col` substring matching: 'cat' matches 'location'/'allocation' and 'prod' matches 'production'. Only 'location' is protected because it is an explicit mapping key; any new unmapped header containing these substrings will be mis-mapped.",
+    "MonthlyMIS.jsx is ~2035 lines - should be split into smaller components (table, filters, dialogs).",
+    "MIS table cells had no data-testid; added data-testid=`mis-cell-${loan.id}-${field}` for testability."
+  ],
+  "updated_files": [
+    "/app/frontend/src/pages/MonthlyMIS.jsx (added data-testid to table cells only)",
+    "/app/backend/tests/test_import_fuzzy_cat_prod.py (new)",
+    "/app/backend/tests/cleanup_sep2026_qa.py (new)"
+  ],
+  "success_rate": {"backend": "100% (8/8 import tests)", "frontend": "100% of tested import->MIS display flow"},
+  "seed_data_creation": "Temporary Sep-2026/Sep'26 loans (TEST_* customers) created via Excel import; all deleted after testing (verified 0 remaining).",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Import tests live in /app/backend/tests/test_import_category_product.py and test_import_fuzzy_cat_prod.py (both use month Sep-2026 and auto-clean). Note the frontend nav item is 'Month MIS' (not 'MIS Board'), MIS page testid is mis-board-page, month header testid is month-header-<MMM-YYYY>, cell testid mis-cell-<loanId>-<field>. Import dialog month dropdown only lists existing month groups. Unrelated leftover data 'TEST_Replace_Bank_1' exists in Apr-2026 from an earlier iteration.",
+  "rca_of_the_issue": "Category/Product were empty because the pre-fix column mapping never renamed those headers; data imported before the fix has no category/product stored. The current code maps 'category'/'loan category'/'product'/'product type'/'loan product' plus a fuzzy fallback and works correctly - old rows simply need re-import. Verified end to end."
+}

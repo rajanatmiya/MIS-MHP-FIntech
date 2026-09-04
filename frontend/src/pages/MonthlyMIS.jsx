@@ -1252,7 +1252,7 @@ const MonthlyMIS = () => {
                           </td>
                           )}
                           {ALL_COLUMNS.filter(c => visibleColumns.includes(c.key)).map(({ key: field }) => (
-                            <td key={field} style={getFreezeStyle(field)} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''} ${FREEZE_KEYS.includes(field) ? 'bg-white' : ''}`}>
+                            <td key={field} data-testid={`mis-cell-${loan.id}-${field}`} style={getFreezeStyle(field)} className={`px-2 py-1 whitespace-nowrap ${field === 'decline_reason' ? 'bg-red-50/40' : ''} ${FREEZE_KEYS.includes(field) ? 'bg-white' : ''}`}>
                               {renderCell(loan, field, field)}
                             </td>
                           ))}
