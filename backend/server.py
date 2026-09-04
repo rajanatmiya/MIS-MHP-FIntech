@@ -212,7 +212,7 @@ class LoanApplication(BaseModel):
 
 class LoanApplicationCreate(BaseModel):
     agent_name: str
-    customer_name: str
+    customer_name: Optional[str] = ""
     company_name: Optional[str] = ""
     contact_no: Optional[str] = ""
     login_date: Optional[str] = ""

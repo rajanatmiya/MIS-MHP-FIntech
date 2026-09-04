@@ -549,8 +549,16 @@ const MonthlyMIS = () => {
 
   const handleAddLoan = async (e) => {
     e.preventDefault();
+    // Non-admin: customer_name and contact_no are required
+    if (user?.role !== 'admin') {
+      if (!newLoanData.customer_name?.trim()) { toast.error('Customer Name is required'); return; }
+      if (!newLoanData.contact_no?.trim()) { toast.error('Contact Number is required'); return; }
+    }
     try {
       const submitData = {...newLoanData};
+      submitData.customer_name = submitData.customer_name || '';
+      submitData.contact_no = submitData.contact_no || '';
+      submitData.company_name = submitData.company_name || '';
       if (addEntryForMonth) {
         submitData.group_month = addEntryForMonth;
       }
@@ -582,6 +590,10 @@ const MonthlyMIS = () => {
 
   const handleEditSave = async (e) => {
     e.preventDefault();
+    if (user?.role !== 'admin') {
+      if (!editFormData.customer_name?.trim()) { toast.error('Customer Name is required'); return; }
+      if (!editFormData.contact_no?.trim()) { toast.error('Contact Number is required'); return; }
+    }
     try {
       await axios.put(`${API}/loans/${editingLoan.id}`, editFormData);
       setLoans(loans.map(l => l.id === editingLoan.id ? { ...l, ...editFormData } : l));
@@ -1327,7 +1339,7 @@ const MonthlyMIS = () => {
           <form onSubmit={handleAddLoan} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               <div>
-                <Label className="text-[11px] text-slate-600">Customer Name *</Label>
+                <Label className="text-[11px] text-slate-600">Customer Name{user?.role !== 'admin' ? ' *' : ''}</Label>
                 <Select key={`cust-add-${masterCustomers.length}`} value={newLoanData.customer_name || ''} onValueChange={(value) => {
                   if (!value || value === '') return;
                   const cust = masterCustomers.find(c => c.name === value);
@@ -1343,7 +1355,7 @@ const MonthlyMIS = () => {
                 </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Contact Number</Label>
+                <Label className="text-[11px] text-slate-600">Contact Number{user?.role !== 'admin' ? ' *' : ''}</Label>
                 <Input value={newLoanData.contact_no || ''} onChange={(e) => setNewLoanData(prev => ({...prev, contact_no: e.target.value}))} className="h-8 text-[11px] mt-0.5" />
               </div>
               <div>
@@ -1573,7 +1585,7 @@ const MonthlyMIS = () => {
           <form onSubmit={handleEditSave} className="space-y-3">
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               <div>
-                <Label className="text-[11px] text-slate-600">Customer Name *</Label>
+                <Label className="text-[11px] text-slate-600">Customer Name{user?.role !== 'admin' ? ' *' : ''}</Label>
                 <Select key={`cust-edit-${masterCustomers.length}`} value={editFormData.customer_name || ''} onValueChange={(value) => {
                     if (!value || value === '') return;
                     const cust = masterCustomers.find(c => c.name === value);
@@ -1589,7 +1601,7 @@ const MonthlyMIS = () => {
                   </Select>
               </div>
               <div>
-                <Label className="text-[11px] text-slate-600">Contact Number</Label>
+                <Label className="text-[11px] text-slate-600">Contact Number{user?.role !== 'admin' ? ' *' : ''}</Label>
                 <Input value={editFormData.contact_no || ''} onChange={(e) => setEditFormData({...editFormData, contact_no: e.target.value})} className="h-8 text-[11px] mt-0.5" />
               </div>
               <div>

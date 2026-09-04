@@ -1,0 +1,36 @@
+{
+  "summary": "Frontend-only testing of role-conditional mandatory Customer Name / Contact Number on MIS page (Apr-2026). Admin: no '*' on Customer Name & Contact Number in BOTH Add and Edit forms (PASS). Manager & Agent: '*' shown in both Add and Edit forms, and submitting empty shows toast 'Customer Name is required' then 'Contact Number is required' (ALL PASS). FAILED: Admin cannot actually create a loan with empty Customer Name/Contact Number — POST /api/loans returns 422 ('customer_name Field required') and UI shows 'Failed to add loan', dialog stays open.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/loans", "issue": "LoanApplicationCreate (server.py line 215) declares customer_name: str (required) -> 422 'Field required' when frontend omits it. Admin therefore cannot submit the form with Customer Name empty, defeating the new optional-for-admin requirement. Verified via curl: payload without customer_name => 422; same payload with customer_name:\"\" => 200. Fix: make customer_name Optional[str] = \"\" in LoanApplicationCreate (and keep contact_no optional), OR in MonthlyMIS.handleAddLoan default submitData.customer_name/contact_no to '' before POST.", "priority": "CRITICAL"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS Add/Edit form", "issue": "Contact Number input and Agent Name/Status/Bank controls have no data-testid (had to use label-based XPath). Add data-testid=\"add-contact-input\"/\"edit-contact-input\", add-agent/status/bank selects.", "selector": "none", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Admin Add Entry with empty Customer Name/Contact Number", "issue": "Submission fails with backend 422; toast shows generic 'Failed to add loan' instead of creating the loan. Toast also does not surface the real backend validation detail.", "affected_selectors": ["[data-testid=\"add-entry-submit-btn\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Make customer_name optional in backend LoanApplicationCreate (Optional[str] = \"\") so admin can submit empty Customer Name; alternatively send '' from handleAddLoan.",
+    "Surface backend error detail in the 'Failed to add loan' toast (error.response?.data?.detail) for easier debugging.",
+    "Add data-testid to Contact Number input and Agent/Status/Bank selects in Add & Edit forms."
+  ],
+  "critical_code_review_comments": [
+    "Frontend-only role validation (handleAddLoan/handleEditSave) is not mirrored in backend: a non-admin could POST without customer_name-only guard bypass via API; and admin path is blocked by strict Pydantic model. Align role-based requiredness on the server (e.g. validate based on current_user.role).",
+    "MonthlyMIS.jsx is ~2000 lines — should be split into smaller components (AddEntryDialog, EditEntryDialog, MonthGroupTable)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped, 1 targeted API check failed)", "frontend": "88% (7/8 checks passed)"},
+  "seed_data_creation": "Created one loan via API (customer_name='', Apr-2026, agent TEST_AGENT_QA) to verify backend accepts empty strings; it was deleted afterwards (DELETE 200). No UI-created test loans remained (submission 422'd). Apr-2026 still has 8 pre-existing rows.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "admin@mhpfintech.com / manager@mhpfintech.com / agent@mhpfintech.com — all Admin@123",
+  "context_for_next_testing_agent": "Month groups collapsed by default; use [data-testid=\"add-entry-Apr-2026\"] to open Add form and [data-testid=\"month-header-Apr-2026\"] to expand rows, then [data-testid^=\"mis-edit-\"] for edit. Labels are read via 'div[role=dialog] form label'. Asterisk logic works for all 3 roles in Add+Edit; only the admin empty-submission end-to-end save needs retest after backend model fix.",
+  "rca_of_the_issue": "handleAddLoan spreads newLoanData, which never contains customer_name/contact_no keys if untouched, so the POST body omits them. Pydantic LoanApplicationCreate.customer_name is a required str -> 422. Sending empty strings succeeds, so either default the fields in the frontend payload or make the model field optional."
+}
