@@ -1871,8 +1871,7 @@ const MonthlyMIS = () => {
           </DialogHeader>
           <div className="space-y-3">
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-[11px] text-slate-600">
-              <p><strong>Required:</strong> Customer Name, Status</p>
-              <p className="mt-0.5"><strong>Optional:</strong> Bank, Company, Contact, Location, Executive, Manager, Sanction, Disbursed, etc.</p>
+              <p>All columns are optional. Map your Excel columns to: Customer Name, Status, Bank, Company, Contact, Executive, Manager, etc.</p>
             </div>
             <div>
               <Label className="text-[11px]">Month *</Label>

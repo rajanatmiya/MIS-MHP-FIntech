@@ -2183,21 +2183,11 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
             if old_col in df.columns:
                 df.rename(columns={old_col: new_col}, inplace=True)
         
-        # Required fields (removed month as it can be auto-generated)
-        required_fields = ['customer_name', 'status']
-        missing_fields = [field for field in required_fields if field not in df.columns]
-        
-        if missing_fields:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"Missing required columns: {', '.join(missing_fields)}"
-            )
-        
         # Auto-generate month if not present (use selected month or current month)
         selected_month = month.strip() if month else None
         current_month = datetime.now().strftime("%b'%y")  # e.g., "Jan'25"
         
-        # Import loans with duplicate detection
+        # Import loans — no mandatory fields, all columns optional
         imported_count = 0
         skipped_count = 0
         duplicate_count = 0
@@ -2205,12 +2195,12 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
         
         for index, row in df.iterrows():
             try:
-                # Skip empty rows
-                if pd.isna(row.get('customer_name')) or not str(row.get('customer_name')).strip():
+                # Skip completely empty rows
+                if all(pd.isna(row.get(c)) or str(row.get(c, '')).strip() == '' for c in df.columns):
                     skipped_count += 1
                     continue
                 
-                customer_name = str(row.get('customer_name', '')).strip()
+                customer_name = str(row.get('customer_name', '')).strip() if pd.notna(row.get('customer_name')) else ''
                 contact_no = str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else ''
                 bank = str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else ''
                 
