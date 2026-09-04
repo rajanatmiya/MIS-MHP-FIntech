@@ -1,0 +1,38 @@
+{
+  "summary": "Tested Excel import NaN fix (safe_str) end-to-end. Backend: created xlsx files with openpyxl containing empty cells and full column sets, imported via POST /api/import/loans-excel, verified stored docs via GET /api/loans. The 'nan' string bug is FIXED (no field returns 'nan'; empty cells -> '', empty Status -> 'Pending'). All 15 requested columns map correctly (customer_name, company_name, contact_no, bank, status, category, product, amount, sanction, disbursed, login_date, location, branch, executive_name, team_manager) plus month/group_month. NaN cleanup migration verified: 0 of 25 existing loans hold 'nan' in any field. UI: logged in as admin, MIS Board -> Import dialog -> month select -> file upload -> import worked; table renders empty cells as em-dash, no 'nan' anywhere. NEW BUGS FOUND (same root cause family, not fixed by safe_str): (1) blank date cells are stored as the literal string 'NaT' (pandas NaT is not a float, so safe_str falls through to str()); (2) numeric columns that contain any blank cell are coerced by pandas to float, so Contact No 9876543210 is stored/displayed as '9911001100.0' and Amount 5000000 as '5000000.0'; (3) date cells are stored as '2026-01-15 00:00:00' instead of a date-only string.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "POST /api/import/loans-excel", "issue": "Numeric Excel columns with any blank cell are read as float64, so Contact No is stored as '9911001100.0' and Amount as '5000000.0' — phone numbers/amounts corrupted (visible in MIS table). safe_str should strip trailing '.0' for whole floats (e.g. if isinstance(val,float) and val.is_integer(): return str(int(val))).", "priority": "HIGH"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/import/loans-excel", "issue": "Blank date cells stored as literal 'NaT' (login_date='NaT'). safe_str only checks isinstance(val,float) before pd.isna; use pd.isna(val) generically and also treat 'nat'/'none'/'nan' strings as empty. Migration v1_clean_nan_values also does not clean 'NaT'."},
+      {"endpoint": "POST /api/import/loans-excel", "issue": "Populated date cells stored as '2026-01-15 00:00:00' (pandas Timestamp str) instead of date-only, inconsistent with manual entry format."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS table", "issue": "Imported Contact No displays as '9911001100.0' due to backend float coercion (frontend renders raw value)", "selector": "tr[data-testid^='mis-row-']", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MIS Import dialog", "issues": ["React a11y warning: Missing Description/aria-describedby for DialogContent (import + other dialogs)"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_excel_nan_import.py", "/app/test_reports/pytest/pytest_results.xml"],
+  "action_items": [
+    "Harden safe_str: use pd.isna(val) for all types (handles NaT/None), lowercase-check for 'nan'/'nat'/'none', and convert whole-number floats to int strings so Contact No/Amount are not '...0'",
+    "Format date-like values as date-only (e.g. val.strftime('%Y-%m-%d')) during import",
+    "Extend cleanup migration to also clean 'NaT' strings and strip trailing '.0' from contact_no/amount in existing imported records"
+  ],
+  "critical_code_review_comments": [
+    "safe_str() checks `isinstance(val, float) and pd.isna(val)` — pandas NaT and pd.NA are not floats, so they leak through as 'NaT'/'<NA>'. Use pd.isna(val) unguarded.",
+    "server.py is very large (>3300 lines); import logic and startup migrations should move to separate modules."
+  ],
+  "updated_files": ["/app/backend/tests/test_excel_nan_import.py"],
+  "success_rate": {"backend": "75% (3/4 test cases pass; edge-case test fails on NaT/float coercion)", "frontend": "100% for the nan-display requirement (dash shown, no 'nan'); contact_no formatting defect present"},
+  "seed_data_creation": "Temporary loans imported under months Dec'99 / Dec'98 / Apr-2026 with TESTNAN_/TESTEDGE_/TESTUI_ prefixes — all deleted after testing (DB back to 25 loans)",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run pytest /app/backend/tests/test_excel_nan_import.py -p no:randomly. TestImportEdgeCases::test_blank_date_and_numeric_cells is the failing regression test for the NaT + float-coercion bugs; it should pass once safe_str is hardened. Tests self-clean via module fixture.",
+  "rca_of_the_issue": "Original 'nan' bug is resolved by safe_str(). Residual issues stem from the same source: pandas dtype coercion. Blank cells in a date column produce pd.NaT (not a float) which bypasses safe_str's isinstance(float) guard and is stringified as 'NaT'; blank cells in an integer column upcast the column to float64 so ints render with a '.0' suffix."
+}

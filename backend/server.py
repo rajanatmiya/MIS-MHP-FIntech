@@ -2193,45 +2193,79 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
         duplicate_count = 0
         errors = []
         
+        def safe_str(val, default=''):
+            """Convert value to string, handling NaN/NaT/None and float coercion properly"""
+            if val is None:
+                return default
+            try:
+                if pd.isna(val):
+                    return default
+            except (TypeError, ValueError):
+                pass
+            # Handle pandas Timestamp -> date-only string
+            if hasattr(val, 'strftime'):
+                return val.strftime('%d-%m-%Y')
+            # Handle float -> int string (e.g., 9876543210.0 -> "9876543210")
+            if isinstance(val, float):
+                if val != val:  # NaN check
+                    return default
+                if val == int(val):
+                    return str(int(val))
+                return str(val)
+            s = str(val).strip()
+            if s.lower() in ('nan', 'nat', 'none', '<na>'):
+                return default
+            # Strip trailing .0 from string representations
+            if s.endswith('.0') and s[:-2].replace('-', '').isdigit():
+                return s[:-2]
+            return s
+
         for index, row in df.iterrows():
             try:
                 # Skip completely empty rows
-                if all(pd.isna(row.get(c)) or str(row.get(c, '')).strip() == '' for c in df.columns):
+                if all(pd.isna(row.get(c)) or str(row.get(c, '')).strip() in ('', 'nan') for c in df.columns):
                     skipped_count += 1
                     continue
                 
-                customer_name = str(row.get('customer_name', '')).strip() if pd.notna(row.get('customer_name')) else ''
-                contact_no = str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else ''
-                bank = str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else ''
+                customer_name = safe_str(row.get('customer_name'))
+                contact_no = safe_str(row.get('contact_no'))
+                bank = safe_str(row.get('bank'))
                 
                 # Prepare loan data
                 loan_data = {
                     "id": str(uuid.uuid4()),
-                    "customer_name": str(row.get('customer_name', '')).strip(),
-                    "company_name": str(row.get('company_name', '')).strip() if pd.notna(row.get('company_name')) else '',
-                    "contact_no": str(row.get('contact_no', '')).strip() if pd.notna(row.get('contact_no')) else '',
-                    "status": str(row.get('status', 'Pending')).strip(),
-                    "bank": str(row.get('bank', '')).strip() if pd.notna(row.get('bank')) else '',
-                    "sanction": str(row.get('sanction', '')).strip() if pd.notna(row.get('sanction')) else '',
-                    "disbursed": str(row.get('disbursed', '')).strip() if pd.notna(row.get('disbursed')) else '',
-                    "remark": str(row.get('remark', '')).strip() if pd.notna(row.get('remark')) else '',
-                    "decline_reason": str(row.get('decline_reason', '')).strip() if pd.notna(row.get('decline_reason')) else '',
-                    "scheme": str(row.get('scheme', '')).strip() if pd.notna(row.get('scheme')) else '',
-                    "case_from": str(row.get('case_from', '')).strip() if pd.notna(row.get('case_from')) else '',
-                    "location": str(row.get('location', '')).strip() if pd.notna(row.get('location')) else '',
-                    "branch": str(row.get('branch', '')).strip() if pd.notna(row.get('branch')) else '',
-                    "executive_name": str(row.get('executive_name', '')).strip() if pd.notna(row.get('executive_name')) else '',
-                    "agent_name": str(row.get('agent_name', current_user.name)).strip() if pd.notna(row.get('agent_name')) else current_user.name,
-                    "team_manager": str(row.get('team_manager', '')).strip() if pd.notna(row.get('team_manager')) else '',
-                    "code": str(row.get('code', '')).strip() if pd.notna(row.get('code')) else '',
-                    "rate": str(row.get('rate', '')).strip() if pd.notna(row.get('rate')) else '',
-                    "pf": str(row.get('pf', '')).strip() if pd.notna(row.get('pf')) else '',
-                    "insurance": str(row.get('insurance', '')).strip() if pd.notna(row.get('insurance')) else '',
-                    "tenure": str(row.get('tenure', '')).strip() if pd.notna(row.get('tenure')) else '',
-                    "subvention": str(row.get('subvention', '')).strip() if pd.notna(row.get('subvention')) else '',
-                    "brokerage_subvention": str(row.get('brokerage_subvention', '')).strip() if pd.notna(row.get('brokerage_subvention')) else '',
-                    "month": str(row.get('month', selected_month or current_month)).strip() if pd.notna(row.get('month')) else (selected_month or current_month),
-                    "group_month": selected_month or (str(row.get('month', current_month)).strip() if pd.notna(row.get('month')) else current_month),
+                    "customer_name": customer_name,
+                    "company_name": safe_str(row.get('company_name')),
+                    "contact_no": contact_no,
+                    "status": safe_str(row.get('status'), 'Pending'),
+                    "bank": bank,
+                    "sanction": safe_str(row.get('sanction')),
+                    "disbursed": safe_str(row.get('disbursed')),
+                    "remark": safe_str(row.get('remark')),
+                    "decline_reason": safe_str(row.get('decline_reason')),
+                    "scheme": safe_str(row.get('scheme')),
+                    "case_from": safe_str(row.get('case_from')),
+                    "location": safe_str(row.get('location')),
+                    "branch": safe_str(row.get('branch')),
+                    "executive_name": safe_str(row.get('executive_name')),
+                    "agent_name": safe_str(row.get('agent_name'), current_user.name),
+                    "team_manager": safe_str(row.get('team_manager')),
+                    "code": safe_str(row.get('code')),
+                    "rate": safe_str(row.get('rate')),
+                    "pf": safe_str(row.get('pf')),
+                    "insurance": safe_str(row.get('insurance')),
+                    "tenure": safe_str(row.get('tenure')),
+                    "subvention": safe_str(row.get('subvention')),
+                    "brokerage_subvention": safe_str(row.get('brokerage_subvention')),
+                    "login_date": safe_str(row.get('login_date')),
+                    "disbursed_date": safe_str(row.get('disbursed_date')),
+                    "amount": safe_str(row.get('amount')),
+                    "category": safe_str(row.get('category')),
+                    "product": safe_str(row.get('product')),
+                    "technical_value": safe_str(row.get('technical_value')),
+                    "legal_status": safe_str(row.get('legal_status')),
+                    "month": safe_str(row.get('month'), selected_month or current_month),
+                    "group_month": selected_month or safe_str(row.get('month'), current_month),
                     "created_by": current_user.id,
                     "created_at": datetime.now(timezone.utc).isoformat(),
                     "updated_at": datetime.now(timezone.utc).isoformat()
@@ -3307,6 +3341,30 @@ async def create_default_admin():
                 logger.info("Loan field trim migration complete")
         except Exception as e:
             logger.error(f"Trim migration error: {str(e)}")
+
+        # Clean "nan"/"NaT" string values and trailing .0 in loan fields
+        try:
+            nan_ver = "v2_clean_nan_nat_values"
+            if not await db.migrations.find_one({"_id": nan_ver}):
+                nan_fields = ["customer_name", "company_name", "bank", "executive_name", "team_manager", "agent_name", "contact_no", "branch", "location", "status", "category", "product", "scheme", "case_from", "code", "rate", "pf", "insurance", "tenure", "subvention", "brokerage_subvention", "remark", "decline_reason", "amount", "sanction", "disbursed", "login_date", "disbursed_date", "technical_value", "legal_status"]
+                total_cleaned = 0
+                for field in nan_fields:
+                    # Clean nan/NaT/none strings
+                    for bad_val in ["nan", "NaN", "NaT", "nat", "None", "none", "<NA>"]:
+                        result = await db.loan_applications.update_many({field: bad_val}, {"$set": {field: ""}})
+                        total_cleaned += result.modified_count
+                # Fix contact_no with trailing .0 (e.g., "9876543210.0")
+                cursor = db.loan_applications.find({"contact_no": {"$regex": "\\.0$"}}, {"_id": 1, "contact_no": 1})
+                async for doc in cursor:
+                    val = doc.get("contact_no", "")
+                    if val.endswith(".0"):
+                        await db.loan_applications.update_one({"_id": doc["_id"]}, {"$set": {"contact_no": val[:-2]}})
+                        total_cleaned += 1
+                await db.migrations.update_one({"_id": nan_ver}, {"$set": {"applied_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+                if total_cleaned > 0:
+                    logger.info(f"NaN/NaT cleanup v2: {total_cleaned} fields cleaned")
+        except Exception as e:
+            logger.error(f"NaN cleanup error: {str(e)}")
 
         try:
             pipeline = [
