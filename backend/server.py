@@ -2173,6 +2173,11 @@ async def import_loans_from_excel(file: UploadFile = File(...), month: str = For
             'disbursed date': 'disbursed_date',
             'disburseddate': 'disbursed_date',
             'disbursal date': 'disbursed_date',
+            'category': 'category',
+            'loan category': 'category',
+            'product': 'product',
+            'loan product': 'product',
+            'product type': 'product',
         }
         
         # Normalize column names

@@ -1,0 +1,33 @@
+{
+  "summary": "Verified the Excel-import Category/Product column-mapping fix. Backend: created xlsx files with openpyxl and imported via POST /api/import/loans-excel (month=Sep-2026) — (1) standard headers 'Category'/'Product' -> imported=2 and GET /api/loans confirms category='SECURED'/product='Home Loan' and category='UNSECURED'/product='Personal Loan' (bank/status also correct); (2) alternate headers 'Loan Category'/'Product Type' -> category='SECURED', product='LAP'; (3) alias 'Loan Product' -> product='Business Loan'. 3/3 pytest tests pass. UI: logged in as admin, MIS Board -> Add Month (2026-09) -> Import dialog -> selected Sep-2026 -> uploaded xlsx -> import succeeded (group shows '2 entries'); after expanding the Sep-2026 group the CATEGORY and PRODUCT columns render 'SECURED / Home Loan' and 'UNSECURED / Personal Loan' correctly. Cleanup: all Sep-2026 test loans deleted (DB back to 25 loans, 0 Sep-2026 remaining). One pre-existing (unrelated) UI defect found: the FIRST click on the newest month-group header is swallowed — the group only expands on the second click.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "MonthlyMIS month group header", "issue": "First click on the newest/just-imported month header does not expand the group (chevron stays collapsed); a second click works. Root cause: fetchLoans() auto-expand does setExpandedMonths(new Set([data[0].month])) which overwrites user toggles on any subsequent loans refresh, and it uses the raw loan.month value instead of the grouped month key (toMonthKey). Reproduced 3/3 times right after an import.", "selector": "[data-testid=\"month-header-Sep-2026\"]", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "MIS Board - Add Month dialog", "issues": ["Uses native browser <input type=\"month\"> picker (data-testid=add-month-input) instead of a shadcn month/date picker; value must be 'YYYY-MM' which is inconsistent with the 'Sep-2026' labels used everywhere else"]},
+      {"screen": "MIS table (imported rows)", "issues": ["DATE column for imported rows shows the month label 'Sep-2026' instead of a date/em-dash when the Excel has no date column"]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_import_category_product.py", "/app/test_reports/pytest/pytest_results.xml", "/app/tests/cleanup_sep2026.py", "/app/tests/make_ui_xlsx.py"],
+  "action_items": [
+    "Fix MonthlyMIS auto-expand: only auto-expand on the initial load (e.g. guard with a ref) and use toMonthKey(loan.month, loan.group_month) so a loans refresh doesn't reset the user's expanded/collapsed state and swallow the first header click"
+  ],
+  "critical_code_review_comments": [
+    "column_mapping now covers category/product aliases; consider normalizing headers by removing spaces/underscores (e.g. 'loan_category', 'Product  Type') so mapping is resilient rather than an ever-growing alias dict",
+    "server.py import handler is inside a >3300 line file; extract Excel import + column mapping into its own module for testability"
+  ],
+  "updated_files": ["/app/backend/tests/test_import_category_product.py", "/app/tests/cleanup_sep2026.py", "/app/tests/make_ui_xlsx.py"],
+  "success_rate": {"backend": "100% (3/3)", "frontend": "100% for Category/Product display (month-expand click quirk is pre-existing)"},
+  "seed_data_creation": "Temporary Sep-2026 loans (TEST_User A-D, TESTUI_User A/B) created via import and deleted afterwards; DB back to 25 loans",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "context_for_next_testing_agent": "Run: pytest /app/backend/tests/test_import_category_product.py -v -p no:randomly (self-cleaning module fixture deletes all Sep-2026 loans). For UI, Sep-2026 must first be created via Add Month (native month input, fill '2026-09') before it appears in the import month select; month groups need TWO clicks to expand right after import due to the auto-expand bug.",
+  "rca_of_the_issue": "Category/Product were dropped because df columns were never renamed from 'Category'/'Product' to 'category'/'product'; adding the aliases to column_mapping resolves it and is confirmed end-to-end at API and UI level."
+}
