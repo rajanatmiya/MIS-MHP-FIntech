@@ -811,7 +811,7 @@ async def get_loans(
             query["$or"] = search_conditions
     
     # Cap limit to prevent abuse
-    limit = min(limit, 2000)
+    limit = min(limit, 10000)
     skip = (page - 1) * limit
     
     total = await db.loan_applications.count_documents(query)
@@ -1286,29 +1286,65 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     accessible_ids = await get_accessible_user_ids(current_user)
     rbac = build_rbac_filter(current_user, accessible_ids)
     
-    # Use group_month only — must match exactly what MIS board shows
-    query = {"group_month": month_key}
+    # Replicate frontend toMonthKey logic exactly:
+    # 1. Records with group_month = month_key
+    # 2. Records with empty/missing group_month whose date resolves to month_key
+    
+    # Step 1: Get records with explicit group_month
+    q1 = {"group_month": month_key}
     if rbac:
-        query = {"$and": [rbac, {"group_month": month_key}]}
+        q1 = {"$and": [rbac, q1]}
+    loans_with_gm = await db.loan_applications.find(q1, {"_id": 0}).to_list(50000)
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
+    # Step 2: Get records without group_month, filter by date->month_key in Python
+    q2 = {"$or": [{"group_month": {"$exists": False}}, {"group_month": ""}, {"group_month": None}]}
+    if rbac:
+        q2 = {"$and": [rbac, q2]}
+    loans_no_gm = await db.loan_applications.find(q2, {"_id": 0}).to_list(50000)
     
-    # Sort by date (newest first) to match MIS board display order
+    def to_month_key(val):
+        """Replicate frontend toMonthKey for records without group_month"""
+        if not val:
+            return 'Unknown'
+        val = str(val).strip()
+        # Already MMM-YYYY
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+            return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            # dd-mm-yyyy
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_EXP[mi]}-{parts[2]}"
+        if len(parts) == 3 and len(parts[0]) == 4:
+            # yyyy-mm-dd (possibly with time)
+            mi = int(parts[1]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_EXP[mi]}-{parts[0]}"
+        if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 4:
+            # mm-yyyy
+            mi = int(parts[0]) - 1
+            if 0 <= mi < 12:
+                return f"{MONTH_NAMES_EXP[mi]}-{parts[1]}"
+        return val
+    
+    fallback_loans = [l for l in loans_no_gm if to_month_key(l.get('month', '')) == month_key]
+    
+    loans = loans_with_gm + fallback_loans
+    
+    logger.info(f"Month export {month_key}: {len(loans_with_gm)} with group_month + {len(fallback_loans)} fallback = {len(loans)} total")
+    
+    # Sort by date (newest first)
     def parse_date_sort(loan):
         d = str(loan.get('month', '') or '')
-        # dd-mm-yyyy
         m = re.match(r'^(\d{1,2})-(\d{1,2})-(\d{4})$', d)
         if m:
             return (int(m.group(3)), int(m.group(2)), int(m.group(1)))
-        # yyyy-mm-dd
         m2 = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})', d)
         if m2:
             return (int(m2.group(1)), int(m2.group(2)), int(m2.group(3)))
         return (0, 0, 0)
-    
     loans.sort(key=parse_date_sort, reverse=True)
-    
-    logger.info(f"Month export {month_key}: {len(loans)} records found")
     
     df = pd.DataFrame(loans)
     column_config = [

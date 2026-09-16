@@ -386,7 +386,7 @@ const MonthlyMIS = () => {
 
   const fetchLoans = async () => {
     try {
-      const response = await axios.get(`${API}/loans?limit=2000`);
+      const response = await axios.get(`${API}/loans?limit=10000`);
       const data = response.data.loans || response.data;
       setLoans(data);
       
