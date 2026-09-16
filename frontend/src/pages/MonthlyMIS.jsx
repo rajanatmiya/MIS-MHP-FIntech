@@ -823,6 +823,22 @@ const MonthlyMIS = () => {
     groupedLoans[month].push(loan);
   });
 
+  // Sort loans within each group by date (newest first)
+  const parseDateVal = (d) => {
+    if (!d) return 0;
+    const s = String(d).trim();
+    // dd-mm-yyyy
+    const m1 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+    if (m1) return new Date(+m1[3], +m1[2] - 1, +m1[1]).getTime();
+    // yyyy-mm-dd (with possible time)
+    const m2 = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (m2) return new Date(+m2[1], +m2[2] - 1, +m2[3]).getTime();
+    return 0;
+  };
+  Object.keys(groupedLoans).forEach(k => {
+    groupedLoans[k].sort((a, b) => parseDateVal(b.month) - parseDateVal(a.month));
+  });
+
   // Include empty month groups added via "Add Month"
   emptyMonthGroups.forEach(m => {
     if (!groupedLoans[m]) groupedLoans[m] = [];

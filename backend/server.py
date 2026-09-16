@@ -1293,6 +1293,21 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
     
+    # Sort by date (newest first) to match MIS board display order
+    def parse_date_sort(loan):
+        d = str(loan.get('month', '') or '')
+        # dd-mm-yyyy
+        m = re.match(r'^(\d{1,2})-(\d{1,2})-(\d{4})$', d)
+        if m:
+            return (int(m.group(3)), int(m.group(2)), int(m.group(1)))
+        # yyyy-mm-dd
+        m2 = re.match(r'^(\d{4})-(\d{1,2})-(\d{1,2})', d)
+        if m2:
+            return (int(m2.group(1)), int(m2.group(2)), int(m2.group(3)))
+        return (0, 0, 0)
+    
+    loans.sort(key=parse_date_sort, reverse=True)
+    
     logger.info(f"Month export {month_key}: {len(loans)} records found")
     
     df = pd.DataFrame(loans)
