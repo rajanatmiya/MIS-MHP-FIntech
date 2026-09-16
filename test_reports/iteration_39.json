@@ -1,0 +1,19 @@
+{
+  "summary": "Backend-only testing of export deduplication and cleanup-duplicates endpoint. All 5 tests passed. Verified: (1) 4 identical loans in Sep-2026 are all persisted in DB (distinct IDs), (2) Month export GET /api/backup/export-month/Sep-2026 returns Excel with only 1 row for the duplicate customer, (3) POST /api/loans/cleanup-duplicates as admin returns duplicates_removed>=3 and leaves exactly 1 remaining in DB, (4) Same customer/contact/bank/company but different status (Pending vs Approved) are NOT deduped -- both appear in export, (5) Full export via GET /api/export/loans dedupes duplicates as well.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_export_dedup.py", "/app/test_reports/pytest/export_dedup.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Month export dedup key uses 7 fields (excludes group_month) while cleanup-duplicates uses 8 fields (includes group_month). This inconsistency is intentional per the design (month export is already month-scoped), but worth documenting.",
+    "sanction/disbursed are stored as strings in the schema (POST /api/loans requires string) — numeric comparison for dedup relies on exact string match; '100000' vs '100000.0' would not dedupe. Consider normalizing numerically."
+  ],
+  "updated_files": ["/app/backend/tests/test_export_dedup.py"],
+  "success_rate": {"backend": "100%", "frontend": "N/A"},
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "seed_data_creation": "Created temporary loans with customer_name='TEST_DEDUP_CUST' (4 identical) and 'TEST_DEDUP_DIFFSTATUS' (2 with different status) in Sep-2026. All cleaned up post-test via module fixture. Verified 0 TEST_DEDUP loans remain.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Full export path is /api/export/loans (NOT /api/backup/export). Month export path is /api/backup/export-month/{month_key}. Loan sanction/disbursed fields must be strings in POST /api/loans (Pydantic validation). Cleanup fixture in test_export_dedup.py scans all loans matching TEST_DEDUP prefix and removes them.",
+  "rca of the issue": "N/A - feature verified working as designed."
+}
