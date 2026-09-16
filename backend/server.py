@@ -1286,17 +1286,10 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     accessible_ids = await get_accessible_user_ids(current_user)
     rbac = build_rbac_filter(current_user, accessible_ids)
     
-    # Primary filter: use group_month (the authoritative grouping field)
-    # Fallback: regex on month field for entries without group_month
-    month_patterns = [
-        {"group_month": month_key},
-        {"group_month": {"$exists": False}, "month": {"$regex": f"^\\d{{2}}-{mm}-{year}$"}},
-        {"group_month": "", "month": {"$regex": f"^\\d{{2}}-{mm}-{year}$"}},
-    ]
-    
-    query = {"$or": month_patterns}
+    # Use group_month only — must match exactly what MIS board shows
+    query = {"group_month": month_key}
     if rbac:
-        query = {"$and": [rbac, {"$or": month_patterns}]}
+        query = {"$and": [rbac, {"group_month": month_key}]}
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
     
