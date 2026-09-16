@@ -37,6 +37,16 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - **Master Customer/Executive/Manager — Aug 2026:** Added 3 new Master File sections: Customer Names (with contact number), Executive Names, Team Managers. Used as dropdown selects in MIS Board add/edit forms. Customer selection auto-fills contact number. Edit form preserves legacy values with "(current)" indicator. Inline "+" buttons on MIS forms allow adding new entries without leaving the page.
 - **Bank Name Standardization — Aug 2026:** Auto-run startup migration renames 9 bank names (kotak→Kotak Bank, db→Deutsche, fullerton→SMFG, etc.) in both master_banks and loan records. Idempotent — safe to run multiple times. Also added `POST /api/master/banks/rename-bulk` endpoint for custom renames.
 - **Bulk Excel Import — Aug 2026:** Master File page has "Import Excel" button. Upload .xlsx to bulk import into any master section (Banks, Agents, Companies, Customers, Executives, Managers, etc.). Auto-detects "Name" and "Contact No" columns. Skips duplicates. Backend: `POST /api/master/import-excel`.
+- **Master Rename Propagation — Aug 2026:** Renaming a master record (Customer, Company, Executive, Manager, Bank, Agent) propagates the change into all existing loan records. Uses trimmed, regex-escaped exact matching to handle whitespace from Excel imports.
+- **Role-Based Form Rules — Aug 2026:** Admin: Customer Name, Contact No, Company Name optional. Manager/Agent: mandatory with `*` labels and toast validation. Excel import has no mandatory columns.
+- **Import Data Normalization — Aug 2026:** Excel import handles NaN→empty string, NaT dates, numeric `.0` suffix removal, Category/Product column mapping with expanded aliases.
+- **Import Month Selector — Aug 2026:** Month MIS import dialog lets user select target month group before upload; backend assigns `group_month` from selection.
+- **Export Deduplication — Aug 2026:** Month and full exports deduplicate by (Customer Name + Contact No + Bank + Company Name). Admin cleanup endpoint: `POST /api/loans/cleanup-duplicates`.
+- **Month Export Group Filter Fix — Feb 2026:** Fixed month export to use `group_month` as authoritative primary filter instead of regex date matching. Prevents cross-month leakage (e.g., July-dated records assigned to Aug-2026 no longer appear in Jul export). Legacy fallback for records without `group_month`. Testing: iteration 40, 4/4 passed.
+- **RBAC Agent Isolation Fix — Aug 2026:** Agents only see loans where `created_by` matches their user ID. Managers see own + team data.
+- **Master Data Permissions — Aug 2026:** Manager/Agent can POST new master entries (Customer, Company, Executive, Manager). PUT/DELETE remain Admin-only.
+- **Duplicate Customers Allowed — Aug 2026:** Master File Customer Names allow duplicate entries by design.
+- **Loan-to-Master Auto-Sync — Aug 2026:** Creating/updating a loan auto-syncs Customer, Company, Executive, Manager, Bank values to their respective master collections.
 
 ## Key API Endpoints
 - `/api/loans` (GET, POST) — CRUD with RBAC
@@ -51,9 +61,16 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - `deleted_month_backups`: Archived month data
 
 ## Pending / Backlog
-- **P2:** Bulk import master data directly from Excel
-- **P2:** Refactor `backend/server.py` into modular routers (~2600 lines)
-- **P2:** Refactor `MonthlyMIS.jsx` into smaller components (~1700 lines)
+- **P2:** Refactor `backend/server.py` into modular routers (~3,500 lines)
+- **P2:** Refactor `MonthlyMIS.jsx` into smaller components (~2,000+ lines)
+
+## Important Design Decisions
+- Month export uses `group_month` as authoritative filter (not date regex)
+- Agent visibility: strict `created_by` match only (not `agent_name`)
+- Startup migrations must be idempotent (no `delete_many({})`)
+- Executive/Manager master lists use authoritative Excel seed (no loan sync)
+- Table cells are read-only; users edit via row Edit action
+- Frozen columns end at Status column
 
 ## Credentials
 - Admin: admin@mhpfintech.com / Admin@123

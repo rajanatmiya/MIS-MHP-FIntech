@@ -1,0 +1,19 @@
+{
+  "summary": "Backend-only testing of month export filter fix (group_month as primary/authoritative filter with regex fallback) and cleanup-duplicates endpoint. All 4 tests passed: (1) Apr-2026 export contains only Apr entries (2 with group_month + 1 with empty group_month via fallback regex on month field), no Aug leak. (2) Aug-2026 export contains only Aug entries including the cross-month loan (month=01-07-2026 but group_month=Aug-2026), no Apr leak. (3) Jul-2026 export correctly EXCLUDES the loan whose group_month=Aug-2026 (confirms group_month is authoritative and old regex-on-month bug is fixed). (4) POST /api/loans/cleanup-duplicates removes duplicates (3 identical Pending loans -> 1 remaining, duplicates_removed>=2).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": ["/app/backend/tests/test_month_export.py", "/app/test_reports/pytest/month_export.xml"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Fallback regex in export-month (line 1293-1294) uses only pattern `^\\d{2}-mm-YYYY$` — will miss legacy formats like `MMM-YY`, `MMM-YYYY`, or `YYYY-MM-DD` when group_month is empty. Acceptable since group_month is populated on create, but existing legacy data without group_month in non-dd-mm-yyyy format will be silently dropped from month exports.",
+    "The `{group_month: {$exists: false}}` and `{group_month: ''}` are two separate $or clauses — could be consolidated with `$in: [null, '']` + $exists check for readability."
+  ],
+  "updated_files": ["/app/backend/tests/test_month_export.py"],
+  "success_rate": {"backend": "100%", "frontend": "N/A"},
+  "test_credentials": "admin@mhpfintech.com / Admin@123",
+  "seed_data_creation": "Created 5 loans in module fixture (2 Apr, 2 Aug, 1 cross-month Jul-into-Aug, 1 fallback Apr with empty group_month) + 3 duplicate May loans for cleanup test. All prefixed TEST_MONTHEXP_. All deleted post-test — verified 0 leftovers.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Month export path: GET /api/backup/export-month/{month_key} (e.g., Apr-2026). Query filter: primary = group_month=month_key; fallback = (group_month missing OR '') AND month regex ^dd-mm-YYYY$. Excel parsed via openpyxl; 'Customer Name' column contains customer_name. POST /api/loans requires all string fields; sanction/disbursed are strings.",
+  "rca of the issue": "N/A - fix verified working. Old bug: 6 regex patterns on 'month' field could match wrong months (e.g., month='01-07-2026' with intended group_month=Aug-2026 was incorrectly included in Jul export). New logic: group_month is authoritative primary filter; regex fallback only applies when group_month is missing/empty. All 4 test cases confirm behaviour matches specification."
+}
