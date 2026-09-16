@@ -1300,27 +1300,9 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     
     loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
     
-    # Deduplicate: remove rows with identical key fields (keeps first occurrence)
-    seen = set()
-    unique_loans = []
-    for loan in loans:
-        dedup_key = (
-            str(loan.get('customer_name', '')).strip().lower(),
-            str(loan.get('contact_no', '')).strip(),
-            str(loan.get('bank', '')).strip().lower(),
-            str(loan.get('company_name', '')).strip().lower(),
-            str(loan.get('sanction', '')).strip(),
-            str(loan.get('disbursed', '')).strip(),
-            str(loan.get('status', '')).strip().lower(),
-        )
-        if dedup_key not in seen:
-            seen.add(dedup_key)
-            unique_loans.append(loan)
+    logger.info(f"Month export {month_key}: {len(loans)} records found")
     
-    if len(loans) != len(unique_loans):
-        logger.info(f"Export dedup: {len(loans)} -> {len(unique_loans)} ({len(loans) - len(unique_loans)} duplicates removed)")
-    
-    df = pd.DataFrame(unique_loans)
+    df = pd.DataFrame(loans)
     column_config = [
         ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
@@ -1994,27 +1976,9 @@ async def export_loans(
             return val
         loans = [l for l in loans if to_mk(l) == month]
     
-    # Deduplicate: remove rows with identical key fields
-    seen = set()
-    unique_loans = []
-    for loan in loans:
-        dedup_key = (
-            str(loan.get('customer_name', '')).strip().lower(),
-            str(loan.get('contact_no', '')).strip(),
-            str(loan.get('bank', '')).strip().lower(),
-            str(loan.get('company_name', '')).strip().lower(),
-            str(loan.get('sanction', '')).strip(),
-            str(loan.get('disbursed', '')).strip(),
-            str(loan.get('status', '')).strip().lower(),
-        )
-        if dedup_key not in seen:
-            seen.add(dedup_key)
-            unique_loans.append(loan)
+    logger.info(f"Full export (month={month}): {len(loans)} records found")
     
-    if len(loans) != len(unique_loans):
-        logger.info(f"Full export dedup: {len(loans)} -> {len(unique_loans)} ({len(loans) - len(unique_loans)} duplicates removed)")
-    
-    df = pd.DataFrame(unique_loans)
+    df = pd.DataFrame(loans)
     
     # Define columns with proper readable headers
     column_config = [
