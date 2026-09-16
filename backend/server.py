@@ -304,7 +304,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             raise HTTPException(status_code=401, detail="Invalid authentication credentials")
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token has expired")
-    except jwt.JWTError:
+    except (jwt.PyJWTError, jwt.InvalidTokenError, Exception) as e:
         raise HTTPException(status_code=401, detail="Could not validate credentials")
     
     user = await db.users.find_one({"id": user_id}, {"_id": 0})
@@ -346,7 +346,8 @@ def build_rbac_filter(current_user: User, accessible_ids):
 
 # Auth routes
 @api_router.post("/auth/register", response_model=Token)
-async def register(user_data: UserCreate):
+async def register(user_data: UserCreate, current_user: User = Depends(get_current_user)):
+    check_admin(current_user)
     existing_user = await db.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -976,12 +977,19 @@ async def toggle_entry_status(loan_id: str, data: dict = Body(...), current_user
     new_status = data.get("entry_status", "")
     if new_status not in ("Open", "Closed"):
         raise HTTPException(status_code=400, detail="entry_status must be 'Open' or 'Closed'")
+    # RBAC: verify caller owns or can access this loan
+    accessible_ids = await get_accessible_user_ids(current_user)
+    rbac = build_rbac_filter(current_user, accessible_ids)
+    loan_query = {"id": loan_id}
+    if rbac:
+        loan_query.update(rbac)
+    loan = await db.loan_applications.find_one(loan_query)
+    if not loan:
+        raise HTTPException(status_code=404, detail="Loan not found or access denied")
     result = await db.loan_applications.update_one(
         {"id": loan_id},
         {"$set": {"entry_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
-    if result.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Loan not found")
     return {"message": f"Entry status set to {new_status}", "entry_status": new_status}
 
 @api_router.post("/loans/bulk-delete")
@@ -999,8 +1007,14 @@ async def bulk_update_status(data: dict = Body(...), current_user: User = Depend
     new_status = data.get("status", "")
     if not ids or not new_status:
         raise HTTPException(status_code=400, detail="ids and status are required")
+    # RBAC: only update loans the caller can access
+    accessible_ids = await get_accessible_user_ids(current_user)
+    rbac = build_rbac_filter(current_user, accessible_ids)
+    update_query = {"id": {"$in": ids}}
+    if rbac:
+        update_query.update(rbac)
     result = await db.loan_applications.update_many(
-        {"id": {"$in": ids}},
+        update_query,
         {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
     return {"message": f"{result.modified_count} loans updated to '{new_status}'", "modified_count": result.modified_count}
