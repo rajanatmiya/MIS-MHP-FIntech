@@ -811,7 +811,7 @@ async def get_loans(
             query["$or"] = search_conditions
     
     # Cap limit to prevent abuse
-    limit = min(limit, 2000)
+    limit = min(limit, 10000)
     skip = (page - 1) * limit
     
     total = await db.loan_applications.count_documents(query)
@@ -3472,6 +3472,49 @@ async def create_default_admin():
                     logger.info(f"NaN/NaT cleanup v2: {total_cleaned} fields cleaned")
         except Exception as e:
             logger.error(f"NaN cleanup error: {str(e)}")
+
+
+        # Backfill group_month for orphan records (records with empty/missing group_month)
+        try:
+            BACKFILL_VER = "v1_backfill_group_month"
+            if not await db.migrations.find_one({"_id": BACKFILL_VER}):
+                MONTH_NAMES_BF = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+                orphan_query = {"$or": [
+                    {"group_month": {"$exists": False}},
+                    {"group_month": ""},
+                    {"group_month": None}
+                ]}
+                orphans = await db.loan_applications.find(orphan_query, {"_id": 1, "month": 1}).to_list(50000)
+                backfilled = 0
+                for doc in orphans:
+                    val = str(doc.get('month', '') or '').strip()
+                    gm = None
+                    if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+                        gm = val
+                    else:
+                        parts = val.split('-')
+                        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+                            mi = int(parts[1]) - 1
+                            if 0 <= mi < 12:
+                                gm = f"{MONTH_NAMES_BF[mi]}-{parts[2]}"
+                        elif len(parts) == 3 and len(parts[0]) == 4:
+                            mi = int(parts[1]) - 1
+                            if 0 <= mi < 12:
+                                gm = f"{MONTH_NAMES_BF[mi]}-{parts[0]}"
+                        elif len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 4:
+                            mi = int(parts[0]) - 1
+                            if 0 <= mi < 12:
+                                gm = f"{MONTH_NAMES_BF[mi]}-{parts[1]}"
+                    if gm:
+                        await db.loan_applications.update_one({"_id": doc["_id"]}, {"$set": {"group_month": gm}})
+                        backfilled += 1
+                await db.migrations.update_one({"_id": BACKFILL_VER}, {"$set": {"applied_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+                if backfilled > 0:
+                    logger.info(f"Backfilled group_month for {backfilled} orphan records")
+                else:
+                    logger.info("No orphan records needed group_month backfill")
+        except Exception as e:
+            logger.error(f"Group month backfill error: {str(e)}")
 
         try:
             pipeline = [
