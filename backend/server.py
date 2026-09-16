@@ -811,7 +811,7 @@ async def get_loans(
             query["$or"] = search_conditions
     
     # Cap limit to prevent abuse
-    limit = min(limit, 10000)
+    limit = min(limit, 2000)
     skip = (page - 1) * limit
     
     total = await db.loan_applications.count_documents(query)
