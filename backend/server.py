@@ -940,6 +940,36 @@ async def delete_loan(loan_id: str, current_user: User = Depends(get_current_use
     
     return {"message": "Loan application deleted successfully"}
 
+@api_router.post("/loans/cleanup-duplicates")
+async def cleanup_duplicate_loans(current_user: User = Depends(get_current_user)):
+    """Remove duplicate loan records from the database (admin only)"""
+    check_admin(current_user)
+    all_loans = await db.loan_applications.find({}, {"_id": 0}).to_list(100000)
+    seen = {}
+    duplicates_to_delete = []
+    for loan in all_loans:
+        dedup_key = (
+            str(loan.get('customer_name', '')).strip().lower(),
+            str(loan.get('contact_no', '')).strip(),
+            str(loan.get('bank', '')).strip().lower(),
+            str(loan.get('company_name', '')).strip().lower(),
+            str(loan.get('sanction', '')).strip(),
+            str(loan.get('disbursed', '')).strip(),
+            str(loan.get('status', '')).strip().lower(),
+            str(loan.get('group_month', '')).strip(),
+        )
+        if dedup_key in seen:
+            duplicates_to_delete.append(loan['id'])
+        else:
+            seen[dedup_key] = loan['id']
+    deleted = 0
+    for lid in duplicates_to_delete:
+        await db.loan_applications.delete_one({"id": lid})
+        deleted += 1
+    logger.info(f"Cleanup: {deleted} duplicate loans removed from {len(all_loans)} total")
+    return {"total_before": len(all_loans), "duplicates_removed": deleted, "total_after": len(all_loans) - deleted}
+
+
 @api_router.patch("/loans/{loan_id}/entry-status")
 async def toggle_entry_status(loan_id: str, data: dict = Body(...), current_user: User = Depends(get_current_user)):
     """Toggle entry_status between Open and Closed"""
@@ -1270,9 +1300,29 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     if rbac:
         query = {"$and": [rbac, {"$or": month_patterns}]}
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
     
-    df = pd.DataFrame(loans)
+    # Deduplicate: remove rows with identical key fields (keeps first occurrence)
+    seen = set()
+    unique_loans = []
+    for loan in loans:
+        dedup_key = (
+            str(loan.get('customer_name', '')).strip().lower(),
+            str(loan.get('contact_no', '')).strip(),
+            str(loan.get('bank', '')).strip().lower(),
+            str(loan.get('company_name', '')).strip().lower(),
+            str(loan.get('sanction', '')).strip(),
+            str(loan.get('disbursed', '')).strip(),
+            str(loan.get('status', '')).strip().lower(),
+        )
+        if dedup_key not in seen:
+            seen.add(dedup_key)
+            unique_loans.append(loan)
+    
+    if len(loans) != len(unique_loans):
+        logger.info(f"Export dedup: {len(loans)} -> {len(unique_loans)} ({len(loans) - len(unique_loans)} duplicates removed)")
+    
+    df = pd.DataFrame(unique_loans)
     column_config = [
         ('month', 'Date'), ('customer_name', 'Customer Name'), ('company_name', 'Company Name'),
         ('contact_no', 'Contact No'), ('bank', 'Bank'), ('category', 'Category'), ('product', 'Product'),
@@ -1925,7 +1975,7 @@ async def export_loans(
     if bank:
         query["bank"] = bank
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(50000)
     
     # Filter by month using group_month / date-to-month conversion
     if month and month != 'all':
@@ -1946,7 +1996,27 @@ async def export_loans(
             return val
         loans = [l for l in loans if to_mk(l) == month]
     
-    df = pd.DataFrame(loans)
+    # Deduplicate: remove rows with identical key fields
+    seen = set()
+    unique_loans = []
+    for loan in loans:
+        dedup_key = (
+            str(loan.get('customer_name', '')).strip().lower(),
+            str(loan.get('contact_no', '')).strip(),
+            str(loan.get('bank', '')).strip().lower(),
+            str(loan.get('company_name', '')).strip().lower(),
+            str(loan.get('sanction', '')).strip(),
+            str(loan.get('disbursed', '')).strip(),
+            str(loan.get('status', '')).strip().lower(),
+        )
+        if dedup_key not in seen:
+            seen.add(dedup_key)
+            unique_loans.append(loan)
+    
+    if len(loans) != len(unique_loans):
+        logger.info(f"Full export dedup: {len(loans)} -> {len(unique_loans)} ({len(loans) - len(unique_loans)} duplicates removed)")
+    
+    df = pd.DataFrame(unique_loans)
     
     # Define columns with proper readable headers
     column_config = [
