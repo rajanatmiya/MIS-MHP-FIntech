@@ -868,6 +868,7 @@ const MonthlyMIS = () => {
           <p className="text-[10px] text-slate-400 mt-0.5">Click any cell to edit inline</p>
         </div>
         <div className="flex items-center gap-1.5">
+          {user?.role === 'admin' && (
           <Button
             onClick={handleExportExcel}
             variant="outline"
@@ -878,6 +879,7 @@ const MonthlyMIS = () => {
             <Download className="w-3 h-3 mr-1" />
             Export
           </Button>
+          )}
           {user?.role === 'admin' && (
             <>
               <Button
