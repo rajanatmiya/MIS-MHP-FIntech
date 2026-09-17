@@ -868,18 +868,18 @@ const MonthlyMIS = () => {
           <p className="text-[10px] text-slate-400 mt-0.5">Click any cell to edit inline</p>
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            onClick={handleExportExcel}
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px] px-2.5 border-slate-200 text-slate-600 hover:bg-slate-50"
+            data-testid="export-excel-btn"
+          >
+            <Download className="w-3 h-3 mr-1" />
+            Export
+          </Button>
           {user?.role === 'admin' && (
             <>
-              <Button
-                onClick={handleExportExcel}
-                variant="outline"
-                size="sm"
-                className="h-7 text-[11px] px-2.5 border-slate-200 text-slate-600 hover:bg-slate-50"
-                data-testid="export-excel-btn"
-              >
-                <Download className="w-3 h-3 mr-1" />
-                Export
-              </Button>
               <Button
                 onClick={() => setShowImportDialog(true)}
                 variant="outline"
