@@ -1266,6 +1266,7 @@ const MonthlyMIS = () => {
                               >
                                 <Edit className="w-3.5 h-3.5 text-[#2c587a]" />
                               </button>
+                              {user?.role === 'admin' && (
                               <button
                                 onClick={() => handleDuplicateEntry(loan)}
                                 className="p-1 rounded hover:bg-violet-50 transition-colors"
@@ -1274,6 +1275,8 @@ const MonthlyMIS = () => {
                               >
                                 <Copy className="w-3.5 h-3.5 text-violet-500" />
                               </button>
+                              )}
+                              {user?.role === 'admin' && (
                               <button
                                 onClick={() => handleMoveToMonth(loan)}
                                 className="p-1 rounded hover:bg-amber-50 transition-colors"
@@ -1282,6 +1285,7 @@ const MonthlyMIS = () => {
                               >
                                 <MoveRight className="w-3.5 h-3.5 text-amber-600" />
                               </button>
+                              )}
                               {user?.role === 'admin' && (
                                 <button
                                   onClick={() => handleDeleteLoan(loan.id)}
