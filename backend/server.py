@@ -1387,6 +1387,78 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to normalize months: {str(e)}")
 
 
+@api_router.post("/loans/reset-group-months")
+async def reset_group_months(current_user: User = Depends(get_current_user)):
+    """Reset group_month on all loans so they go back to their natural month from the 'month' field.
+    This undoes all 'Move to Month' actions. Admin only."""
+    check_admin(current_user)
+    MONTH_NAMES_RESET = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+    def derive_month_key(val):
+        """Derive MMM-YYYY from the month date field"""
+        if not val:
+            return None
+        val = str(val).strip()
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+            return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            try:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_RESET[mi]}-{parts[2]}"
+            except ValueError:
+                pass
+        if len(parts) >= 3 and len(parts[0]) == 4:
+            try:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_RESET[mi]}-{parts[0]}"
+            except ValueError:
+                pass
+        if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 4:
+            try:
+                mi = int(parts[0]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_RESET[mi]}-{parts[1]}"
+            except ValueError:
+                pass
+        return None
+
+    all_loans = await db.loan_applications.find({}).to_list(None)
+    reset_count = 0
+    skipped = 0
+
+    for loan in all_loans:
+        month_val = loan.get("month", "")
+        natural_key = derive_month_key(month_val)
+        current_gm = loan.get("group_month", "")
+
+        if natural_key and current_gm and current_gm != natural_key:
+            # group_month differs from natural month — reset it
+            await db.loan_applications.update_one(
+                {"_id": loan["_id"]},
+                {"$set": {"group_month": natural_key}}
+            )
+            reset_count += 1
+        elif natural_key and not current_gm:
+            # No group_month set — set it to natural month
+            await db.loan_applications.update_one(
+                {"_id": loan["_id"]},
+                {"$set": {"group_month": natural_key}}
+            )
+            reset_count += 1
+        else:
+            skipped += 1
+
+    return {
+        "message": f"Reset {reset_count} loans to their natural month. {skipped} unchanged.",
+        "reset_count": reset_count,
+        "skipped": skipped,
+        "total": len(all_loans)
+    }
+
+
 # Analytics routes
 @api_router.get("/analytics/overview")
 async def get_overview(current_user: User = Depends(get_current_user)):

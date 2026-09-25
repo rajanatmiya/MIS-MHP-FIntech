@@ -417,6 +417,32 @@ const Settings = () => {
           </Card>
 
 
+          {/* Reset Month Grouping */}
+          <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="flex items-center gap-1.5 text-xs text-amber-800">
+                <Calendar className="w-3.5 h-3.5" />
+                Reset Month Grouping
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[10px] text-slate-600 mb-2">Undo all "Move to Month" actions. Every loan goes back to its original month based on its date field.</p>
+              <Button
+                data-testid="reset-group-months-btn"
+                onClick={async () => {
+                  if (!window.confirm('This will undo all "Move to Month" changes and reset every loan to its natural month. Continue?')) return;
+                  try {
+                    const response = await axios.post(`${API}/loans/reset-group-months`);
+                    toast.success(`Reset ${response.data.reset_count} entries! ${response.data.skipped} unchanged.`);
+                  } catch (error) { toast.error('Failed to reset month grouping'); }
+                }}
+                size="sm" className="h-7 text-[11px] bg-amber-600 hover:bg-amber-700"
+              >
+                <Calendar className="w-3 h-3 mr-1" /> Reset Months
+              </Button>
+            </CardContent>
+          </Card>
+
           {/* Delete by Date */}
           <Card className="shadow-sm border-red-200 bg-red-50/50">
             <CardHeader className="pb-1 pt-3 px-4">
