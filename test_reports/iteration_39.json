@@ -1,0 +1,24 @@
+{
+  "summary": "Verified the month-export row-count fix (Sep-2026 UI count == Excel row count). Added pytest suite /app/backend/tests/test_month_export_count.py (5 tests, all PASS) that seeds 3 Sep-2026 loans with group_month, 2 Sep-2026 loans in dd-mm-yyyy format WITHOUT group_month, and 1 Oct-2026 loan, then asserts: (a) Sep export rows == UI toMonthKey count and is >=5, (b) Oct export rows == UI count and >=1, (c) Apr-2026 export rows == UI count, (d) no cross-month leakage (Oct customer not in Sep export and vice-versa; all 5 seeded Sep customers present in Sep export), (e) Agent RBAC: agent-token export contains only agent's own loans and none of admin's. UI verified with Playwright: admin sees 'Sep-2026 5 entries' badge and the export-month-Sep-2026 button; agent sees 0 export buttons (admin-only gating works). All seeded TEST_MONEXP_* loans cleaned up via bulk-delete.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_month_export_count.py",
+    "/app/test_reports/pytest/month_export_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py export_month_loans now correctly fetches all RBAC-filtered loans and filters in Python using an exact replica of the frontend toMonthKey - guarantees export == UI count. Good fix.",
+    "Minor: for very large tenants (e.g., 355+ loans per month, thousands overall), export loads ALL user-accessible loans into memory before filtering. Acceptable for current scale but consider pagination/streaming if data grows to 100k+.",
+    "The Python to_month_key replica is duplicated in 4 places (export_month_loans, get_monthly_trends, get_by_bank, get_by_agent). Extract into a shared helper to prevent future drift from the frontend implementation.",
+    "MonthlyMIS.jsx still ~2043 lines - recommend splitting into subcomponents."
+  ],
+  "updated_files": ["/app/backend/tests/test_month_export_count.py (new)"],
+  "success_rate": {"backend": "100% (5/5)", "frontend": "100% (admin export button visible, agent gated, UI count badge matches seed)"},
+  "test_credentials": "admin@mhpfintech.com/Admin@123, agent@mhpfintech.com/Admin@123",
+  "seed_data_creation": "Created 6 TEST_MONEXP_* loans (Sep-2026 x5, Oct-2026 x1) + 1 agent-created loan; all removed via bulk-delete at teardown.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Regression test lives at /app/backend/tests/test_month_export_count.py. It self-cleans. To rerun: pytest backend/tests/test_month_export_count.py -v. Uses REACT_APP_BACKEND_URL from frontend/.env. Existing Apr-2026 data is not modified.",
+  "rca_of_the_issue": "Previous implementation used complex MongoDB regex queries per month format which drifted from the frontend's toMonthKey() grouping (e.g., dd-mm-yyyy loans without group_month or edge-case formats). Fix replicates toMonthKey in Python and filters the RBAC-scoped result set the same way as the UI. Verified end-to-end: 5 Sep-2026 entries (3 via group_month, 2 via dd-mm-yyyy) all appear in export; Oct entry does not leak in."
+}

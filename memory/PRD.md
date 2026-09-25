@@ -50,10 +50,14 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - `loan_applications`: `group_month` (string, e.g. "May-2026"), `entry_status` (string, "Open" or "Closed", default "Open")
 - `deleted_month_backups`: Archived month data
 
+## Recent Changes
+- **Month Export Count Fix — Sep 2026:** Replaced complex regex-based MongoDB queries in `/api/backup/export-month/{month_key}` with a Python replica of the frontend's `toMonthKey()` logic. Backend now fetches all RBAC-filtered loans and filters in Python using the same grouping rules as the UI, guaranteeing exported Excel row count exactly matches UI displayed count. Testing agent iteration 39: 100% pass (5/5 backend, frontend verified).
+
 ## Pending / Backlog
 - **P2:** Bulk import master data directly from Excel
-- **P2:** Refactor `backend/server.py` into modular routers (~2600 lines)
-- **P2:** Refactor `MonthlyMIS.jsx` into smaller components (~1700 lines)
+- **P2:** Refactor `backend/server.py` into modular routers (~3400 lines)
+- **P2:** Refactor `MonthlyMIS.jsx` into smaller components (~2000 lines)
+- **P3:** Extract shared `to_month_key()` helper used in 4 places in server.py into a single utility function
 
 ## Credentials
 - Admin: admin@mhpfintech.com / Admin@123
