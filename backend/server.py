@@ -1236,41 +1236,61 @@ async def delete_archived_month(archive_id: str, current_user: User = Depends(ge
 
 @api_router.get("/backup/export-month/{month_key}")
 async def export_month_loans(month_key: str, current_user: User = Depends(get_current_user)):
-    """Export loans for a specific month as Excel"""
+    """Export loans for a specific month as Excel - uses same grouping logic as frontend"""
     MONTH_NAMES_EXP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-    
-    match = re.match(r'^([A-Za-z]{3})-(\d{2,4})$', month_key)
-    if not match:
-        raise HTTPException(status_code=400, detail="Invalid month_key format")
-    
-    month_name = match.group(1)
-    year = match.group(2)
-    if len(year) == 2:
-        year = f"20{year}"
-    mi = MONTH_NAMES_EXP.index(month_name) if month_name in MONTH_NAMES_EXP else -1
-    if mi == -1:
-        raise HTTPException(status_code=400, detail="Invalid month name")
-    mm = str(mi + 1).zfill(2)
-    
+
+    def to_month_key(val, group_month):
+        """Exact replica of frontend toMonthKey() logic"""
+        if group_month:
+            return group_month
+        if not val:
+            return 'Unknown'
+        # Already in MMM-YYYY format
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', str(val)):
+            return str(val)
+        parts = str(val).split('-')
+        # dd-mm-yyyy
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            try:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_EXP[mi]}-{parts[2]}"
+            except ValueError:
+                pass
+            return str(val)
+        # yyyy-mm-dd (possibly with time after T or space)
+        if len(parts) >= 3 and len(parts[0]) == 4:
+            try:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_EXP[mi]}-{parts[0]}"
+            except ValueError:
+                pass
+            return str(val)
+        # mm-yyyy
+        if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 4:
+            try:
+                mi = int(parts[0]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_EXP[mi]}-{parts[1]}"
+            except ValueError:
+                pass
+            return str(val)
+        return str(val)
+
     # Build RBAC filter
     accessible_ids = await get_accessible_user_ids(current_user)
     rbac = build_rbac_filter(current_user, accessible_ids)
-    
-    month_patterns = [
-        {"month": {"$regex": f"^\\d{{2}}-{mm}-{year}$"}},
-        {"month": {"$regex": f"^{month_name}-{year}$", "$options": "i"}},
-        {"month": {"$regex": f"^{mm}-{year}$"}},
-        {"month": {"$regex": f"^{year}-{mm}-\\d{{2}}$"}},
-        {"group_month": month_key},
+
+    # Fetch all RBAC-filtered loans, then group exactly like frontend
+    query = rbac if rbac else {}
+    all_loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
+
+    # Filter to only loans that belong to the requested month_key
+    loans = [
+        loan for loan in all_loans
+        if to_month_key(loan.get("month", ""), loan.get("group_month", "")) == month_key
     ]
-    short_year = year[2:]
-    month_patterns.append({"month": {"$regex": f"^{month_name}-{short_year}$", "$options": "i"}})
-    
-    query = {"$or": month_patterns}
-    if rbac:
-        query = {"$and": [rbac, {"$or": month_patterns}]}
-    
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
     
     df = pd.DataFrame(loans)
     column_config = [
