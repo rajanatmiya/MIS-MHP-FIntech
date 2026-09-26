@@ -51,13 +51,14 @@ A comprehensive MIS dashboard for a loan agency (MHP Fintech). Manages loan appl
 - `deleted_month_backups`: Archived month data
 
 ## Recent Changes
-- **Month Export Count Fix — Sep 2026:** Replaced complex regex-based MongoDB queries in `/api/backup/export-month/{month_key}` with a Python replica of the frontend's `toMonthKey()` logic. Backend now fetches all RBAC-filtered loans and filters in Python using the same grouping rules as the UI, guaranteeing exported Excel row count exactly matches UI displayed count. Testing agent iteration 39: 100% pass (5/5 backend, frontend verified).
+- **Restore Month from Excel Tool — Sep 2026:** Added `/api/loans/restore-month-from-excel` endpoint and Settings UI. Admin can upload a previously exported month Excel file and specify a month key. The tool matches each row to a loan in the database (by customer_name + contact_no + bank + date) and restores their `group_month` to the specified month. This fixes "Move to Month" mistakes where entries were accidentally moved between months.
+- **Month Export Code Reverted — Sep 2026:** Export endpoint reverted to original regex-based MongoDB query approach (matching commit 654f8d1).
 
 ## Pending / Backlog
+- **P1:** Fix month export count mismatch (export should return exact same count as UI)
 - **P2:** Bulk import master data directly from Excel
 - **P2:** Refactor `backend/server.py` into modular routers (~3400 lines)
 - **P2:** Refactor `MonthlyMIS.jsx` into smaller components (~2000 lines)
-- **P3:** Extract shared `to_month_key()` helper used in 4 places in server.py into a single utility function
 
 ## Credentials
 - Admin: admin@mhpfintech.com / Admin@123

@@ -1387,75 +1387,89 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to normalize months: {str(e)}")
 
 
-@api_router.post("/loans/reset-group-months")
-async def reset_group_months(current_user: User = Depends(get_current_user)):
-    """Reset group_month on all loans so they go back to their natural month from the 'month' field.
-    This undoes all 'Move to Month' actions. Admin only."""
+@api_router.post("/loans/restore-month-from-excel")
+async def restore_month_from_excel(
+    file: UploadFile = File(...),
+    month_key: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Restore group_month for loans matching rows in an uploaded Excel export.
+    Matches loans by customer_name + contact_no + bank + month(date).
+    Sets their group_month to the specified month_key. Admin only."""
     check_admin(current_user)
-    MONTH_NAMES_RESET = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
-    def derive_month_key(val):
-        """Derive MMM-YYYY from the month date field"""
-        if not val:
-            return None
-        val = str(val).strip()
-        if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
-            return val
-        parts = val.split('-')
-        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
-            try:
-                mi = int(parts[1]) - 1
-                if 0 <= mi < 12:
-                    return f"{MONTH_NAMES_RESET[mi]}-{parts[2]}"
-            except ValueError:
-                pass
-        if len(parts) >= 3 and len(parts[0]) == 4:
-            try:
-                mi = int(parts[1]) - 1
-                if 0 <= mi < 12:
-                    return f"{MONTH_NAMES_RESET[mi]}-{parts[0]}"
-            except ValueError:
-                pass
-        if len(parts) == 2 and len(parts[0]) == 2 and len(parts[1]) == 4:
-            try:
-                mi = int(parts[0]) - 1
-                if 0 <= mi < 12:
-                    return f"{MONTH_NAMES_RESET[mi]}-{parts[1]}"
-            except ValueError:
-                pass
-        return None
+    try:
+        contents = await file.read()
+        df = pd.read_excel(BytesIO(contents))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to read Excel: {str(e)}")
 
-    all_loans = await db.loan_applications.find({}).to_list(None)
-    reset_count = 0
-    skipped = 0
+    # Map export column headers back to DB field names
+    col_map = {
+        'Date': 'month', 'Customer Name': 'customer_name',
+        'Contact No': 'contact_no', 'Bank': 'bank',
+        'Company Name': 'company_name', 'Status': 'status',
+        'Amount': 'amount', 'Category': 'category', 'Product': 'product',
+    }
+    df.rename(columns=col_map, inplace=True)
 
-    for loan in all_loans:
-        month_val = loan.get("month", "")
-        natural_key = derive_month_key(month_val)
-        current_gm = loan.get("group_month", "")
+    restored = 0
+    not_found = 0
+    already_correct = 0
 
-        if natural_key and current_gm and current_gm != natural_key:
-            # group_month differs from natural month — reset it
-            await db.loan_applications.update_one(
-                {"_id": loan["_id"]},
-                {"$set": {"group_month": natural_key}}
-            )
-            reset_count += 1
-        elif natural_key and not current_gm:
-            # No group_month set — set it to natural month
-            await db.loan_applications.update_one(
-                {"_id": loan["_id"]},
-                {"$set": {"group_month": natural_key}}
-            )
-            reset_count += 1
-        else:
-            skipped += 1
+    for _, row in df.iterrows():
+        customer = str(row.get('customer_name', '') or '').strip()
+        contact = str(row.get('contact_no', '') or '').strip()
+        bank = str(row.get('bank', '') or '').strip()
+        date_val = str(row.get('month', '') or '').strip()
+
+        # Clean pandas artifacts
+        for bad in ['nan', 'NaN', 'None', 'NaT']:
+            if customer == bad: customer = ''
+            if contact == bad: contact = ''
+            if bank == bad: bank = ''
+            if date_val == bad: date_val = ''
+        if contact.endswith('.0'):
+            contact = contact[:-2]
+
+        # Build match query — use multiple fields for accuracy
+        match_q = {}
+        if customer:
+            match_q["customer_name"] = {"$regex": f"^{re.escape(customer.strip())}$", "$options": "i"}
+        if contact:
+            match_q["contact_no"] = contact
+        if bank:
+            match_q["bank"] = {"$regex": f"^{re.escape(bank.strip())}$", "$options": "i"}
+        if date_val:
+            match_q["month"] = {"$regex": re.escape(date_val)}
+
+        if len(match_q) < 2:
+            not_found += 1
+            continue
+
+        # Find matching loan(s)
+        candidates = await db.loan_applications.find(match_q).to_list(10)
+
+        if not candidates:
+            not_found += 1
+            continue
+
+        for loan in candidates:
+            if loan.get("group_month") == month_key:
+                already_correct += 1
+            else:
+                await db.loan_applications.update_one(
+                    {"_id": loan["_id"]},
+                    {"$set": {"group_month": month_key}}
+                )
+                restored += 1
 
     return {
-        "message": f"Reset {reset_count} loans to their natural month. {skipped} unchanged.",
-        "reset_count": reset_count,
-        "skipped": skipped,
-        "total": len(all_loans)
+        "message": f"Restored {restored} loans to {month_key}. {already_correct} already correct. {not_found} not matched.",
+        "restored": restored,
+        "already_correct": already_correct,
+        "not_found": not_found,
+        "total_rows": len(df)
     }
 
 

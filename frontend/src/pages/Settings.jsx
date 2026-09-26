@@ -146,6 +146,9 @@ const Settings = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteAllConfirm, setDeleteAllConfirm] = useState('');
   const [deleteAllLoading, setDeleteAllLoading] = useState(false);
+  const [restoreFile, setRestoreFile] = useState(null);
+  const [restoreMonth, setRestoreMonth] = useState('');
+  const [restoreLoading, setRestoreLoading] = useState(false);
 
   const handleBackupData = async () => {
     setBackupLoading(true);
@@ -416,6 +419,55 @@ const Settings = () => {
             </CardContent>
           </Card>
 
+
+          {/* Restore Month from Excel */}
+          <Card className="shadow-sm border-amber-200 bg-amber-50/50">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="flex items-center gap-1.5 text-xs text-amber-800">
+                <Database className="w-3.5 h-3.5" />
+                Restore Month from Excel
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[10px] text-slate-600 mb-2">Upload a previously exported month Excel file to restore loans back to that month. Fixes "Move to Month" mistakes.</p>
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Input
+                    value={restoreMonth}
+                    onChange={(e) => setRestoreMonth(e.target.value)}
+                    placeholder="Month (e.g. Sep-2026)"
+                    className="h-8 text-[11px] flex-1"
+                  />
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={(e) => setRestoreFile(e.target.files[0])}
+                    className="text-[11px] flex-1"
+                  />
+                </div>
+                <Button
+                  data-testid="restore-month-btn"
+                  onClick={async () => {
+                    if (!restoreFile || !restoreMonth) { toast.error('Select file and enter month'); return; }
+                    if (!window.confirm(`Restore loans from Excel to "${restoreMonth}"?`)) return;
+                    setRestoreLoading(true);
+                    try {
+                      const formData = new FormData();
+                      formData.append('file', restoreFile);
+                      formData.append('month_key', restoreMonth);
+                      const response = await axios.post(`${API}/loans/restore-month-from-excel`, formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+                      toast.success(`Restored ${response.data.restored} loans to ${restoreMonth}. ${response.data.already_correct} already correct. ${response.data.not_found} not matched.`);
+                    } catch (error) { toast.error('Failed to restore: ' + (error.response?.data?.detail || error.message)); }
+                    finally { setRestoreLoading(false); }
+                  }}
+                  disabled={restoreLoading || !restoreFile || !restoreMonth}
+                  size="sm" className="h-7 text-[11px] bg-amber-600 hover:bg-amber-700 w-fit"
+                >
+                  <Database className="w-3 h-3 mr-1" /> {restoreLoading ? 'Restoring...' : 'Restore Month'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Delete by Date */}
           <Card className="shadow-sm border-red-200 bg-red-50/50">
