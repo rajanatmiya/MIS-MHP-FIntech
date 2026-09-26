@@ -1412,10 +1412,39 @@ async def restore_month_from_excel(
     month_key: str = Form(...),
     current_user: User = Depends(get_current_user)
 ):
-    """Restore group_month for loans matching rows in an uploaded Excel export.
-    Matches loans by customer_name + contact_no + bank + month(date).
-    Sets their group_month to the specified month_key. Admin only."""
+    """Precise month restore from Excel export. Admin only.
+    Step 1: Reset ALL loans currently in month_key (and variants with spaces) back to date-derived month.
+    Step 2: Match ONLY the Excel rows precisely and set their group_month to month_key.
+    This ensures exact count match."""
     check_admin(current_user)
+    MONTH_NAMES_R = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+    # Normalize month_key (strip spaces around dash)
+    month_key = re.sub(r'\s*-\s*', '-', month_key.strip())
+
+    def derive_month_from_date(val):
+        """Derive MMM-YYYY from a date string"""
+        if not val:
+            return None
+        val = str(val).strip()
+        if re.match(r'^[A-Za-z]{3}-\d{4}$', val):
+            return val
+        parts = val.split('-')
+        if len(parts) == 3 and len(parts[0]) <= 2 and len(parts[2]) == 4:
+            try:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_R[mi]}-{parts[2]}"
+            except ValueError:
+                pass
+        if len(parts) >= 3 and len(parts[0]) == 4:
+            try:
+                mi = int(parts[1]) - 1
+                if 0 <= mi < 12:
+                    return f"{MONTH_NAMES_R[mi]}-{parts[0]}"
+            except ValueError:
+                pass
+        return None
 
     try:
         contents = await file.read()
@@ -1423,7 +1452,6 @@ async def restore_month_from_excel(
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to read Excel: {str(e)}")
 
-    # Map export column headers back to DB field names
     col_map = {
         'Date': 'month', 'Customer Name': 'customer_name',
         'Contact No': 'contact_no', 'Bank': 'bank',
@@ -1432,6 +1460,28 @@ async def restore_month_from_excel(
     }
     df.rename(columns=col_map, inplace=True)
 
+    # STEP 1: Reset all loans in month_key (and space variants) back to their date-derived month
+    space_variants = [month_key, month_key.replace('-', ' - '), month_key.replace('-', '- '), month_key.replace('-', ' -')]
+    reset_count = 0
+    for variant in space_variants:
+        loans_in_month = await db.loan_applications.find({"group_month": variant}).to_list(None)
+        for loan in loans_in_month:
+            derived = derive_month_from_date(loan.get("month", ""))
+            if derived and derived != variant:
+                await db.loan_applications.update_one(
+                    {"_id": loan["_id"]},
+                    {"$set": {"group_month": derived}}
+                )
+                reset_count += 1
+            elif derived == variant:
+                pass  # Already correct date-derived month, keep it
+            else:
+                # Can't derive, leave unchanged
+                pass
+
+    # STEP 2: Precisely match Excel rows and set group_month
+    # Track already-matched loan IDs to avoid double-counting
+    matched_ids = set()
     restored = 0
     not_found = 0
     already_correct = 0
@@ -1441,39 +1491,55 @@ async def restore_month_from_excel(
         contact = str(row.get('contact_no', '') or '').strip()
         bank = str(row.get('bank', '') or '').strip()
         date_val = str(row.get('month', '') or '').strip()
+        company = str(row.get('company_name', '') or '').strip()
+        status = str(row.get('status', '') or '').strip()
 
-        # Clean pandas artifacts
-        for bad in ['nan', 'NaN', 'None', 'NaT']:
+        # Clean pandas NaN artifacts
+        for bad in ['nan', 'NaN', 'None', 'NaT', '<NA>']:
             if customer == bad: customer = ''
             if contact == bad: contact = ''
             if bank == bad: bank = ''
             if date_val == bad: date_val = ''
+            if company == bad: company = ''
+            if status == bad: status = ''
         if contact.endswith('.0'):
             contact = contact[:-2]
 
-        # Build match query — use multiple fields for accuracy
+        # Build STRICT match query — require ALL available fields
         match_q = {}
         if customer:
-            match_q["customer_name"] = {"$regex": f"^{re.escape(customer.strip())}$", "$options": "i"}
-        if contact:
-            match_q["contact_no"] = contact
+            match_q["customer_name"] = {"$regex": f"^{re.escape(customer)}$", "$options": "i"}
         if bank:
-            match_q["bank"] = {"$regex": f"^{re.escape(bank.strip())}$", "$options": "i"}
+            match_q["bank"] = {"$regex": f"^{re.escape(bank)}$", "$options": "i"}
         if date_val:
             match_q["month"] = {"$regex": re.escape(date_val)}
+        if contact:
+            match_q["contact_no"] = {"$regex": f"^{re.escape(contact)}$"}
+        if company:
+            match_q["company_name"] = {"$regex": f"^{re.escape(company)}$", "$options": "i"}
 
         if len(match_q) < 2:
             not_found += 1
             continue
 
-        # Find matching loan(s)
-        candidates = await db.loan_applications.find(match_q).to_list(10)
+        candidates = await db.loan_applications.find(match_q).to_list(5)
+
+        if not candidates:
+            # Try relaxed match without company
+            match_q.pop("company_name", None)
+            candidates = await db.loan_applications.find(match_q).to_list(5)
 
         if not candidates:
             not_found += 1
             continue
 
+        # Pick the first un-matched candidate
+        matched = False
         for loan in candidates:
+            lid = str(loan.get("_id") or loan.get("id", ""))
+            if lid in matched_ids:
+                continue
+            matched_ids.add(lid)
             if loan.get("group_month") == month_key:
                 already_correct += 1
             else:
@@ -1482,9 +1548,15 @@ async def restore_month_from_excel(
                     {"$set": {"group_month": month_key}}
                 )
                 restored += 1
+            matched = True
+            break
+
+        if not matched:
+            not_found += 1
 
     return {
-        "message": f"Restored {restored} loans to {month_key}. {already_correct} already correct. {not_found} not matched.",
+        "message": f"Reset {reset_count} loans first, then restored {restored} to {month_key}. {already_correct} already correct. {not_found} not matched.",
+        "reset_first": reset_count,
         "restored": restored,
         "already_correct": already_correct,
         "not_found": not_found,
