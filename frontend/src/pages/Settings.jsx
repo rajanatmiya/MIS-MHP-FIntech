@@ -149,6 +149,9 @@ const Settings = () => {
   const [restoreFile, setRestoreFile] = useState(null);
   const [restoreMonth, setRestoreMonth] = useState('');
   const [restoreLoading, setRestoreLoading] = useState(false);
+  const [renameOld, setRenameOld] = useState('');
+  const [renameNew, setRenameNew] = useState('');
+  const [renameLoading, setRenameLoading] = useState(false);
 
   const handleBackupData = async () => {
     setBackupLoading(true);
@@ -419,6 +422,41 @@ const Settings = () => {
             </CardContent>
           </Card>
 
+
+          {/* Rename Month Group */}
+          <Card className="shadow-sm border-blue-200 bg-blue-50/50">
+            <CardHeader className="pb-1 pt-3 px-4">
+              <CardTitle className="flex items-center gap-1.5 text-xs text-blue-800">
+                <Calendar className="w-3.5 h-3.5" />
+                Rename Month Group
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 pb-3">
+              <p className="text-[10px] text-slate-600 mb-2">Merge or rename a month group. E.g., rename "Sep - 2026" to "Sep-2026".</p>
+              <div className="flex gap-2 mb-2">
+                <Input value={renameOld} onChange={(e) => setRenameOld(e.target.value)} placeholder="Old name (e.g. Sep - 2026)" className="h-8 text-[11px] flex-1" />
+                <Input value={renameNew} onChange={(e) => setRenameNew(e.target.value)} placeholder="New name (e.g. Sep-2026)" className="h-8 text-[11px] flex-1" />
+              </div>
+              <Button
+                data-testid="rename-month-btn"
+                onClick={async () => {
+                  if (!renameOld || !renameNew) { toast.error('Enter both old and new name'); return; }
+                  if (!window.confirm(`Rename all "${renameOld}" entries to "${renameNew}"?`)) return;
+                  setRenameLoading(true);
+                  try {
+                    const response = await axios.post(`${API}/loans/rename-group-month`, { old_name: renameOld, new_name: renameNew });
+                    toast.success(`Renamed ${response.data.count} entries`);
+                    setRenameOld(''); setRenameNew('');
+                  } catch (error) { toast.error('Failed: ' + (error.response?.data?.detail || error.message)); }
+                  finally { setRenameLoading(false); }
+                }}
+                disabled={renameLoading || !renameOld || !renameNew}
+                size="sm" className="h-7 text-[11px] bg-blue-600 hover:bg-blue-700"
+              >
+                <Calendar className="w-3 h-3 mr-1" /> {renameLoading ? 'Renaming...' : 'Rename'}
+              </Button>
+            </CardContent>
+          </Card>
 
           {/* Restore Month from Excel */}
           <Card className="shadow-sm border-amber-200 bg-amber-50/50">

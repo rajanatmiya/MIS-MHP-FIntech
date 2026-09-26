@@ -1387,6 +1387,25 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to normalize months: {str(e)}")
 
 
+@api_router.post("/loans/rename-group-month")
+async def rename_group_month(
+    data: dict = Body(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Rename group_month from old_name to new_name for all matching loans. Admin only."""
+    check_admin(current_user)
+    old_name = data.get("old_name", "").strip()
+    new_name = data.get("new_name", "").strip()
+    if not old_name or not new_name:
+        raise HTTPException(status_code=400, detail="old_name and new_name required")
+    
+    result = await db.loan_applications.update_many(
+        {"group_month": old_name},
+        {"$set": {"group_month": new_name}}
+    )
+    return {"message": f"Renamed {result.modified_count} loans from '{old_name}' to '{new_name}'", "count": result.modified_count}
+
+
 @api_router.post("/loans/restore-month-from-excel")
 async def restore_month_from_excel(
     file: UploadFile = File(...),
