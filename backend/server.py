@@ -1505,6 +1505,13 @@ async def restore_month_from_excel(
         if contact.endswith('.0'):
             contact = contact[:-2]
 
+        # Also extract amount fields for precise matching
+        amount_val = str(row.get('amount', '') or '').strip()
+        sanction_val = str(row.get('Sanction Amount', row.get('sanction', '')) or '').strip()
+        for bad in ['nan', 'NaN', 'None', 'NaT', '<NA>']:
+            if amount_val == bad: amount_val = ''
+            if sanction_val == bad: sanction_val = ''
+
         # Build STRICT match query — require ALL available fields
         match_q = {}
         if customer:
@@ -1517,6 +1524,12 @@ async def restore_month_from_excel(
             match_q["contact_no"] = {"$regex": f"^{re.escape(contact)}$"}
         if company:
             match_q["company_name"] = {"$regex": f"^{re.escape(company)}$", "$options": "i"}
+        if status:
+            match_q["status"] = {"$regex": f"^{re.escape(status)}$", "$options": "i"}
+        if amount_val:
+            match_q["amount"] = {"$regex": f"^{re.escape(amount_val)}$"}
+        if sanction_val:
+            match_q["sanction"] = {"$regex": f"^{re.escape(sanction_val)}$"}
 
         if len(match_q) < 2:
             not_found += 1
