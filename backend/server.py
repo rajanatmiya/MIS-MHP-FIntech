@@ -811,7 +811,7 @@ async def get_loans(
             query["$or"] = search_conditions
     
     # Cap limit to prevent abuse
-    limit = min(limit, 2000)
+    limit = min(limit, 50000)
     skip = (page - 1) * limit
     
     total = await db.loan_applications.count_documents(query)
@@ -1095,7 +1095,7 @@ async def carry_forward_loans(data: dict = Body(...), current_user: User = Depen
         if rbac:
             query = {"$and": [rbac, {"$or": month_patterns}, {"status": {"$ne": "Disbursed"}}, {"entry_status": {"$ne": "Closed"}}]}
         
-        prev_loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+        prev_loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
         
         if not prev_loans:
             return {"message": f"No non-Disbursed loans found in {prev_month_key} to carry forward", "carried_count": 0, "from_month": prev_month_key}
@@ -1170,7 +1170,7 @@ async def delete_month_group(data: dict = Body(...), current_user: User = Depend
         query = {"$or": month_patterns}
         
         # Fetch loans to archive
-        loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+        loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
         
         if not loans:
             return {"message": f"No loans found for {month_key}", "deleted_count": 0, "archived": False}
@@ -1205,7 +1205,7 @@ async def delete_month_group(data: dict = Body(...), current_user: User = Depend
 async def get_archived_months(current_user: User = Depends(get_current_user)):
     """Get list of archived month backups"""
     check_admin(current_user)
-    archives = await db.deleted_month_backups.find({}, {"_id": 0, "loans": 0}).sort("deleted_at", -1).to_list(100)
+    archives = await db.deleted_month_backups.find({}, {"_id": 0, "loans": 0}).sort("deleted_at", -1).to_list(None)
     return archives
 
 @api_router.post("/backup/restore-month/{archive_id}")
@@ -1270,7 +1270,7 @@ async def export_month_loans(month_key: str, current_user: User = Depends(get_cu
     if rbac:
         query = {"$and": [rbac, {"$or": month_patterns}]}
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     df = pd.DataFrame(loans)
     column_config = [
@@ -1327,7 +1327,7 @@ async def normalize_months(current_user: User = Depends(get_current_user)):
             'september': 'Sep', 'october': 'Oct', 'november': 'Nov', 'december': 'Dec'
         }
         
-        all_loans = await db.loan_applications.find({}).to_list(10000)
+        all_loans = await db.loan_applications.find({}).to_list(None)
         updated_count = 0
         
         for loan in all_loans:
@@ -1584,7 +1584,7 @@ async def get_overview(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     total = len(loans)
     status_counts = defaultdict(int)
@@ -1637,7 +1637,7 @@ async def get_monthly_trends(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     MONTH_NAMES_T = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     
@@ -1706,7 +1706,7 @@ async def get_by_bank(month: Optional[str] = None, current_user: User = Depends(
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     MONTH_NAMES_BK = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     def to_mk(loan):
@@ -1763,7 +1763,7 @@ async def get_by_agent(month: Optional[str] = None, current_user: User = Depends
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     MONTH_NAMES_AG = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     def to_mk(loan):
@@ -1815,7 +1815,7 @@ async def get_by_month(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     month_stats = defaultdict(lambda: {"total": 0, "disbursed": 0, "declined": 0})
     
@@ -1838,7 +1838,7 @@ async def get_deep_analytics(month: Optional[str] = None, current_user: User = D
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     if month and month != 'all':
         MONTH_NAMES_DP = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
@@ -1924,7 +1924,7 @@ async def get_unique_values(current_user: User = Depends(get_current_user)):
     accessible_ids = await get_accessible_user_ids(current_user)
     query.update(build_rbac_filter(current_user, accessible_ids))
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     MONTH_NAMES_UV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
     
@@ -2115,7 +2115,7 @@ async def export_loans(
     if bank:
         query["bank"] = bank
     
-    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
     
     # Filter by month using group_month / date-to-month conversion
     if month and month != 'all':
@@ -2210,13 +2210,13 @@ async def backup_all_data(current_user: User = Depends(get_current_user)):
     check_admin(current_user)
     
     # Get all loans
-    loans = await db.loan_applications.find({}, {"_id": 0}).to_list(10000)
+    loans = await db.loan_applications.find({}, {"_id": 0}).to_list(None)
     
     # Get all users (without passwords)
     users = await db.users.find({}, {"_id": 0, "password": 0}).to_list(None)
     
     # Get all field configs
-    field_configs = await db.field_configs.find({}, {"_id": 0}).to_list(100)
+    field_configs = await db.field_configs.find({}, {"_id": 0}).to_list(None)
     
     # Loan column config
     loan_column_config = [
@@ -2569,7 +2569,7 @@ async def ai_smart_suggestions(field: str, partial_value: str, current_user: Use
     """Get AI-powered suggestions for field values"""
     try:
         # Get existing values from database
-        loans = await db.loan_applications.find({}, {"_id": 0, field: 1}).to_list(100000)
+        loans = await db.loan_applications.find({}, {"_id": 0, field: 1}).to_list(None)
         existing_values = list(set([loan.get(field, "") for loan in loans if loan.get(field)]))
         
         # Filter matching values
@@ -2593,7 +2593,7 @@ async def ai_data_analysis(request: AIAnalysisRequest, current_user: User = Depe
         if request.month:
             query["month"] = request.month
         
-        loans = await db.loan_applications.find(query, {"_id": 0}).to_list(10000)
+        loans = await db.loan_applications.find(query, {"_id": 0}).to_list(None)
         
         # Prepare data summary for AI
         total_loans = len(loans)
@@ -3214,7 +3214,7 @@ async def download_backup(current_user: User = Depends(get_current_user)):
     backup = {}
     collections = ["users", "loan_applications", "schemes", "statuses", "master_banks", "master_agents", "master_companies", "master_branches", "master_locations", "master_categories", "master_products", "master_customers", "master_executives", "master_managers", "agent_targets"]
     for col_name in collections:
-        docs = await db[col_name].find({}, {"_id": 0}).to_list(100000)
+        docs = await db[col_name].find({}, {"_id": 0}).to_list(None)
         backup[col_name] = docs
     backup["metadata"] = {
         "backup_date": datetime.now(timezone.utc).isoformat(),
@@ -3592,7 +3592,7 @@ async def create_default_admin():
                 {"$match": {"customer_name": {"$exists": True, "$ne": ""}}},
                 {"$group": {"_id": "$customer_name", "contact_no": {"$first": "$contact_no"}}}
             ]
-            loan_customers = await db.loan_applications.aggregate(pipeline).to_list(10000)
+            loan_customers = await db.loan_applications.aggregate(pipeline).to_list(None)
             customers_added = 0
             for lc in loan_customers:
                 name = (lc["_id"] or "").strip()
